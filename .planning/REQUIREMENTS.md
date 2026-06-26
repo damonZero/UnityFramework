@@ -1,130 +1,17 @@
 # Requirements: KJ Unity Framework
 
-**Defined:** 2026-06-26
-**Core Value:** 模块化、可复用的客户端框架，一个模块一个模块搭建并验证，确保每个模块独立可用、稳定可靠。
+**Created:** 2026-06-26
+**Goal:** 商业级可用的 Unity 客户端框架，模块化、可复用、逐模块验证。
 
-## v1 Requirements
+## 核心原则
 
-### Foundation (Core Systems)
+- 一个模块一个模块地搭建，每个模块写完 → 编译通过 → 测试通过 → 再做下一个
+- 不堆砌代码，不跳过验证
+- 商业级质量：接口设计合理、边界情况处理、可扩展
 
-- [ ] **FOUND-01**: Boot Layer 引导层实现，包含 Entry 入口、启动流程状态机、.asmdef 分层（Boot/Core/General/Project）
-- [ ] **FOUND-02**: IModule 接口定义，包含 Priority、Init()、Shutdown()，支持可选接口（ITickable 等）
-- [ ] **FOUND-03**: ModuleManager 模块管理器，按优先级排序初始化、逆序关闭，驱动模块生命周期
-- [ ] **FOUND-04**: EventManager 事件系统，基于枚举事件ID、优先级排序、Owner 管理（自动清理）、同步分发
+## 需求清单
 
-### Resource (资源管理)
-
-- [ ] **RES-01**: ResourceManager 资源管理器，支持异步加载、引用计数、缓存策略
-- [ ] **RES-02**: AssetHandle<T> 句柄式 API，统一资源加载接口
-- [ ] **RES-03**: ObjectPoolManager 对象池管理器，支持通用对象池 + GameObject 池、IPoolable 重置契约
-
-### UI (界面框架)
-
-- [ ] **UI-01**: UIManager 界面管理器，6 层排序系统（Background/Normal/Popup/Top/Loading/System）
-- [ ] **UI-02**: UIWindow 基类，包含 OnInit/OnOpen/OnClose/OnPause/OnResume 生命周期
-- [ ] **UI-03**: 窗口模式支持（Normal/Single/HideOthers/Overlay）
-- [ ] **UI-04**: 异步预制体加载和窗口栈管理
-
-### Network (网络通信)
-
-- [ ] **NET-01**: NetManager 网络管理器，会话管理（创建/销毁/获取）
-- [ ] **NET-02**: Session 会话类，状态机（Disconnected/Connecting/Connected/Authenticating/Reconnecting）
-- [ ] **NET-03**: Protobuf 消息序列化/反序列化集成
-- [ ] **NET-04**: MessageRouter 消息路由器，协议分发到处理器
-- [ ] **NET-05**: 心跳机制和断线重连支持
-- [ ] **NET-06**: Message Auto-Generation，.proto 文件自动生成处理器注册代码
-
-### Config (配置表)
-
-- [ ] **CFG-01**: ConfigManager 配置管理器，集成 Luban v4.10.1
-- [ ] **CFG-02**: 二进制格式加载、懒加载策略
-- [ ] **CFG-03**: 自动生成配置类、快速 ID 查找
-
-### Timer (计时器)
-
-- [ ] **TIMER-01**: TimerManager 计时器管理器，基于 Tick（非协程）
-- [ ] **TIMER-02**: 支持一次性定时器和循环定时器
-- [ ] **TIMER-03**: 暂停/恢复功能
-
-### Hot Update (热更新)
-
-- [ ] **HOT-01**: HybridCLR 集成，热更新加载流程
-- [ ] **HOT-02**: AOT 元数据补充
-- [ ] **HOT-03**: 版本检查和更新机制
-
-### Localization (本地化)
-
-- [ ] **L10N-01**: LocalizationManager 本地化管理器，键值查找
-- [ ] **L10N-02**: 运行时语言切换
-- [ ] **L10N-03**: Luban 配置表集成
-
-## v2 Requirements
-
-### Audio (音频)
-
-- **AUDIO-01**: AudioManager 音频管理器，BGM/SFX/Voice 通道
-- **AUDIO-02**: AudioSource 池化、音量控制
-- **AUDIO-03**: 音效淡入淡出
-
-### Game Systems (游戏系统)
-
-- **RED-01**: RedDotManager 红点系统，树结构节点、事件驱动传播
-- **RED-02**: 脏标记优化、批量更新
-- **GUIDE-01**: GuideManager 引导系统，步骤状态机、配置驱动
-- **GUIDE-02**: 事件触发、条件判断
-
-### Animation (动画)
-
-- **ANIM-01**: DOTween 集成，Tween 动画支持
-- **ANIM-02**: 动画队列、回调支持
-
-## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| ECS/DOTS | 复杂度高，不适合大多数游戏类型 |
-| 内置服务器 | 框架层不含服务器实现，后期用 C# 独立实现 |
-| 可视化脚本 | 非核心需求，增加框架复杂度 |
-| 数据统计/崩溃上报 | 业务层需求，不属于框架层 |
-| 自定义序列化 | Protobuf 已满足需求 |
-| MVVM 绑定框架 | 过度设计，UGUI 不适合 MVVM |
-
-## Traceability
-
-| Requirement | Module | Status |
-|-------------|--------|--------|
-| FOUND-01 | M5-Boot | ⬜ |
-| FOUND-02 | M1-IModule | ⬜ |
-| FOUND-03 | M2-ModuleManager | ⬜ |
-| FOUND-04 | M3-EventManager | ⬜ |
-| RES-01 | M4-ResourceManager | ⬜ |
-| RES-02 | M4-ResourceManager | ⬜ |
-| RES-03 | M6-ObjectPool | ⬜ |
-| UI-01 | M7-UIManager | ⬜ |
-| UI-02 | M7-UIManager | ⬜ |
-| UI-03 | M7-UIManager | ⬜ |
-| UI-04 | M7-UIManager | ⬜ |
-| NET-01 | M8-Network | ⬜ |
-| NET-02 | M8-Network | ⬜ |
-| NET-03 | M8-Network | ⬜ |
-| NET-04 | M8-Network | ⬜ |
-| NET-05 | M8-Network | ⬜ |
-| NET-06 | M8-Network | ⬜ |
-| CFG-01 | M10-Config | ⬜ |
-| CFG-02 | M10-Config | ⬜ |
-| CFG-03 | M10-Config | ⬜ |
-| TIMER-01 | M9-Timer | ⬜ |
-| TIMER-02 | M9-Timer | ⬜ |
-| TIMER-03 | M9-Timer | ⬜ |
-| HOT-01 | M12-HotUpdate | ⬜ |
-| HOT-02 | M12-HotUpdate | ⬜ |
-| HOT-03 | M12-HotUpdate | ⬜ |
-| L10N-01 | M11-Localization | ⬜ |
-| L10N-02 | M11-Localization | ⬜ |
-| L10N-03 | M11-Localization | ⬜ |
-
-**Coverage:** 25 total, 0 done
+（待讨论，从零开始逐条确认）
 
 ---
-*Requirements defined: 2026-06-26*
-*Reset for incremental development: 2026-06-26*
+*待开始*
