@@ -1,22 +1,33 @@
 # Project State: KJ Unity Framework
 
 **Last Updated:** 2026-06-26
-**Current Step:** Step 8 - Create Roadmap (not started)
+**Current Status:** 🔄 重新开始 — 增量开发模式
 
-## Progress
+## 开发方式
 
-| Step | Status | Description |
-|------|--------|-------------|
-| 1. Setup | ✅ Complete | Git init, .planning/ created |
-| 2. Brownfield | ✅ Skipped | Greenfield project |
-| 3. Deep Questioning | ✅ Complete | UI=UGUI, Config=Luban, Protocol=Protobuf, HotUpdate=HybridCLR |
-| 4. PROJECT.md | ✅ Complete | Committed |
-| 5. Workflow Config | ✅ Complete | YOLO, Standard granularity, Parallel, Quality models |
-| 6. Research | ✅ Complete | 4 parallel agents + synthesizer, all committed |
-| 7. Requirements | ✅ Complete | 25 v1 requirements defined, committed |
-| 7.5. Project Mode | ⏸ Pending | Need to ask Vertical MVP vs Horizontal Layers |
-| 8. Roadmap | ⏸ Pending | Need to spawn roadmapper |
-| 9. Done | ⏸ Pending | Final summary |
+一个模块一个模块地开发：**写代码 → 编译通过 → 测试通过 → 提交 → 下一个**
+
+## 模块开发顺序
+
+| # | 模块 | 程序集 | 包含需求 | 状态 |
+|---|------|--------|----------|------|
+| M1 | IModule 接口 | KJ.Core | FOUND-02 | ⬜ 待开始 |
+| M2 | ModuleManager | KJ.Core | FOUND-03 | ⬜ 待开始 |
+| M3 | EventManager | KJ.Core | FOUND-04 | ⬜ 待开始 |
+| M4 | ResourceManager | KJ.Core | RES-01, RES-02 | ⬜ 待开始 |
+| M5 | Boot 层 | KJ.Boot | FOUND-01 | ⬜ 待开始 |
+| M6 | ObjectPoolManager | KJ.Core | RES-03 | ⬜ 待开始 |
+| M7 | UIManager + UIWindow | KJ.Core | UI-01~04 | ⬜ 待开始 |
+| M8 | Network | KJ.Core | NET-01~06 | ⬜ 待开始 |
+| M9 | TimerManager | KJ.Core | TIMER-01~03 | ⬜ 待开始 |
+| M10 | ConfigManager | KJ.General | CFG-01~03 | ⬜ 待开始 |
+| M11 | LocalizationManager | KJ.General | L10N-01~03 | ⬜ 待开始 |
+| M12 | HotUpdateManager | KJ.Boot | HOT-01~03 | ⬜ 待开始 |
+
+## 当前进度
+
+**当前模块:** M1 — IModule 接口
+**完成:** 0/12
 
 ## Decisions Made
 
@@ -24,45 +35,15 @@
 - Config: Luban (open source)
 - Protocol: Protobuf
 - Hot Update: HybridCLR (needed)
-- Mode: YOLO
-- Granularity: Standard
-- Execution: Parallel
-- Git Tracking: Yes
-- AI Models: Quality (Opus)
-- Research: Yes
-- Plan Check: Yes
-- Verifier: Yes
-- Drift Guard: Yes
+- **开发方式: 增量开发，逐模块验证**
+- **不提前引入外部依赖，用 #if 或空实现预留**
 
-## v1 Requirements Summary
+## 文件清单
 
-- **Foundation:** FOUND-01~04 (Boot Layer, IModule, ModuleManager, EventManager)
-- **Resource:** RES-01~03 (ResourceManager, AssetHandle, ObjectPool)
-- **UI:** UI-01~04 (UIManager, UIWindow, layers, async loading)
-- **Network:** NET-01~06 (NetManager, Session, Protobuf, MessageRouter, heartbeat, auto-gen)
-- **Config:** CFG-01~03 (ConfigManager, Luban, lazy loading)
-- **Timer:** TIMER-01~03 (TimerManager, tick-based, pause/resume)
-- **Hot Update:** HOT-01~03 (HybridCLR, AOT, version check)
-- **Localization:** L10N-01~03 (LocalizationManager, runtime switch, Luban)
+```
+Assets/Scripts/
+├── (待创建)
+```
 
-## Files Created
-
-- `.planning/PROJECT.md` ✅
-- `.planning/config.json` ✅
-- `.planning/research/STACK.md` ✅
-- `.planning/research/FEATURES.md` ✅
-- `.planning/research/ARCHITECTURE.md` ✅
-- `.planning/research/PITFALLS.md` ✅
-- `.planning/research/SUMMARY.md` ✅
-- `.planning/REQUIREMENTS.md` ✅
-
-## Next Steps
-
-1. **Step 7.5:** Ask user: Vertical MVP vs Horizontal Layers
-2. **Step 8:** Spawn roadmapper to create ROADMAP.md and STATE.md
-3. **Step 9:** Final summary, tell user to run `/gsd-discuss-phase 1`
-
-## Project Reference
-
-**Core value:** 模块化、可复用的客户端框架，一个模块一个模块搭建并验证，确保每个模块独立可用、稳定可靠。
-**Current focus:** Roadmap creation
+---
+*v1 增量开发重启: 2026-06-26*

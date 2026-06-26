@@ -91,43 +91,40 @@
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
-| RES-01 | Phase 1 | Pending |
-| RES-02 | Phase 1 | Pending |
-| RES-03 | Phase 2 | Pending |
-| UI-01 | Phase 2 | Pending |
-| UI-02 | Phase 2 | Pending |
-| UI-03 | Phase 2 | Pending |
-| UI-04 | Phase 2 | Pending |
-| NET-01 | Phase 3 | Pending |
-| NET-02 | Phase 3 | Pending |
-| NET-03 | Phase 3 | Pending |
-| NET-04 | Phase 3 | Pending |
-| NET-05 | Phase 3 | Pending |
-| NET-06 | Phase 3 | Pending |
-| CFG-01 | Phase 3 | Pending |
-| CFG-02 | Phase 3 | Pending |
-| CFG-03 | Phase 3 | Pending |
-| TIMER-01 | Phase 3 | Pending |
-| TIMER-02 | Phase 3 | Pending |
-| TIMER-03 | Phase 3 | Pending |
-| HOT-01 | Phase 4 | Pending |
-| HOT-02 | Phase 4 | Pending |
-| HOT-03 | Phase 4 | Pending |
-| L10N-01 | Phase 4 | Pending |
-| L10N-02 | Phase 4 | Pending |
-| L10N-03 | Phase 4 | Pending |
+| Requirement | Module | Status |
+|-------------|--------|--------|
+| FOUND-01 | M5-Boot | ⬜ |
+| FOUND-02 | M1-IModule | ⬜ |
+| FOUND-03 | M2-ModuleManager | ⬜ |
+| FOUND-04 | M3-EventManager | ⬜ |
+| RES-01 | M4-ResourceManager | ⬜ |
+| RES-02 | M4-ResourceManager | ⬜ |
+| RES-03 | M6-ObjectPool | ⬜ |
+| UI-01 | M7-UIManager | ⬜ |
+| UI-02 | M7-UIManager | ⬜ |
+| UI-03 | M7-UIManager | ⬜ |
+| UI-04 | M7-UIManager | ⬜ |
+| NET-01 | M8-Network | ⬜ |
+| NET-02 | M8-Network | ⬜ |
+| NET-03 | M8-Network | ⬜ |
+| NET-04 | M8-Network | ⬜ |
+| NET-05 | M8-Network | ⬜ |
+| NET-06 | M8-Network | ⬜ |
+| CFG-01 | M10-Config | ⬜ |
+| CFG-02 | M10-Config | ⬜ |
+| CFG-03 | M10-Config | ⬜ |
+| TIMER-01 | M9-Timer | ⬜ |
+| TIMER-02 | M9-Timer | ⬜ |
+| TIMER-03 | M9-Timer | ⬜ |
+| HOT-01 | M12-HotUpdate | ⬜ |
+| HOT-02 | M12-HotUpdate | ⬜ |
+| HOT-03 | M12-HotUpdate | ⬜ |
+| L10N-01 | M11-Localization | ⬜ |
+| L10N-02 | M11-Localization | ⬜ |
+| L10N-03 | M11-Localization | ⬜ |
 
-**Coverage:**
-- v1 requirements: 25 total
-- Mapped to phases: 25
-- Unmapped: 0 ✓
+**Coverage:** 25 total, 0 done
 
 ---
 *Requirements defined: 2026-06-26*
-*Last updated: 2026-06-26 after initial definition*
+*Reset for incremental development: 2026-06-26*

@@ -1,0 +1,35 @@
+Using pre-set license
+Built from '2022.3/respin/2022.3.62f2-4af31df585-v2' branch; Version is '2022.3.62f2 (7670c08855a9) revision 7762112'; Using compiler version '192829333'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit Professional' Language: 'zh' Physical Memory: 64681 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1, IsPro: 1
+
+COMMAND LINE ARGUMENTS:
+F:\Unity\Editor\Unity.exe
+-adb2
+-batchMode
+-noUpm
+-name
+AssetImportWorker2
+-projectPath
+G:/NewProjectK/KJ
+-logFile
+Logs/AssetImportWorker2.log
+-srvPort
+14267
+received signal from system: SIGSEGV
+Obtained 14 stack frames
+RtlLookupFunctionEntry returned NULL function. Aborting stack walk.
+0x00007ff6d92d9e7d (Unity) StackWalker::GetCurrentCallstack
+0x00007ff6d92def59 (Unity) StackWalker::ShowCallstack
+0x00007ff6da29e251 (Unity) GetStacktrace
+0x00007ff6d92de376 (Unity) winutils::PrintStackTrace
+0x00007ff6d92d96ac (Unity) winutils::CrashHandler::DefaultSignalHandler
+0x00007ff6db6c4be4 (Unity) seh_filter_exe
+0x00007ff6db78afa0 (Unity) `__scrt_common_main_seh'::`1'::filt$0
+0x00007ff6db68d970 (Unity) _C_specific_handler
+0x00007ffb39a261cf (ntdll) _chkstk
+0x00007ffb398d23a7 (ntdll) RtlLocateExtendedFeature
+0x00007ffb39a25b0e (ntdll) KiUserExceptionDispatcher
+0x00007ff6da64efc7 (Unity) WorkerLicense::Activated
+<Missing stacktrace information>
+
