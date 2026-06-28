@@ -1,8 +1,8 @@
-using KJ.Core;
+using Core;
 using UnityEngine;
 using VContainer;
 
-namespace KJ.Project
+namespace Project
 {
     /// <summary>
     /// Project 层的容器接入点占位。

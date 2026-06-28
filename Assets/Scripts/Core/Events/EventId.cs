@@ -1,4 +1,4 @@
-namespace KJ.Core
+namespace Core
 {
     /// <summary>
     /// Core 层统一事件 ID。

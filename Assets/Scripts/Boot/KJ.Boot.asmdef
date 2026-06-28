@@ -1,8 +1,8 @@
 {
-    "name": "KJ.Boot",
-    "rootNamespace": "KJ.Boot",
+    "name": "Boot",
+    "rootNamespace": "Boot",
     "references": [
-        "KJ.Core",
+        "Core",
         "VContainer"
     ],
     "includePlatforms": [],

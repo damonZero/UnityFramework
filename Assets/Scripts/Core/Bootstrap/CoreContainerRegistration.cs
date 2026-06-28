@@ -2,7 +2,7 @@ using MessagePipe;
 using VContainer;
 using VContainer.Unity;
 
-namespace KJ.Core
+namespace Core
 {
     /// <summary>
     /// Core 层容器注册入口。

@@ -1,6 +1,6 @@
 {
-    "name": "KJ.Core",
-    "rootNamespace": "KJ.Core",
+    "name": "Core",
+    "rootNamespace": "Core",
     "references": [
         "VContainer",
         "MessagePipe",

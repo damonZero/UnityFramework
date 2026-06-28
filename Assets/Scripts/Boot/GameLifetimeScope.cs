@@ -1,8 +1,8 @@
-using KJ.Core;
+using Core;
 using VContainer;
 using VContainer.Unity;
 
-namespace KJ.Boot
+namespace Boot
 {
     public class GameLifetimeScope : LifetimeScope
     {

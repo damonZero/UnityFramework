@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer.Unity;
 
-namespace KJ.Core
+namespace Core
 {
     /// <summary>
     /// 系统管理器 — 统一管理所有 ISystem 的生命周期。

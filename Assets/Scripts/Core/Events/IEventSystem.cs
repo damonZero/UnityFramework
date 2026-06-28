@@ -1,6 +1,6 @@
 using System;
 
-namespace KJ.Core
+namespace Core
 {
     /// <summary>
     /// 事件系统对外入口。

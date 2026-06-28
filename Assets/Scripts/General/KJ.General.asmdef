@@ -1,8 +1,8 @@
 {
-    "name": "KJ.General",
-    "rootNamespace": "KJ.General",
+    "name": "General",
+    "rootNamespace": "General",
     "references": [
-        "KJ.Core",
+        "Core",
         "VContainer"
     ],
     "includePlatforms": [],

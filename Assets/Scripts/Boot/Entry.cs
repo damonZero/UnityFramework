@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace KJ.Boot
+namespace Boot
 {
     /// <summary>
     /// 游戏启动入口。

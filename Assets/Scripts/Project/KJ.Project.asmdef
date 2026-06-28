@@ -1,9 +1,9 @@
 {
-    "name": "KJ.Project",
-    "rootNamespace": "KJ.Project",
+    "name": "Project",
+    "rootNamespace": "Project",
     "references": [
-        "KJ.Core",
-        "KJ.General",
+        "Core",
+        "General",
         "VContainer"
     ],
     "includePlatforms": [],

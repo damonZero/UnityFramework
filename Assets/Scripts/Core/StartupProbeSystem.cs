@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace KJ.Core
+namespace Core
 {
     /// <summary>
     /// 最小可运行系统，用于验证启动链路和容器接入。

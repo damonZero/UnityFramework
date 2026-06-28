@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MessagePipe;
 using UnityEngine;
 
-namespace KJ.Core
+namespace Core
 {
     /// <summary>
     /// MessagePipe-backed event system.
