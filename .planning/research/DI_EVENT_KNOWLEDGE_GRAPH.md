@@ -1,6 +1,6 @@
 # DI Event Knowledge Graph
 
-**Scope:** VContainer + MessagePipe integration for KJ Unity Framework
+**Scope:** VContainer + MessagePipe integration for Unity Framework
 **Updated:** 2026-06-28
 **Purpose:** 快速查阅依赖注入、事件系统、启动链路、订阅清理和 AI 触发关键词
 
@@ -20,7 +20,7 @@
 
 ### MessagePipe
 - Role: event bus and request/response pipeline foundation
-- In this project: framework event layer wraps MessagePipe, but keeps KJ-specific `EventId` and `FireUntil`
+- In this project: framework event layer wraps MessagePipe, but keeps project-specific `EventId` and `FireUntil`
 - Main API shapes:
   - `MessageBroker<T>` / `MessageBroker<TKey, TMessage>`
   - `IPublisher<T>` / `ISubscriber<T>`
@@ -63,7 +63,8 @@
 ### Packages
 - `Packages/manifest.json`
 - `Assets/packages.config`
-- `Assets/Packages/MessagePipe.1.1.0/`
+- `Assets/Packages/MessagePipe.Analyzer.1.8.2/`
+- `Assets/Packages/VContainerSourceGenerator.1.1.0/`
 
 ---
 
@@ -113,7 +114,7 @@ Use both when the user mentions:
 4. Prefer entry points for framework runners like `SystemManager`.
 
 ### MessagePipe Rules
-1. Keep KJ-facing API stable via `IEventSystem`.
+1. Keep public API stable via `IEventSystem`.
 2. Use `EventId` enum, not strings.
 3. Track owner subscriptions for cleanup.
 4. Preserve `FireUntil` as framework semantic even if transport changes.

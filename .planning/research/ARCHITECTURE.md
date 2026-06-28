@@ -40,17 +40,17 @@
 ```
 Assets/
 ├── Scripts/
-│   ├── Boot/           → KJ.Boot.asmdef
-│   ├── Core/           → KJ.Core.asmdef
-│   ├── General/        → KJ.General.asmdef
-│   └── Project/        → KJ.Project.asmdef
+│   ├── Boot/           → Boot.asmdef
+│   ├── Core/           → Core.asmdef
+│   ├── General/        → General.asmdef
+│   └── Project/        → Project.asmdef
 ```
 
 **依赖关系:**
-- `KJ.Boot` → 无依赖
-- `KJ.Core` → `KJ.Boot`
-- `KJ.General` → `KJ.Core`, `KJ.Boot`
-- `KJ.Project` → `KJ.General`, `KJ.Core`, `KJ.Boot`
+- `Boot` → `Core`, `VContainer`
+- `Core` → `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`
+- `General` → `Core`, `VContainer`
+- `Project` → `Core`, `General`, `VContainer`
 
 **优势:** 编译隔离、依赖清晰、防止循环引用、支持增量编译
 

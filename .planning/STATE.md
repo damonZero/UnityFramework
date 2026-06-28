@@ -19,17 +19,25 @@
 ```
 Assets/Scripts/
 ├── Core/
-│   ├── KJ.Core.asmdef          ← 最底层，无框架依赖
+│   ├── Core.asmdef          ← 最底层，引用 VContainer + MessagePipe + UniTask
 │   ├── ISystem.cs              ← ISystem + ITickableSystem 接口
-│   └── SystemManager.cs        ← 系统生命周期管理器（单例）
+│   ├── SystemManager.cs        ← 系统生命周期管理器（VContainer 驱动）
+│   ├── Events/
+│   │   ├── IEventSystem.cs     ← 事件系统接口
+│   │   ├── EventSystem.cs      ← MessagePipe 实现（DI 注入）
+│   │   └── EventId.cs          ← 事件 ID 枚举
+│   └── Bootstrap/
+│       ├── IAppBootstrapper.cs ← 启动桥接接口
+│       └── CoreContainerRegistration.cs ← Core 层 DI 注册
 ├── Boot/
-│   ├── KJ.Boot.asmdef          ← 引用 KJ.Core
+│   ├── Boot.asmdef          ← 引用 Core
 │   ├── Entry.cs                ← 启动入口 MonoBehaviour
-│   └── GameLaunch.cs           ← 注册系统 + InitAll
+│   └── GameLifetimeScope.cs    ← VContainer LifetimeScope
 ├── General/
-│   └── KJ.General.asmdef       ← 引用 KJ.Core（空，待用）
+│   └── General.asmdef       ← 引用 Core（空，待用）
 └── Project/
-    └── KJ.Project.asmdef       ← 引用 KJ.Core + KJ.General（空，待用）
+    ├── Project.asmdef       ← 引用 Core + General
+    └── ProjectBootstrapper.cs ← Project 层容器接入点
 ```
 
 ## 下一步
