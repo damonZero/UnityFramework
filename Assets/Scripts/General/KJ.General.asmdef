@@ -1,0 +1,17 @@
+{
+    "name": "KJ.General",
+    "rootNamespace": "KJ.General",
+    "references": [
+        "KJ.Core",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

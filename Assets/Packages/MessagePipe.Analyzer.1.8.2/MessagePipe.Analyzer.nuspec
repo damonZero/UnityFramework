@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>MessagePipe.Analyzer</id>
+    <version>1.8.2</version>
+    <authors>Cysharp</authors>
+    <developmentDependency>true</developmentDependency>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>Icon.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/Cysharp/MessagePipe</projectUrl>
+    <description>Analyzers of MessagePipe to prevent subscription leak.</description>
+    <copyright>© Cysharp, Inc.</copyright>
+    <tags>analyzer</tags>
+    <repository type="git" url="https://github.com/Cysharp/MessagePipe" commit="58516c36d4465a7b6396b7850a4ad7e03326998c" />
+  </metadata>
+</package>
