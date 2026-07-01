@@ -9,7 +9,6 @@
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
-[Uu]ser[Ss]ettings/
 
 # Unity meta 文件必须提交（记录资源 GUID、脚本 GUID、Inspector 引用等）
 # *.meta 不能忽略
@@ -18,20 +17,11 @@
 # IDE / 编辑器
 # ================================================
 
-# JetBrains Rider
-.idea/
-
-# Visual Studio
-.vs/
-*.csproj
-*.sln
+# Visual Studio 用户本地文件
 *.user
 *.userosscache
 *.suo
 *.userprefs
-
-# VS Code
-.vscode/
 
 # ================================================
 # 操作系统
