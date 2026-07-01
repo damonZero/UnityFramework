@@ -1,10 +1,11 @@
 using UnityEngine;
 
-namespace Core
+namespace Core.Architecture
 {
     /// <summary>
     /// 最小可运行系统，用于验证启动链路和容器接入。
     /// </summary>
+    [CoreSystem]
     public sealed class StartupProbeSystem : ISystem
     {
         public int Priority => 0;

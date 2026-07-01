@@ -1,4 +1,4 @@
-namespace Core
+namespace Core.Architecture
 {
     /// <summary>
     /// 系统生命周期接口 — 所有 Core 层系统必须实现

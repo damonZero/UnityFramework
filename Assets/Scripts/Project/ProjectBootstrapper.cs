@@ -1,17 +1,19 @@
-using Core;
+using System.Reflection;
+using General;
+using MessagePipe;
 using UnityEngine;
 using VContainer;
 
 namespace Project
 {
     /// <summary>
-    /// Project 层的容器接入点占位。
-    /// 后续业务系统、Model、UseCase 都从这里接入容器。
+    /// Project layer container hook. It only depends on General and external DI packages.
     /// </summary>
-    public class ProjectBootstrapper : MonoBehaviour, IAppBootstrapper
+    public class ProjectBootstrapper : MonoBehaviour
     {
-        public void Configure(IContainerBuilder builder)
+        public void Configure(IContainerBuilder builder, MessagePipeOptions options)
         {
+            builder.RegisterBusinessLayer(options, Assembly.GetExecutingAssembly());
             Debug.Log("[ProjectBootstrapper] Project 层容器注册已接入");
         }
     }

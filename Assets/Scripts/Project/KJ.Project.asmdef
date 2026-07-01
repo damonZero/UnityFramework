@@ -2,8 +2,10 @@
     "name": "Project",
     "rootNamespace": "Project",
     "references": [
-        "Core",
+        "Boot",
         "General",
+        "MessagePipe",
+        "MessagePipe.VContainer",
         "VContainer"
     ],
     "includePlatforms": [],

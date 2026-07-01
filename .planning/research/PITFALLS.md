@@ -9,26 +9,26 @@
 
 Mistakes that cause rewrites, major refactoring, or fundamental architectural problems.
 
-### Pitfall 1: Over-Engineered Module System (IModule God Interface)
+### Pitfall 1: Over-Engineered System Interface (ISystem God Interface)
 
-**What goes wrong:** The `IModule` interface grows too large with `Initialize()`, `Tick()`, `LateTick()`, `Dispose()`, `OnPause()`, `OnResume()`, `OnAppFocus()` etc. Every module must implement all methods even if irrelevant. Modules become MonoBehaviours with empty method bodies.
+**What goes wrong:** The `ISystem` interface grows too large with `Initialize()`, `Tick()`, `LateTick()`, `Dispose()`, `OnPause()`, `OnResume()`, `OnAppFocus()` etc. Every system must implement all methods even if irrelevant.
 
-**Why it happens:** Designing the interface before understanding what each module actually needs. Trying to anticipate every lifecycle scenario.
+**Why it happens:** Designing the interface before understanding what each system actually needs. Trying to anticipate every lifecycle scenario.
 
 **Consequences:**
-- 30+ empty method implementations across modules
-- Adding a new lifecycle method requires touching every module
-- Modules look complex but do nothing in most methods
-- New developers afraid to add modules due to boilerplate
+- 30+ empty method implementations across systems
+- Adding a new lifecycle method requires touching every system
+- New developers afraid to add systems due to boilerplate
 
 **Prevention:**
-- Start with minimal interface: `Initialize()` and `Dispose()` only
-- Use optional interfaces: `ITickable`, `ILateTickable`, `IApplicationLifecycle` that modules opt into
-- Prefer composition over inheritance — modules own their lifecycle hooks via registration
+- Kept `ISystem` minimal: `Priority`, `Init()`, `Shutdown()`
+- Optional orthogonal: `ITickableSystem`
+- DI (VContainer) handles construction; `[CoreSystem]` attribute handles discovery
+- `AsImplementedInterfaces()` for automatic binding
 
-**Detection:** If you have more than 5 methods in your base module interface before shipping v1, you are over-engineering.
+**Detection:** If `ISystem` has more than 3 members before shipping any system, stop adding.
 
-**Phase:** Phase 1 (project foundation). Fix this before building any module.
+**Phase:** Already prevented by current design.
 
 ---
 
@@ -45,20 +45,21 @@ Mistakes that cause rewrites, major refactoring, or fundamental architectural pr
 - "It works on my machine" due to initialization race conditions
 
 **Prevention:**
-- Enforce unidirectional dependency flow: Core modules cannot depend on General modules
-- Use EventManager for cross-module communication instead of direct references
+- Enforce unidirectional dependency flow: Core assemblies cannot reference General assemblies
+- Use MessagePipe for cross-module communication instead of direct references
+- DI (VContainer) resolves dependencies at startup; circular refs are compile-time or registration-time errors
 - Document dependency graph: `Boot -> Core -> General -> Project` (downward only)
-- If module A needs module B, and B needs A, extract shared logic into a lower layer
+- If A needs B and B needs A, extract shared logic into a lower layer or use events
 
 **Detection:** Draw your module dependency graph. If you see cycles, refactor immediately.
 
-**Phase:** Phase 1 (project foundation). Establish dependency rules before building modules.
+**Phase:** Already enforced via .asmdef references.
 
 ---
 
 ### Pitfall 3: Event System Becomes Spaghetti
 
-**What goes wrong:** EventManager uses string-based event names (`"PlayerDeath"`, `"playerDeath"`, `"PLAYER_DEATH"` — all different events). No compile-time checking. Events fire events that fire events. Debugging is impossible.
+**What goes wrong:** Old pattern: string-based event names (`"PlayerDeath"`, `"playerDeath"`, `"PLAYER_DEATH"` — all different events). No compile-time checking. Events fire events that fire events. Debugging is impossible.
 
 **Why it happens:** Events are easy to add, hard to remove. Developers use events for everything including direct module communication.
 
@@ -68,16 +69,15 @@ Mistakes that cause rewrites, major refactoring, or fundamental architectural pr
 - Memory leaks from forgotten unsubscribe calls
 - Performance issues from event chains (A fires B fires C fires D)
 
-**Prevention:**
-- Use enum-based event IDs, not strings — compile-time safety
-- Implement owner-based subscription management (auto-unsubscribe when owner is disposed)
-- Limit event chain depth: max 2 hops, then use direct calls
-- Add event logging/debug view in development builds
-- Keep EventManager for cross-module decoupling; use direct calls within a module
+**Prevention (already in place):**
+- MessagePipe with `[GameEvent]` structs — compile-time safety, no string IDs
+- `IPublisher<T>` / `ISubscriber<T>` with `IDisposable` subscription tokens
+- Subscription tokens disposed in system `Shutdown()` or `OnDestroy()`
+- Keep MessagePipe for cross-module decoupling; use direct calls within a module
 
 **Detection:** If you cannot answer "what subscribes to event X?" in under 30 seconds, your event system is spaghetti.
 
-**Phase:** Phase 2 (event system). Design it right from the start — this is hard to fix later.
+**Phase:** Already solved by MessagePipe architecture.
 
 ---
 
@@ -119,10 +119,8 @@ Mistakes that cause rewrites, major refactoring, or fundamental architectural pr
 - Eventually out-of-memory on mobile devices
 
 **Prevention:**
-- EventManager subscription must use weak references or owner-based auto-cleanup
-- Enforce pattern: subscribe in `OnEnable`, unsubscribe in `OnDisable` — code review this
-- Use `System.WeakReference` for event subscribers where possible
-- Add memory leak detection in development builds (count subscribers per event)
+- MessagePipe uses `IDisposable` subscription tokens — dispose in Shutdown() / OnDestroy()
+- No need for `System.WeakReference` — the token pattern is simpler and deterministic
 
 **Detection:** Open/close a UI window 100 times. If memory grows, you have a leak. Check Profiler for growing object counts.
 
@@ -307,13 +305,13 @@ Mistakes that cause rewrites, major refactoring, or fundamental architectural pr
 
 | Phase | Topic | Likely Pitfall | Mitigation |
 |-------|-------|----------------|------------|
-| Phase 1 | Project Foundation | Over-engineered IModule interface, circular dependencies | Start minimal, enforce dependency direction, use optional interfaces |
-| Phase 2 | Event System | String-based events, memory leaks from subscriptions, event spaghetti | Enum-based IDs, owner management, debug logging |
-| Phase 3 | Network Module | Zombie sessions, Protobuf version mismatch, main thread blocking | Heartbeat, version handshake, marshal to main thread |
-| Phase 4 | Config Tables | Loading spikes, memory waste, type mapping errors | Lazy loading, binary format, type validation |
-| Phase 5 | UI Framework | Single Canvas bottleneck, object pool state leaks, raycast abuse | Canvas splitting, IPoolable reset, disable RaycastTarget |
-| Phase 6 | HybridCLR | AOT boundary violations, generic sharing failures, stripping | Assembly boundary design, preserve attributes, test with High stripping |
-| Phase 7 | Object Pool | State not reset, pool never shrinks, stale references | IPoolable interface, pool size limits, weak references |
+| Boot | Project Foundation | Over-engineered ISystem interface, circular dependencies | Start minimal, enforce dependency direction, use optional interfaces |
+| Core | Event System | Event spaghetti, subscription leaks | MessagePipe struct events, IDisposable tokens, dispose in Shutdown() |
+| Core | Network Module | Zombie sessions, Protobuf version mismatch, main thread blocking | Heartbeat, version handshake, marshal to main thread |
+| General | Config Tables | Loading spikes, memory waste, type mapping errors | Lazy loading, binary format, type validation |
+| Core | UI Framework | Single Canvas bottleneck, object pool state leaks, raycast abuse | Canvas splitting, IPoolable reset, disable RaycastTarget |
+| Boot | Hot Update | AOT boundary violations, generic sharing failures, stripping | Assembly boundary design, preserve attributes, test with High stripping |
+| Core | Object Pool | State not reset, pool never shrinks, stale references | IPoolable interface, pool size limits, clear on scene change |
 
 ---
 
@@ -327,9 +325,9 @@ Mistakes that cause rewrites, major refactoring, or fundamental architectural pr
 
 ### Layer Violation: Core Depending on General
 
-**What goes wrong:** Core layer (EventManager, NetMgr) depends on General layer (UI framework, asset manager). Core becomes project-specific.
+**What goes wrong:** Core layer depends on General layer. Core becomes project-specific and not reusable.
 
-**Prevention:** Core must be dependency-free (except Unity API). General modules depend on Core, never the reverse.
+**Prevention:** Core assemblies must not reference General or Project assemblies. Use interfaces defined in Core or MessagePipe events for upward communication.
 
 ### Boot Layer Bloat
 

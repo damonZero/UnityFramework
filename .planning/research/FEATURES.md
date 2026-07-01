@@ -14,21 +14,16 @@ These are the features every Unity game framework must have. Without them, the f
 
 **Why Expected:** The fundamental decoupling mechanism. Every module communicates through events. Without it, modules become tightly coupled spaghetti.
 
-**Complexity:** Medium
+**Complexity:** Medium  
+**Status:** ✅ Done — MessagePipe with `[GameEvent]` attribute-driven registration
 
 **Requirements:**
-- Synchronous and asynchronous event dispatch
-- Priority-based listener ordering
-- Owner/subscription management (auto-cleanup on scene change or owner destroy)
-- Type-safe event data (avoid `object` boxing)
-- Unsubscribe by owner (bulk cleanup)
+- [x] Type-safe events via `IPublisher<T>` / `ISubscriber<T>` (compile-time safety, no `object` boxing)
+- [x] Attribute-based auto-registration (`[GameEvent]` structs scanned and registered as MessagePipe brokers)
+- [x] Auto-cleanup via `IDisposable` subscription (caller owns the subscription token)
+- [x] Core and General/Project have separate `[GameEvent]` attributes for scoped scanning
 
-**Common Patterns:**
-- `EventManager.Register<TEvent>(owner, callback, priority)`
-- `EventManager.Fire<TEvent>(eventData)`
-- `EventManager.UnregisterAll(owner)` — cleanup all subscriptions for an owner
-
-**Notes:** This is the backbone of the entire framework. Every other module depends on it. Build it first, build it right.
+**Backend:** MessagePipe + MessagePipe.VContainer bridge
 
 ---
 
@@ -84,22 +79,18 @@ UIManager.Instance.CloseAll();
 
 **Why Expected:** Loading assets is the most fundamental Unity operation. Without a proper resource manager, projects end up with hard references, memory leaks, and no hot-update support.
 
-**Complexity:** High
+**Complexity:** High  
+**Status:** ✅ Done — YooAsset 3.0 封装为 `Core/Asset/AssetSystem`
 
 **Requirements:**
-- Async resource loading (load by path or key)
-- Reference counting for automatic cleanup
-- Asset caching (avoid reloading)
-- Unified API regardless of backend (Addressables, AssetBundle, or custom)
-- Support for hot-update asset paths (HybridCLR compatible)
+- [x] Async resource loading (UniTask-based)
+- [x] Dual-channel handle management: owned (caller manages lifecycle) / cached (system manages lifecycle)
+- [x] Type-aware caching via `AssetCacheKey` (path + Type)
+- [x] Scene loading with serialized unload/load per path
+- [x] Downloader exposure for update pipeline
+- [x] Unity API regardless of backend — `IAssetSystem` interface hides YooAsset
 
-**Common Patterns:**
-```csharp
-var handle = await AssetManager.LoadAsync<GameObject>("ui/login_panel");
-AssetManager.Release(handle);
-```
-
-**Notes:** PROJECT.md uses a custom AssetManager rather than Addressables directly. This abstraction is wise — it allows swapping backends without touching game code. The reference counting is critical to prevent memory leaks.
+**Backend:** YooAsset 3.0 (UPM git URL). PlayMode: EditorSimulate / Offline / Host. CDN URL configurable via `AssetConfig` ScriptableObject.
 
 ---
 
@@ -148,19 +139,20 @@ AudioManager.Instance.SetVolume(AudioChannel.BGM, 0.5f);
 
 ---
 
-### 7. Singleton/Base Infrastructure (基础架构)
+### 7. DI + System Infrastructure (基础架构)
 
 **Why Expected:** The framework needs foundational patterns that every module uses.
 
-**Complexity:** Low
+**Complexity:** Low  
+**Status:** ✅ Done — VContainer + ISystem + [CoreSystem] + AsImplementedInterfaces()
 
 **Requirements:**
-- Generic singleton base class (`Singleton<T>`)
-- Module interface (`IModule`) for Boot/Core/General/Project layering
-- MonoBehaviour singleton for Unity-specific singletons
-- Service locator or dependency injection basics
+- [x] DI-driven system registration via `[CoreSystem]` attribute + reflection scanning
+- [x] `ISystem` / `ITickableSystem` lifecycle contracts
+- [x] `IModel` lifecycle contract for General/Project business code
+- [x] Boot layer minimal — no dependency on Core/General/Project
 
-**Notes:** PROJECT.md references `IModule` interface from the company framework. This is the module lifecycle contract — Init, Update, Shutdown, etc.
+**Backend:** VContainer 1.1.0
 
 ---
 
@@ -410,7 +402,7 @@ Event System ──────────────────────�
 
 Audio Manager ──> Resource Manager + Object Pool
 
-Boot Infrastructure ──> IModule interface, Singleton<T>
+Boot Infrastructure ──> ISystem + IModel + [CoreSystem] + [Model]
 ```
 
 **Critical Path:**
@@ -432,7 +424,7 @@ Boot Infrastructure ──> IModule interface, Singleton<T>
 1. **Event System** — Everything depends on it
 2. **Resource Manager** — Core loading infrastructure
 3. **Object Pool** — Used everywhere, simple to build
-4. **Singleton/IModule infrastructure** — Boot/Core/General/Project layering
+4. **DI + System Infrastructure** — VContainer + ISystem + [CoreSystem]
 
 ### Build Second (Phase 2 - Core)
 5. **UI Framework** — Most visible, validates the architecture
@@ -467,7 +459,7 @@ Boot Infrastructure ──> IModule interface, Singleton<T>
 | Event System | Medium | 1 | None |
 | Resource Manager | High | 1 | None |
 | Object Pool | Low-Medium | 1 | Resource Manager |
-| Singleton/IModule | Low | 1 | None |
+| Singleton/ISystem Infrastructure | Low | DONE — VContainer + ISystem + [CoreSystem] | Event Bus, object lifecycle |
 | UI Framework | Medium-High | 2 | Resource Manager, Event System |
 | Config Table (Luban) | Medium | 2 | None |
 | Audio Manager | Low-Medium | 2 | Resource Manager, Object Pool |
@@ -483,13 +475,14 @@ Boot Infrastructure ──> IModule interface, Singleton<T>
 
 ## Sources
 
-- Unity official documentation (UGUI, Addressables, Audio)
+- Unity official documentation (UGUI, Audio)
 - GameFramework (Ellan Jiang) — enterprise Unity framework, modular design
 - QFramework — lightweight Unity architecture framework
 - ET Framework — ECS + networking Unity framework
 - Luban configuration table tool documentation
 - HybridCLR hot update solution documentation
-- Common Unity game architecture patterns (MVC, MVCS, ECS)
+- YooAsset asset management documentation
+- Common Unity game architecture patterns (DI, pub/sub, pool)
 - Chinese game dev community best practices (events, red dot, guide systems)
 
 **Confidence Notes:**

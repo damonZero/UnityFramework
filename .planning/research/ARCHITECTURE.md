@@ -1,8 +1,17 @@
 # Unity 游戏框架架构研究
 
 **项目:** KJ Unity Framework
-**研究日期:** 2026-06-26
+**研究日期:** 2026-06-26 / 实际实现更新: 2026-06-30
 **置信度:** 中高 (基于业界成熟模式和开源框架实践)
+
+> **⚠️ 本文档 §§2-9 为设计阶段草稿，使用 `IModule` / `ModuleManager` / `EventManager` 等早期概念。**
+> **实际实现以代码为准：**
+> - `IModule` → `ISystem` + `[CoreSystem]` + VContainer DI
+> - `ModuleManager` → `SystemManager`
+> - `EventManager` → MessagePipe + `[GameEvent]`
+> - `ResourceManager` → `AssetSystem` (YooAsset 3.0 封装)
+> - `ObjectPoolManager` → `Framework/Pool/ObjectPool<T>` + `Framework/Pool/Unity/GameObjectPool` + `Core/Pool/PoolService` (DI 桥接)
+> - §6 (资源管理) 已重写对齐实际实现。本章节 §1 的整体架构方向仍有效。
 
 ---
 
@@ -30,9 +39,9 @@
 
 | 层级 | 职责 | 依赖方向 | 典型内容 |
 |------|------|----------|----------|
-| **Boot** | 程序入口、热更新引导、启动流程 | 无依赖，被所有层依赖 | `GameLaunch.cs`、HybridCLR入口、启动流程状态机 |
-| **Core** | 框架基础设施、通用Manager | 只依赖Boot | `EventManager`、`NetManager`、`UIManager`、`ResourceManager`、`ObjectPoolManager` |
-| **General** | 通用游戏系统 | 依赖Core | `ConfigManager`(Luban)、`AudioManager`、`RedDotManager`、`GuideManager` |
+| **Boot** | 程序入口、热更新引导、启动流程 | 无依赖，被所有层依赖 | `Entry.cs`、`AppLifetimeScope`、`BootstrapContext`、HybridCLR入口 |
+| **Core** | 框架基础设施、引擎级Manager | 依赖Boot + Framework + Packages | `SystemManager`、`AssetSystem`、`NetManager`、`UIManager` |
+| **General** | 通用游戏系统 | 依赖Core | `ConfigManager`(Luban)、`AudioManager`、`RedDotManager`、`GuideManager`、`ModelLifecycle` |
 | **Project** | 具体游戏业务 | 依赖所有层 | 具体UI窗口、游戏逻辑、业务流程 |
 
 ### 1.3 Assembly Definition 分离
@@ -47,10 +56,10 @@ Assets/
 ```
 
 **依赖关系:**
-- `Boot` → `Core`, `VContainer`
-- `Core` → `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`
-- `General` → `Core`, `VContainer`
-- `Project` → `Core`, `General`, `VContainer`
+- `Boot` → `VContainer`
+- `Core` → `Boot`, `Framework.Pool`, `Framework.Cache`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`, `YooAsset`
+- `General` → `Boot`, `Core`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
+- `Project` → `Boot`, `General`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
 
 **优势:** 编译隔离、依赖清晰、防止循环引用、支持增量编译
 
@@ -168,15 +177,15 @@ public class ModuleManager : MonoBehaviour
 
 | 优先级 | 模块 | 说明 |
 |--------|------|------|
-| 100 | ResourceManager | 资源加载是其他模块的基础 |
-| 200 | EventManager | 事件系统是模块通信基础 |
+| -999 | AssetInitSystem | YooAsset 底层初始化 |
+| 50 | PoolService | Framework 委托注入，池注册到 DI |
+| 100 | AssetSystem | 资源加载是其他模块的基础 |
+| 200 | UIManager | UI框架需要资源和事件支持 |
 | 300 | NetManager | 网络模块需要事件系统支持 |
 | 400 | ConfigManager | 配置表需要资源加载支持 |
-| 500 | UIManager | UI框架需要资源和事件支持 |
-| 600 | AudioManager | 音频需要资源加载支持 |
-| 700 | ObjectPoolManager | 对象池需要资源加载支持 |
-| 800 | RedDotManager | 红点需要UI框架支持 |
-| 900 | GuideManager | 引导需要UI框架支持 |
+| 500 | AudioManager | 音频需要资源加载支持 |
+| 600 | RedDotManager | 红点需要事件系统支持 |
+| 700 | GuideManager | 引导需要UI框架支持 |
 
 ---
 
@@ -538,103 +547,106 @@ public enum WindowMode
 
 ## 6. 资源管理设计
 
-### 6.1 ResourceManager 核心接口
+底层引擎: **YooAsset 3.0** (8300+ GitHub Stars, 5年持续维护)，通过 UPM git URL 安装。
+
+封装层: `Core/Asset/AssetSystem`，YooAsset 类型完全限定在 Core assembly，上层代码通过 `IAssetSystem` 接口使用。
+
+### 6.1 AssetSystem 核心接口
 
 ```csharp
-public class ResourceManager : IModule
+// 对上层暴露的接口 (Core.Asset.IAssetSystem)
+public interface IAssetSystem
 {
-    /// <summary>
-    /// 同步加载资源
-    /// </summary>
-    public T Load<T>(string assetPath) where T : Object;
+    // 异步加载并返回带生命周期的句柄（调用者负责 Dispose）
+    UniTask<AssetHandle<T>> LoadAssetHandleAsync<T>(string path) where T : Object;
 
-    /// <summary>
-    /// 异步加载资源
-    /// </summary>
-    public void LoadAsync<T>(string assetPath, Action<T> callback) where T : Object;
+    // 异步加载，系统内部缓存 Handle，Release(path) 释放
+    UniTask<T> LoadAssetAsync<T>(string path) where T : Object;
 
-    /// <summary>
-    /// 异步加载资源（返回句柄）
-    /// </summary>
-    public AssetHandle<T> LoadAsync<T>(string assetPath) where T : Object;
+    // 加载并实例化 (Handle + GameObject 联合生命周期)
+    UniTask<AssetInstanceHandle> InstantiateAsync(string path, Transform parent = null);
 
-    /// <summary>
-    /// 释放资源
-    /// </summary>
-    public void Release(string assetPath);
+    // 场景加载（返回可激活/卸载的句柄，串行化同 path 的 load/unload）
+    UniTask<AssetSceneHandle> LoadSceneAsync(string path, LoadSceneMode mode, Action<float> onProgress);
 
-    /// <summary>
-    /// 释放所有资源
-    /// </summary>
-    public void ReleaseAll();
+    // YooAsset 下载器（供更新管线使用）
+    ResourceDownloaderOperation CreateDownloader(string tag = null);
+    ResourceDownloaderOperation CreateDownloader(string[] tags);
 
-    /// <summary>
-    /// 预加载资源
-    /// </summary>
-    public void Preload(string[] assetPaths, Action onComplete);
+    // 按类型释放缓存
+    void Release<T>(string path) where T : Object;
+    void Release(string path);
+
+    // 底层 UnloadUnusedAssets
+    void UnloadUnused();
 }
 ```
 
-### 6.2 资源句柄设计
+### 6.2 句柄设计
 
 ```csharp
-public class AssetHandle<T> : IDisposable where T : Object
+public sealed class AssetHandle<T> : IDisposable where T : Object
 {
     public T Asset { get; }
     public bool IsDone { get; }
     public float Progress { get; }
+    public bool IsValid { get; }
     public string Error { get; }
+    public void Dispose();         // Release YooAsset handle + remove from owned set
+}
 
-    public event Action<T> OnCompleted;
+public sealed class AssetInstanceHandle : IDisposable 
+{
+    public GameObject Instance { get; }           // 实例化的 GameObject
+    public AssetHandle<GameObject> SourceHandle { get; }  // 源 prefab handle
+    public void Dispose();                        // Destroy(GameObject) + Dispose(Handle)
+}
 
-    public void Dispose()
-    {
-        // 释放资源引用
-    }
+public sealed class AssetSceneHandle : IDisposable
+{
+    public string SceneName { get; }
+    public Scene Scene { get; }
+    public bool ActivateScene();
+    public UniTask UnloadAsync();                 // 异步卸载，串行化
+    public void Dispose();                        // Dispose 时 fire-and-forget 卸载
 }
 ```
 
-### 6.3 资源加载策略
+### 6.3 缓存架构
 
-| 场景 | 策略 | 说明 |
-|------|------|------|
-| **UI Prefab** | 异步加载 + 缓存 | UI窗口频繁打开/关闭，需要缓存 |
-| **配置表** | 同步加载 | 游戏启动时必须加载完成 |
-| **音频** | 异步加载 + 缓存 | 音频资源较大，需要异步 |
-| **特效** | 异步加载 + 对象池 | 特效频繁创建/销毁 |
-| **场景** | 异步加载 + 进度条 | 场景加载需要进度反馈 |
-
-### 6.4 资源缓存策略
-
-```csharp
-public class ResourceCache
-{
-    // 强引用缓存（常驻内存）
-    private readonly Dictionary<string, Object> _strongCache = new();
-
-    // 弱引用缓存（可被GC回收）
-    private readonly Dictionary<string, WeakReference<Object>> _weakCache = new();
-
-    // 引用计数
-    private readonly Dictionary<string, int> _refCount = new();
-
-    public T Get<T>(string key) where T : Object;
-
-    public void Set(string key, Object asset, CacheType type = CacheType.Weak);
-
-    public void AddRef(string key);
-
-    public void RemoveRef(string key);
-
-    public void Cleanup();
-}
-
-public enum CacheType
-{
-    Strong,  // 强引用，常驻内存
-    Weak     // 弱引用，可被回收
-}
 ```
+┌──────────────────────────────────────────────────────┐
+│                    AssetSystem                        │
+├──────────────────────┬───────────────────────────────┤
+│  _assetHandles        │  _ownedAssetHandles            │
+│  Dictionary<Key,Handle>│  HashSet<AssetHandle>         │
+│                       │                               │
+│  LoadAssetAsync → 缓存 │  LoadAssetHandleAsync → 调用者管理  │
+│  Release(path) → 释放   │  AssetHandle.Dispose → 自动移除   │
+├──────────────────────┼───────────────────────────────┤
+│  _sceneHandles        │  _ownedSceneHandles            │
+│  Dictionary<string,Handle>│ HashSet<SceneHandle>          │
+│                       │                               │
+│  _sceneUnloadTasks    │  ← 串行化同 path 的 unload/load│
+│  Dictionary<string,UniTask>│                           │
+└──────────────────────┴───────────────────────────────┘
+```
+
+**缓存键**: `AssetCacheKey` (path + Type) — 同时按路径和类型区分，避免 `LoadAssetAsync<GameObject>("a.prefab")` 与 `LoadAssetAsync<Object>("a.prefab")` 混淆。
+
+**并发保护**: `SemaphoreSlim(1,1)` — 因为 UniTask await 在主线程回归，实际无多线程竞争，但作为防御性设计。
+
+### 6.4 PlayMode 配置
+
+通过 `AssetConfig` ScriptableObject 配置，加载时 `Resources.Load<AssetConfig>("AssetConfig")`。
+
+| 模式 | YooAsset 对应 | 场景 |
+|------|-------------|------|
+| EditorSimulate | EditorFileSystem | 开发期，虚拟文件系统，不打 AB |
+| Offline | BuiltinFileSystem | 单机发布，AB 打入 StreamingAssets |
+| Host | Builtin + Sandbox | 线上热更，内置 AB + CDN 下载 |
+
+Host 模式下 CDN URL 通过 `CdnRemoteService : IRemoteService` 实现，下载超时和并发数由 AssetConfig 下发到 `FileSystemParameters`。
 
 ---
 
@@ -871,8 +883,8 @@ public class AudioManager : IModule
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Boot Layer                                │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ GameLaunch   │  │ HybridCLR   │  │ Procedure   │              │
-│  │ (入口)       │  │ (热更新)     │  │ (流程管理)   │              │
+│  │ Entry.cs     │  │ HybridCLR   │  │ Bootstrap   │              │
+│  │ (入口)       │  │ (热更新)     │  │ (启动链)     │              │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘              │
 └─────────┼────────────────┼────────────────┼─────────────────────┘
           │                │                │
@@ -880,14 +892,14 @@ public class AudioManager : IModule
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Core Layer                                │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ ResourceMgr  │  │ EventMgr    │  │ NetMgr      │              │
-│  │ (资源管理)    │  │ (事件系统)   │  │ (网络管理)   │              │
+│  │ AssetSystem  │  │ SystemMgr  │  │ NetManager  │              │
+│  │ (资源管理)    │  │ (系统管理)   │  │ (网络管理)   │              │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘              │
 │         │                │                │                      │
 │         ▼                ▼                ▼                      │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ UIManager    │  │ ObjectPool  │  │ TimerMgr    │              │
-│  │ (UI框架)     │  │ (对象池)     │  │ (定时器)     │              │
+│  │ UIManager    │  │ PoolService │  │ TimerMgr    │              │
+│  │ (UI框架)     │  │ (池桥接)     │  │ (定时器)     │              │
 │  └─────────────┘  └─────────────┘  └─────────────┘              │
 └─────────────────────────────────────────────────────────────────┘
           │
@@ -895,12 +907,12 @@ public class AudioManager : IModule
 ┌─────────────────────────────────────────────────────────────────┐
 │                       General Layer                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ ConfigMgr    │  │ AudioManager│  │ RedDotMgr   │              │
+│  │ ConfigManager│  │ AudioManager│  │ RedDotManager│              │
 │  │ (配置表)     │  │ (音频)       │  │ (红点)       │              │
 │  └─────────────┘  └─────────────┘  └─────────────┘              │
 │  ┌─────────────┐  ┌─────────────┐                               │
-│  │ GuideMgr     │  │ UIMgr扩展   │                               │
-│  │ (引导)       │  │ (业务UI)     │                               │
+│  │ GuideManager │  │ Localization │                               │
+│  │ (引导)       │  │ (本地化)      │                               │
 │  └─────────────┘  └─────────────┘                               │
 └─────────────────────────────────────────────────────────────────┘
           │
@@ -957,9 +969,9 @@ Server processes
 ```
 UI needs resource
   ↓
-ResourceManager.LoadAsync()
+AssetSystem.LoadAssetAsync()
   ↓
-AssetBundle/Addressables
+YooAsset 3.0
   ↓
 Cache check → Load if needed
   ↓
@@ -970,44 +982,22 @@ UI uses asset
 
 ---
 
-## 11. 建议构建顺序
+## 11. 体系依赖关系
 
-### Phase 1: 基础设施 (Boot + Core基础)
-1. **Boot Layer** - 程序入口、启动流程
-2. **ResourceManager** - 资源加载是其他模块基础
-3. **EventManager** - 事件系统是模块通信基础
-4. **ModuleManager** - 模块生命周期管理
-
-### Phase 2: 核心框架 (Core完善)
-5. **NetManager + Session** - 网络通信
-6. **UIManager** - UI框架
-7. **ObjectPoolManager** - 对象池
-
-### Phase 3: 通用系统 (General层)
-8. **ConfigManager** - Luban配置表集成
-9. **AudioManager** - 音频管理
-10. **RedDotManager** - 红点系统
-
-### Phase 4: 高级功能 (General + Project)
-11. **GuideManager** - 引导系统
-12. **HybridCLR** - 热更新集成
-13. **Project业务** - 具体游戏逻辑
-
-### 构建顺序依赖关系
+详见 [ROADMAP.md](../ROADMAP.md) 依赖关系速查。
 
 ```
-ResourceManager (1)
-    ├── EventManager (2) - 需要资源加载配置
-    ├── NetManager (4) - 需要资源加载消息定义
-    └── UIManager (5) - 需要资源加载UI Prefab
-
-EventManager (2)
-    ├── NetManager (4) - 需要事件系统分发消息
-    ├── UIManager (5) - 需要事件系统通信
-    └── 所有General层模块 - 都需要事件系统
-
-ModuleManager (3)
-    └── 所有模块 - 都需要注册到ModuleManager
+AssetSystem ← ISystem
+Timer ← ISystem
+ObjectPool ← AssetSystem
+UIManager ← ISystem + AssetSystem
+ConfigManager (Luban) ← AssetSystem
+AudioManager ← AssetSystem + ObjectPool
+NetManager ← ISystem + MessagePipe
+RedDot ← MessagePipe
+Guide ← MessagePipe + UIManager + ConfigManager
+Localization ← ConfigManager + AssetSystem
+HybridCLR ← AssetSystem + Boot
 ```
 
 ---
@@ -1016,15 +1006,13 @@ ModuleManager (3)
 
 | 模式 | 应用场景 | 示例 |
 |------|----------|------|
-| **单例模式** | Manager类 | UIManager, ResourceManager |
-| **观察者模式** | 事件系统 | EventManager |
-| **工厂模式** | 消息创建、UI创建 | MessageFactory, UIFactory |
-| **对象池** | 频繁创建/销毁对象 | ObjectPoolManager |
-| **状态机** | 游戏流程、会话状态 | Procedure, SessionState |
+| **DI/IoC** | 模块注册与生命周期 | VContainer + [CoreSystem] + ISystem |
+| **发布/订阅** | 模块通信 | MessagePipe + [GameEvent] |
+| **对象池** | 频繁创建/销毁对象 | Framework/Pool/ObjectPool<T> + GameObjectPool |
+| **状态机** | 游戏流程、会话状态 | Bootstrap Stage 链, SessionState |
 | **命令模式** | 引导系统、输入处理 | GuideStep |
-| **中介者模式** | 模块通信 | EventManager |
-| **装饰器模式** | 网络中间件 | MessageMiddleware |
-| **策略模式** | 资源加载策略 | IResourceLoader |
+| **策略模式** | PlayMode 切换、缓存淘汰 | AssetConfig.Mode → YooAsset PlayMode; ICacheEvictionPolicy → LRU |
+| **工厂模式** | Handle 创建 | AssetSystem → AssetHandle / AssetSceneHandle |
 
 ---
 
@@ -1032,8 +1020,8 @@ ModuleManager (3)
 
 ### 13.1 内存优化
 - 使用对象池减少GC
-- 资源加载使用弱引用缓存
-- 及时释放不用的资源
+- YooAsset 3.0 管理 AssetBundle 生命周期
+- 及时释放不用的 AssetHandle
 - 避免在Update中分配内存
 
 ### 13.2 网络优化
@@ -1059,7 +1047,7 @@ ModuleManager (3)
 | 事件系统 | 高 | 观察者模式成熟，优先级/Owner管理是常见需求 |
 | 网络层 | 中高 | Protobuf成熟，但具体会话管理需要根据项目调整 |
 | UI框架 | 高 | UGUI封装是常见需求，层级管理有成熟方案 |
-| 资源管理 | 中 | 取决于选择Addressables还是AssetBundle，需要验证 |
+| 资源管理 | 高 | YooAsset 3.0 已集成，参见 [ROADMAP.md](../ROADMAP.md) |
 | 对象池 | 高 | Unity 2021+有官方实现，模式成熟 |
 | 红点系统 | 中 | 需要根据具体业务调整树结构 |
 | 引导系统 | 中 | 需要根据具体UI结构调整 |

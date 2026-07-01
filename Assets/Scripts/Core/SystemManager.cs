@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using MessagePipe;
 using UnityEngine;
 using VContainer.Unity;
 
-namespace Core
+namespace Core.Architecture
 {
     /// <summary>
     /// 系统管理器 — 统一管理所有 ISystem 的生命周期。
@@ -16,9 +17,17 @@ namespace Core
         private readonly List<ISystem> _systems = new();
         private readonly List<ITickableSystem> _tickableSystems = new();
         private readonly Dictionary<Type, ISystem> _systemMap = new();
+        private readonly IPublisher<AppStartedEvent> _appStartedPublisher;
+        private readonly IPublisher<AppShuttingDownEvent> _appShuttingDownPublisher;
 
-        public SystemManager(IEnumerable<ISystem> systems)
+        public SystemManager(
+            IEnumerable<ISystem> systems,
+            IPublisher<AppStartedEvent> appStartedPublisher,
+            IPublisher<AppShuttingDownEvent> appShuttingDownPublisher)
         {
+            _appStartedPublisher = appStartedPublisher;
+            _appShuttingDownPublisher = appShuttingDownPublisher;
+
             if (systems == null)
                 return;
 
@@ -92,6 +101,7 @@ namespace Core
             }
 
             Initialized = true;
+            _appStartedPublisher.Publish(new AppStartedEvent());
             Debug.Log("[SystemManager] 全部初始化完成");
         }
 
@@ -99,6 +109,9 @@ namespace Core
         {
             if (!Initialized && _systems.Count == 0)
                 return;
+
+            if (Initialized)
+                _appShuttingDownPublisher.Publish(new AppShuttingDownEvent());
 
             Debug.Log("[SystemManager] 开始关闭系统");
 
@@ -133,9 +146,9 @@ namespace Core
         {
             if (!Initialized) return;
             var dt = Time.deltaTime;
-            for (var i = 0; i < _tickableSystems.Count; i++)
+            foreach (var t in _tickableSystems)
             {
-                _tickableSystems[i].Update(dt);
+                t.Update(dt);
             }
         }
 
@@ -143,9 +156,9 @@ namespace Core
         {
             if (!Initialized) return;
             var dt = Time.deltaTime;
-            for (var i = 0; i < _tickableSystems.Count; i++)
+            foreach (var t in _tickableSystems)
             {
-                _tickableSystems[i].LateUpdate(dt);
+                t.LateUpdate(dt);
             }
         }
 
@@ -153,9 +166,9 @@ namespace Core
         {
             if (!Initialized) return;
             var dt = Time.fixedDeltaTime;
-            for (var i = 0; i < _tickableSystems.Count; i++)
+            foreach (var t in _tickableSystems)
             {
-                _tickableSystems[i].FixedUpdate(dt);
+                t.FixedUpdate(dt);
             }
         }
 

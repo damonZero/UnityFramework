@@ -8,16 +8,33 @@
 - 一个模块一个模块地搭建，每个模块写完 → 编译通过 → 测试通过 → 再做下一个
 - 不堆砌代码，不跳过验证
 - 商业级质量：接口设计合理、边界情况处理、可扩展
-- Boot 层保持最小依赖，只保留启动入口和最基础的桥接代码，避免热更新相关改动要求重启游戏
-- 依赖注入体系统一采用 VContainer 重构，按层逐步接入，Boot 层不直接承载完整 DI 图
+- 依赖方向固定为 `Boot <- Core <- General <- Project`，下层不得依赖上层
+- Boot 层保持最小依赖，只保留稳定启动壳、阶段协议和 prefab 链式启动能力
+- 启动采用当前阶段启动下一阶段：Boot prefab → Core prefab → General prefab → Project prefab
+- 依赖注入采用 VContainer，MessagePipe 作为类型安全事件管线
+- Core 使用 System，业务层使用 Model + ViewModel，不引入业务 System
 
 ## 需求清单
 
-1. 建立基于 VContainer 的全局依赖注入体系
-2. 保持 Boot 层最小化，Boot 只负责启动入口、生命周期桥接和热更新友好隔离
-3. 将现有核心体系逐步重构为可被容器管理的系统注册模型
-4. 确保热更新模块可独立替换，不因 Boot 层变更而触发整包重启
-5. 保持四层分层架构的编译隔离和向下依赖约束
+1. 建立基于 VContainer 的分阶段容器注册体系
+2. 建立 Boot 层稳定启动协议：`BootstrapContext` / `IBootstrapStage`
+3. 建立 prefab 字符串链式启动：每层初始化完成后启动下一层 prefab
+4. 建立 Core Architecture：`ISystem`、`[CoreSystem]`、`SystemManager`
+5. 建立类型安全事件注册：`[GameEvent]` + MessagePipe `IPublisher<T>` / `ISubscriber<T>`
+6. 删除旧式 `EventId + object payload` 事件总线设计
+7. 建立业务 Model 注册：`IModel`、`[Model]`、`ModelLifecycle`
+8. 确保热更新模块可独立替换，不因 Project/General 改动要求重启 App
+9. 保持四层 .asmdef 编译隔离和单向依赖约束
+10. 建立对象池/缓存体系：纯 C# 对象池（`Framework/Pool/`）、Unity 资源缓存（`Framework/Cache/`）、集合租借 `using` 统一入口（`Framework/Pool/Collections/`），由 Core 层 `PoolService` 桥接注册到 DI 容器
+
+## 对象池 / 缓存硬约束
+
+- 集合租借必须保留 `using` 使用方式，不能退化成手动 `Release()` 的唯一方式
+- `List / HashSet / Queue / Stack / Dictionary` 等集合统一走租约封装
+- 纯 C# 对象池（`Framework/Pool/`）、Unity 资源缓存（`Framework/Cache/`）、集合租借（`Framework/Pool/Collections/`）三者分层实现，由 Core 层 `PoolService` 桥接暴露统一门面
+- 资源缓存必须支持预热、回收、淘汰、污染检测、统计
+- Unity 对象池必须兼容 `GameObject` / `Component` / 单资源与多资源场景
+- 缓存策略与容器解耦，默认支持 LRU，后续可扩展 FIFO / 自定义策略
 
 ---
-*待开始*
+*当前重点：Phase 1 — 验证启动链路、实现 UI 框架*

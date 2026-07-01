@@ -16,21 +16,24 @@
 | Component | Technology | Version | Confidence |
 |-----------|-----------|---------|------------|
 | Engine | Unity | 2022.3.62f2 LTS | HIGH |
-| Hot Update | HybridCLR | main branch (no tags) | HIGH |
-| Config Tables | Luban | v4.10.1 | HIGH |
-| Network Serialization | Google.Protobuf | 3.35.1 (netstandard2.0) | HIGH |
+| Hot Update | HybridCLR | main branch (no tags) | MEDIUM — planned, not yet installed |
+| Config Tables | Luban | v4.10.1 | MEDIUM — planned, not yet installed |
+| Network Serialization | Google.Protobuf | 3.35.1 (netstandard2.0) | MEDIUM — planned, not yet installed |
 | Async/Await | UniTask | v2.5.11 | HIGH |
 | Tweening | DOTween | Latest (Asset Store) | MEDIUM |
 | UI | UGUI (built-in) | Unity 2022.3 built-in | HIGH |
 | Audio | Unity Audio (built-in) | Unity 2022.3 built-in | HIGH |
-| Dependency Injection | VContainer | current project integration | HIGH |
-| Event Base | MessagePipe | current project integration | HIGH |
+| Dependency Injection | VContainer | 1.1.0 | HIGH |
+| Event Bus | MessagePipe | latest (UPM) | HIGH |
+| Asset Management | YooAsset | 3.0 (UPM) | HIGH |
 
 **Installation channels:**
-- UPM (manifest.json): UniTask, HybridCLR, VContainer, MessagePipe.VContainer
-- NuGet/Plugins: Google.Protobuf.dll, MessagePipe transitive DLLs via NuGetForUnity
-- Asset Store: DOTween
-- External tools: Luban CLI, protoc
+- UPM (manifest.json): UniTask, VContainer, MessagePipe, MessagePipe.VContainer, YooAsset
+- UPM (planned, not yet installed): HybridCLR
+- NuGet (NuGetForUnity, analyzers only): MessagePipe.Analyzer, VContainerSourceGenerator
+- NuGet/Plugins (planned): Google.Protobuf.dll
+- Asset Store (planned): DOTween
+- External tools (planned): Luban CLI, protoc
 
 ---
 
@@ -40,19 +43,19 @@
 
 | Feature | Complexity | Notes |
 |---------|-----------|-------|
-| Event System | Medium | Foundation -- everything depends on it. Enum-based IDs, priority, owner management. |
-| Resource Manager | High | Async loading, reference counting, caching, unified API over AssetBundle/Addressables. |
-| Network Module | High | Session management, Protobuf serialization, heartbeat, message routing, TCP + WebSocket. |
-| UI Framework | Medium-High | Window lifecycle, layer management (6 layers), async prefab loading, UI stack. |
-| Config Table System | Medium | Luban integration, auto-generated classes, fast ID lookup. |
-| Audio Manager | Low-Medium | BGM/SFX/Voice channels, volume control, source pooling. |
-| Singleton/IModule Infrastructure | Low | Generic singleton, IModule interface, layering contract. |
+| Event System | Medium | DONE — MessagePipe + [GameEvent] attribute scanning |
+| Resource Manager | High | DONE — YooAsset 3.0 封装为 AssetSystem, owned/cached 双通道 |
+| Network Module | High | PLANNED — Session management, Protobuf serialization, heartbeat, message routing, TCP + WebSocket. |
+| UI Framework | Medium-High | PLANNED — Window lifecycle, layer management (6 layers), async prefab loading, UI stack. |
+| Config Table System | Medium | PLANNED — Luban integration, auto-generated classes, fast ID lookup. |
+| Audio Manager | Low-Medium | PLANNED — BGM/SFX/Voice channels, volume control, source pooling. |
+| Singleton/ISystem Infrastructure | Low | DONE — VContainer + ISystem + [CoreSystem] + AsImplementedInterfaces() |
 
 ### Common Modules (expected in mature framework)
 
 | Feature | Complexity | Notes |
 |---------|---------|-------|
-| Object Pool | Low-Medium | Generic + GameObject pools, auto-expand, timed shrink, reset callback. |
+| Object Pool | Low-Medium | Framework/Pool + Framework/Cache 代码已完成，缺 Core/Pool/PoolService.cs DI 桥接。 |
 | Red Dot System | Medium | Tree-structured nodes, event-driven propagation, dirty-flag optimization. |
 | Guide/Tutorial System | Medium-High | Step-based state machine, config-driven, event-triggered transitions. |
 | Timer System | Low-Medium | One-shot + looping, pause/resume, tick-based (not coroutine). |
@@ -72,7 +75,7 @@
 
 ```
 Boot  (entry point, HybridCLR bootstrap, startup flow)
-  -> Core  (EventSystem, NetManager, ResourceManager, UIManager, ObjectPoolManager)
+  -> Core  (EventSystem, NetManager, AssetSystem, UIManager, ObjectPoolManager)
     -> General  (ConfigManager, AudioManager, RedDotManager, GuideManager)
       -> Project  (game-specific UI, logic, business flows)
 ```
@@ -81,10 +84,11 @@ Boot  (entry point, HybridCLR bootstrap, startup flow)
 
 ### Module Lifecycle
 
-- `IEventSystem` is the current event facade contract.
-- `EventSystem` is the MessagePipe-backed implementation.
-- `SystemManager` remains the main system lifecycle driver.
+- `SystemManager` is the main system lifecycle driver.
+- `ISystem` (Core) and `IModel` (General/Project) are the two lifecycle contracts.
+- `[CoreSystem]` / `[Model]` attributes enable automatic container registration via reflection.
 - `VContainer` owns object composition and startup wiring.
+- `AsImplementedInterfaces()` ensures `IAssetSystem` etc. are resolvable via DI.
 
 ---
 
@@ -94,28 +98,34 @@ Boot  (entry point, HybridCLR bootstrap, startup flow)
 
 | # | Pitfall | Prevention |
 |---|---------|------------|
-| 1 | **Boot dependency creep** -- Boot starts owning business registrations | Keep `GameLifetimeScope` thin. Move features into Core/General/Project registration only |
-| 2 | **Event bus rewrite drift** -- framework creates a parallel event system on top of MessagePipe | Keep one facade (`IEventSystem`) and one base (`MessagePipe`) |
-| 3 | **Subscription leaks** -- destroyed owners still hold handlers | Track owners and dispose on `Shutdown()` / `UnsubscribeOwner()` |
-| 4 | **Textual API mismatch** -- AI generates incorrect integration code | Use the knowledge graph doc and trigger keywords in this file |
+| 1 | **Boot dependency creep** -- Boot starts owning business registrations | Keep Boot layer minimal. Move features into Core/General/Project |
+| 2 | **Event bus rewrite drift** -- framework creates a parallel event system | Keep one base (`MessagePipe`); use `[GameEvent]` + `IPublisher<T>` / `ISubscriber<T>` |
+| 3 | **Subscription leaks** -- destroyed owners still hold handlers | Dispose subscription tokens in Shutdown() / OnDestroy() |
+| 4 | **Layer violation** -- Core depends on General, General depends on Project | Compile-time enforcement via .asmdef references |
 
 ---
 
-## 5. Build Order Recommendation
+## 5. Dependencies (Prerequisite Order)
 
-1. Boot Layer
-2. VContainer startup wiring
-3. MessagePipe-backed event facade
-4. ResourceManager
-5. ObjectPoolManager
-6. UIManager
-7. ConfigManager
-8. NetManager
-9. AudioManager
-10. Timer System
-11. RedDotManager
-12. GuideManager
-13. HybridCLR Integration
+Individual modules declare what they depend on; there is no fixed execution schedule.
+
+Key dependency edges:
+```
+AssetSystem ← ISystem
+Timer ← ISystem
+ObjectPool ← AssetSystem
+UIManager ← ISystem + AssetSystem
+ConfigManager (Luban) ← AssetSystem
+AudioManager ← AssetSystem + ObjectPool
+NetManager ← ISystem + MessagePipe
+MessageRouter ← MessagePipe + Protobuf
+RedDot ← MessagePipe
+Guide ← MessagePipe + UIManager + ConfigManager
+Localization ← ConfigManager + AssetSystem
+HybridCLR ← AssetSystem + Boot
+```
+
+See [ROADMAP.md](../ROADMAP.md) for per-module status.
 
 ---
 

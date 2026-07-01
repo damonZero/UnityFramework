@@ -1,7 +1,7 @@
 # Technology Stack
 
-**Project:** KJ Unity Framework
-**Researched:** 2026-06-26
+**Project:** Unity Framework
+**Researched:** 2026-06-26 / Updated: 2026-06-30
 
 ## Recommended Stack
 
@@ -13,18 +13,59 @@
 
 **Confidence:** HIGH - Version specified in PROJECT.md
 
+### Dependency Injection
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| VContainer | 1.1.0 | DI / IoC | Lightweight, fast, pure C# — no MonoBehaviour coupling |
+
+**Installation:** Via Unity Package Manager (UPM) from GitHub
+```
+https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer
+```
+
+**Confidence:** HIGH - Integrated and verified
+
+### Event Bus
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| MessagePipe | Latest | Type-safe async message pipeline | Zero-allocation, supports pub/sub and request/response, VContainer integration |
+
+**Installation:** Via Unity Package Manager (UPM) from GitHub
+```
+https://github.com/Cysharp/MessagePipe.git
+```
+
+**Confidence:** HIGH - Integrated with VContainer bridge (MessagePipe.VContainer)
+
+### Asset Management
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| YooAsset | 3.0 (UPM) | AssetBundle management, hot-update resource pipeline | Industry standard (8300+ GitHub stars), 5+ years maintenance, built-in incremental update, encryption, editor toolchain |
+
+**Installation:** Via Unity Package Manager (UPM) from GitHub
+```
+https://github.com/tuyoogame/YooAsset.git?path=Assets/YooAsset
+```
+
+**Confidence:** HIGH - Integrated via Core/Asset/ with owned/cached dual-channel handle management
+
 ### Hot Update
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
 | HybridCLR | Latest (main branch) | C# hot update | Industry standard for Unity C# hot update, supports all IL2CPP platforms including iOS |
 
+**Status:** Planned, **not yet installed** in manifest.json. Listed here for architecture awareness.
+
 **Installation:** Via Unity Package Manager (UPM) from GitHub
 ```
 https://github.com/focus-creative-games/hybridclr.git
 ```
 
-**Confidence:** HIGH - Official documentation confirms Unity 2022.3.x support
+**Confidence:** MEDIUM — not yet integrated
 
 ### Configuration Tables
 
@@ -76,6 +117,8 @@ https://github.com/Cysharp/UniTask.git
 |------------|---------|---------|-----|
 | DOTween | Latest (Asset Store) | UI animations, tweening | Industry standard, free version available, excellent performance |
 
+**Status:** Planned, **not yet installed**.
+
 **Installation:** Unity Asset Store (free) or http://dotween.demigiant.com
 
 **Confidence:** MEDIUM - Version not available via GitHub releases, distributed via Asset Store
@@ -104,17 +147,6 @@ https://github.com/Cysharp/UniTask.git
 **Confidence:** HIGH - Built-in audio sufficient for framework
 
 ## Supporting Libraries (Recommended)
-
-### Dependency Injection (Optional)
-
-| Library | Purpose | When to Use |
-|---------|---------|-------------|
-| VContainer | Lightweight DI | If module dependencies become complex |
-| Zenject | Full-featured DI | If team prefers convention-based binding |
-
-**Recommendation:** Start without DI for simplicity. Add VContainer if module coupling becomes an issue.
-
-**Confidence:** MEDIUM - Not required, architecture decision
 
 ### Utilities
 
@@ -145,10 +177,15 @@ https://github.com/Cysharp/UniTask.git
 {
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
-    "com.focus-creative-games.hybridclr": "https://github.com/focus-creative-games/hybridclr.git"
+    "com.cysharp.messagepipe": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe",
+    "com.cysharp.messagepipe.vcontainer": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",
+    "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+    "com.tuyoogame.yooasset": "https://github.com/tuyoogame/YooAsset.git?path=Assets/YooAsset"
   }
 }
 ```
+
+**Note:** HybridCLR (`com.focus-creative-games.hybridclr`) is planned but not yet added to manifest.json.
 
 ### NuGet/Manual DLLs (Assets/Plugins/)
 
@@ -176,14 +213,12 @@ Assets/
 ├── Scripts/
 │   ├── Boot/          # Entry point, initialization
 │   ├── Core/          # Framework core systems
-│   │   ├── Event/
-│   │   ├── Network/
-│   │   ├── UI/
-│   │   ├── Resource/
-│   │   └── Pool/
-│   ├── General/       # Shared utilities
+│   │   ├── Architecture/  # SystemManager, CoreSystemAttribute, events
+│   │   ├── Bootstrap/     # CoreContainerRegistration, CoreBootstrapStage
+│   │   └── Asset/         # AssetSystem (YooAsset integration)
+│   ├── General/       # Shared utilities, Model lifecycle
 │   └── Project/       # Game-specific code
-├── Resources/         # Unity Resources (minimal use)
+├── Resources/         # Unity Resources (minimal use — only AssetConfig)
 ├── StreamingAssets/   # Config tables, hot update DLLs
 ├── Plugins/           # Third-party DLLs
 └── Packages/          # UPM packages
@@ -204,6 +239,9 @@ Assets/
 |---------|--------|-------------------|------------|
 | Google.Protobuf 3.35.1 | NuGet | 2026-06-26 | HIGH |
 | UniTask v2.5.11 | GitHub | 2026-06-26 | HIGH |
+| VContainer 1.1.0 | GitHub | 2026-06-30 | HIGH |
+| MessagePipe | GitHub | 2026-06-30 | HIGH |
+| YooAsset 3.0 | GitHub | 2026-06-30 | HIGH |
 | Luban v4.10.1 | GitHub | 2026-06-26 | HIGH |
 | HybridCLR (no version tags) | GitHub | 2026-06-26 | HIGH (use main branch) |
 | DOTween | Asset Store | N/A | MEDIUM (version not verified) |

@@ -2,7 +2,6 @@
     "name": "Boot",
     "rootNamespace": "Boot",
     "references": [
-        "Core",
         "VContainer"
     ],
     "includePlatforms": [],

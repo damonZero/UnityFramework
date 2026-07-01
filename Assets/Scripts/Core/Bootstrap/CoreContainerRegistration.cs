@@ -2,7 +2,7 @@ using MessagePipe;
 using VContainer;
 using VContainer.Unity;
 
-namespace Core
+namespace Core.Architecture
 {
     /// <summary>
     /// Core 层容器注册入口。
@@ -10,18 +10,13 @@ namespace Core
     /// </summary>
     public static class CoreContainerRegistration
     {
-        public static void RegisterCoreServices(this IContainerBuilder builder)
+        public static MessagePipeOptions RegisterCoreServices(this IContainerBuilder builder)
         {
-            // 1. 注册 MessagePipe 基础设施（诊断信息、过滤器工厂等）
             var options = builder.RegisterMessagePipe();
 
-            // 2. 注册 EventEnvelope 的 MessageBroker（提供 IPublisher + ISubscriber）
-            builder.RegisterMessageBroker<EventSystem.EventEnvelope>(options);
-
-            // 3. 注册 Core 层系统
+            builder.RegisterArchitecture(options, typeof(CoreContainerRegistration).Assembly);
             builder.RegisterEntryPoint<SystemManager>();
-            builder.Register<StartupProbeSystem>(Lifetime.Singleton).As<ISystem>();
-            builder.Register<EventSystem>(Lifetime.Singleton).As<IEventSystem, ISystem>();
+            return options;
         }
     }
 }

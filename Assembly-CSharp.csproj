@@ -41,32 +41,26 @@
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.5.0.0\useSharedDesignerContext.txt" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\lib\net461\Microsoft.Extensions.DependencyInjection.xml" />
-    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\lib\net5.0\Microsoft.Extensions.DependencyInjection.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.5.0.0\version.txt" />
-    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\[Content_Types].xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.5.0.0\[Content_Types].xml" />
-    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\version.txt" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.5.0.0\lib\net461\Microsoft.Extensions.DependencyInjection.Abstractions.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\version.txt" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\[Content_Types].xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\useSharedDesignerContext.txt" />
-    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\useSharedDesignerContext.txt" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.5.0.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.xml" />
-    <None Include="Assets\Packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.5.0.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.Abstractions.xml" />
     <Reference Include="UnityEngine">
-      <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
+      <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor">
-      <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
+      <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

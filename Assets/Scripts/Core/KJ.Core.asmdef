@@ -2,10 +2,14 @@
     "name": "Core",
     "rootNamespace": "Core",
     "references": [
+        "Boot",
+        "Pool",
+        "Cache",
         "VContainer",
         "MessagePipe",
         "MessagePipe.VContainer",
-        "UniTask"
+        "UniTask",
+        "YooAsset"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
