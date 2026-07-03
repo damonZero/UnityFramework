@@ -1,7 +1,7 @@
 # DI Event Knowledge Graph
 
 **Scope:** VContainer + MessagePipe integration for Unity Framework  
-**Updated:** 2026-06-30  
+**Updated:** 2026-07-02  
 **Purpose:** 快速查阅依赖注入、事件系统、启动链路和 AI 触发关键词
 
 ---
@@ -20,10 +20,10 @@
 
 ### MessagePipe
 - Role: type-safe pub/sub event pipeline
-- In this project: `[GameEvent]` structs scanned by `ArchitectureContainerRegistration`, registered as `MessageBroker<T>`
+- In this project: structs marked with `Framework.Event.GameEventAttribute` are scanned by shared Framework event scanning helpers, then registered as MessagePipe brokers by Core/General container stages.
 - Main API shapes:
   - `IPublisher<T>` / `ISubscriber<T>` — inject via constructor
-  - `[GameEvent]` attribute — marks a struct for auto-registration
+  - `[GameEvent]` attribute from `Framework.Event` — marks a struct for auto-registration
   - `MessagePipeOptions` — passed through `BootstrapContext` between stages
   - `IDisposable` subscription token — caller owns cleanup
 
@@ -32,13 +32,13 @@
 ## 2. Project Wiring Map
 
 ### Startup Chain
-`BootLifetimeScope` → `BootstrapContext.ConfigurePrefab("Core")` → `CoreBootstrapStage.Configure()` → `builder.RegisterCoreServices()` → `CoreContainerRegistration.RegisterArchitecture()` scans `[CoreSystem]` + `[GameEvent]` → `builder.RegisterEntryPoint<SystemManager>()` → VContainer calls `SystemManager.Start()` → `InitAll()` → sorted by Priority
+`BootLifetimeScope` → `BootstrapContext.ConfigurePrefab("Core")` → `CoreBootstrapStage.Configure()` → `builder.RegisterCoreServices()` → Core registers Framework services → `CoreContainerRegistration.RegisterArchitecture()` scans `[CoreSystem]` + `[GameEvent]` → `builder.RegisterEntryPoint<SystemManager>()` → VContainer calls `SystemManager.Start()` → `InitAll()` → sorted by Priority
 
 ### Event Chain
 `[GameEvent] struct` → auto-registered at container build time → `IPublisher<T>.Publish()` / `ISubscriber<T>.Subscribe()` at runtime
 
 ### Shutdown Chain
-`SystemManager.Dispose()` → `ShutdownAll()` (reverse priority order) → each system's `Shutdown()` disposes its subscription tokens → `YooAssets.Destroy()`
+`SystemManager.Dispose()` → `ShutdownAll()` (reverse priority order) → each system's `Shutdown()` disposes its subscription tokens → `Core.AssetSystem.Shutdown()` → `Framework.Asset.AssetRuntime.Shutdown()` → `YooAssets.Destroy()`
 
 ---
 
@@ -56,10 +56,16 @@
 - `[SystemManager.cs](../../Assets/Scripts/Core/SystemManager.cs)` — lifecycle driver
 - `[CoreContainerRegistration.cs](../../Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs)` — `RegisterCoreServices()` entry
 - `[CoreBootstrapStage.cs](../../Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs)` — stage implementation
-- `[ArchitectureContainerRegistration.cs](../../Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs)` — `[CoreSystem]` + `[GameEvent]` scanner
+- `[ArchitectureContainerRegistration.cs](../../Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs)` — `[CoreSystem]` scanner + MessagePipe broker registration
 - `[CoreSystemAttribute.cs](../../Assets/Scripts/Core/Architecture/Attributes/CoreSystemAttribute.cs)` — marker attribute
-- `[GameEventAttribute.cs](../../Assets/Scripts/Core/Architecture/Events/GameEventAttribute.cs)` — Core event marker
-- `[AssetSystem.cs](../../Assets/Scripts/Core/Asset/AssetSystem.cs)` — asset loading service (example [CoreSystem])
+- `[AssetSystem.cs](../../Assets/Scripts/Core/Asset/AssetSystem.cs)` — Framework.Asset lifecycle orchestration (example [CoreSystem])
+
+### Framework Layer
+- `[GameEventAttribute.cs](../../Assets/Framework/Event/GameEventAttribute.cs)` — unified event marker
+- `[GameEventTypeScanner.cs](../../Assets/Framework/Event/GameEventTypeScanner.cs)` — shared event type scanner and validator
+- `[IAssetSystem.cs](../../Assets/Framework/Asset/IAssetSystem.cs)` — stable asset API for upper layers
+- `[AssetRuntime.cs](../../Assets/Framework/Asset/AssetRuntime.cs)` — YooAsset adapter implementation
+- `[AssetDownloadHandle.cs](../../Assets/Framework/Asset/AssetDownloadHandle.cs)` — downloader wrapper that hides YooAsset types
 
 ### Event Layer (Core)
 - `[AppStartedEvent.cs](../../Assets/Scripts/Core/Architecture/Events/AppStartedEvent.cs)` — published after all systems init
@@ -118,7 +124,7 @@ Use both when the user mentions:
 1. Events are `readonly struct` marked with `[GameEvent]`.
 2. Subscribe with `ISubscriber<T>.Subscribe(handler)`; save the returned `IDisposable`.
 3. Dispose the subscription token in `ISystem.Shutdown()` or `OnDestroy()`.
-4. Core and General/Project have separate `[GameEvent]` attributes for scoped scanning.
+4. Core and General/Project share the same `Framework.Event.GameEventAttribute`; registration scope comes from the assemblies passed to each stage.
 
 ---
 
@@ -127,7 +133,7 @@ Use both when the user mentions:
 - Startup bug: search `BootLifetimeScope`, `BootstrapContext`, `CoreBootstrapStage`, `SystemManager.Start`
 - Event leak: search `IDisposable`, `subscription`, `Shutdown`
 - DI wiring: search `RegisterCoreServices`, `RegisterBusinessLayer`, `RegisterArchitecture`
-- Asset loading: search `AssetSystem`, `AssetInitSystem`, `IAssetSystem`
+- Asset loading: search `Framework.Asset`, `AssetRuntime`, `IAssetSystem`, `AssetSystem`
 
 ---
 
@@ -137,7 +143,8 @@ Use both when the user mentions:
 - MessagePipe packages must be restored before Unity compiles the assemblies.
 - `SystemManager` should stay thin; systems register their own lifecycle.
 - Shutdown order: systems by reverse priority (handled by SystemManager), container, scene.
-- YooAsset types stay inside Core.Asset; upper layers use `IAssetSystem`.
+- YooAsset types stay inside `Framework.Asset`; upper layers use `Framework.Asset.IAssetSystem`.
+- Framework modules do not reference `Assets/Scripts`; Core owns VContainer/MessagePipe registration.
 
 ---
 
@@ -147,5 +154,6 @@ Use both when the user mentions:
 - Container chain entry: `Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs`
 - Core registration: `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs`
 - System scanner: `Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs`
-- Event marker: `Assets/Scripts/Core/Architecture/Events/GameEventAttribute.cs`
-- Asset system: `Assets/Scripts/Core/Asset/AssetSystem.cs`
+- Event marker: `Assets/Framework/Event/GameEventAttribute.cs`
+- Asset API/runtime: `Assets/Framework/Asset/`
+- Asset lifecycle bridge: `Assets/Scripts/Core/Asset/AssetSystem.cs`

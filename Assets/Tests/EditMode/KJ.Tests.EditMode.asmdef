@@ -1,0 +1,24 @@
+{
+    "name": "KJ.Tests.EditMode",
+    "rootNamespace": "Tests.EditMode",
+    "references": [
+        "TestKit",
+        "Asset",
+        "Event",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

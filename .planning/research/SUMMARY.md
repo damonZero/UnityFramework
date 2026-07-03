@@ -24,13 +24,15 @@
 | UI | UGUI (built-in) | Unity 2022.3 built-in | HIGH |
 | Audio | Unity Audio (built-in) | Unity 2022.3 built-in | HIGH |
 | Dependency Injection | VContainer | 1.1.0 | HIGH |
-| Event Bus | MessagePipe | latest (UPM) | HIGH |
-| Asset Management | YooAsset | 3.0 (UPM) | HIGH |
+| Event Backend | MessagePipe behind `Framework.Event` marker/scanner | latest (UPM) | HIGH |
+| Asset Backend | YooAsset behind `Framework.Asset` adapter | 3.0 (UPM) | HIGH |
+| Logging Backend | ZLogger + planned `Framework.Log` adapter | 2.5.10 | HIGH |
+| Allocation Tools | ZString / ZLinq | ZString 2.6.0, ZLinq 1.5.6 | HIGH |
 
 **Installation channels:**
-- UPM (manifest.json): UniTask, VContainer, MessagePipe, MessagePipe.VContainer, YooAsset
+- UPM (manifest.json): UniTask, VContainer, MessagePipe, MessagePipe.VContainer, YooAsset, ZLogger.Unity, ZLinq.Unity, ZString
 - UPM (planned, not yet installed): HybridCLR
-- NuGet (NuGetForUnity, analyzers only): MessagePipe.Analyzer, VContainerSourceGenerator
+- NuGet (NuGetForUnity): MessagePipe.Analyzer, VContainerSourceGenerator, ZLogger, ZLinq, ZLogger required Microsoft.Extensions/System.* dependencies
 - NuGet/Plugins (planned): Google.Protobuf.dll
 - Asset Store (planned): DOTween
 - External tools (planned): Luban CLI, protoc
@@ -43,8 +45,8 @@
 
 | Feature | Complexity | Notes |
 |---------|-----------|-------|
-| Event System | Medium | DONE — MessagePipe + [GameEvent] attribute scanning |
-| Resource Manager | High | DONE — YooAsset 3.0 封装为 AssetSystem, owned/cached 双通道 |
+| Event System | Medium | DONE — `Framework.Event` unified `[GameEvent]` marker/scanner + MessagePipe backend |
+| Resource Manager | High | DONE — `Framework.Asset` wraps YooAsset 3.0; Core only orchestrates lifecycle |
 | Network Module | High | PLANNED — Session management, Protobuf serialization, heartbeat, message routing, TCP + WebSocket. |
 | UI Framework | Medium-High | PLANNED — Window lifecycle, layer management (6 layers), async prefab loading, UI stack. |
 | Config Table System | Medium | PLANNED — Luban integration, auto-generated classes, fast ID lookup. |

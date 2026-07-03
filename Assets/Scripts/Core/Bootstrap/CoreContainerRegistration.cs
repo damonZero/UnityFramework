@@ -1,3 +1,4 @@
+using Framework.Asset;
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -14,6 +15,9 @@ namespace Core.Architecture
         {
             var options = builder.RegisterMessagePipe();
 
+            builder.Register<AssetRuntime>(Lifetime.Singleton)
+                .AsSelf()
+                .AsImplementedInterfaces();
             builder.RegisterArchitecture(options, typeof(CoreContainerRegistration).Assembly);
             builder.RegisterEntryPoint<SystemManager>();
             return options;

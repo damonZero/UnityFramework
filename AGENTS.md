@@ -1,0 +1,83 @@
+# Project Instructions
+
+## Project Overview
+
+KJ is a Unity 2022.3.62f2 client game framework using VContainer, MessagePipe,
+YooAsset, HybridCLR, and Luban.
+
+For the complete technical stack, read `.planning/PROJECT.md`.
+For directory structure rules, read `.planning/目录结构规范.md`.
+
+## Session Startup
+
+At the start of each session, or when receiving a vague task that does not name
+specific files:
+
+1. Read `.planning/STATE.md` to understand current progress and important files.
+2. Read `.planning/ROADMAP.md` to understand module status and pending work.
+3. Use both files to determine the current context and suggest the next practical step.
+
+When there is no explicit instruction, default to recommending the most reasonable
+next module from `ROADMAP.md`, based on dependency readiness and complexity.
+
+## Architecture
+
+- This project is a pure C# Unity project.
+- Use the current C# architecture direction around VContainer and MessagePipe.
+- Do not load or reference any P33 Lua/MVVM skills, conventions, or files for this repository.
+- Treat Lua/P33 guidance as unrelated legacy context unless the user explicitly asks for it.
+- All stable low-level adapters and shared foundation modules must live directly under
+  `Assets/Framework/`, not `Assets/Framework/Package/`.
+
+## Dependency Direction
+
+Assembly dependencies must stay one-way:
+
+```text
+Boot <- Core <- General <- Project
+```
+
+Upper layers may depend on lower layers; lower layers must not depend on upper layers.
+
+- `Packages`: third-party UPM packages such as VContainer, UniTask, MessagePipe,
+  and YooAsset. Packages may reference each other as allowed by Unity/package rules.
+- `Framework`: KJ-owned independent packages such as `Asset/`, `Event/`, `Pool/`, and `Cache/`.
+  Framework code may depend on Packages only. It must not reference code under
+  `Assets/Scripts`. If project capability is needed, expose static delegates and
+  bridge them from Core.
+- `Boot`: startup shell with minimal dependencies, typically VContainer only.
+  It must not reference Core, General, or Project.
+- `Core`: engine infrastructure. It may reference Boot, Framework, and Packages.
+  It must not reference General or Project.
+- `General`: reusable business logic. It may reference Core and Packages.
+  It must not reference Project.
+- `Project`: project-specific business logic. It may reference all lower layers.
+
+Compilation boundaries are enforced by `.asmdef` files.
+
+## Namespaces
+
+Namespace equals directory path and never includes a project prefix.
+
+| Directory | Namespace |
+| --- | --- |
+| `Scripts/Boot/` | `Boot` |
+| `Scripts/Core/` | `Core` |
+| `Scripts/General/` | `General` |
+| `Scripts/Project/` | `Project` |
+| `Framework/` | `Framework.Asset`, `Framework.Event`, `Framework.Pool`, `Framework.Cache`, etc. |
+
+Never write `namespace KJ.*`.
+
+## Naming Conventions
+
+- Core layer: `[CoreSystem]` + `ISystem`, managed by `SystemManager`.
+- General and Project layers: `[Model]` + `IModel`, managed by `ModelLifecycle`.
+- Business layers should not use `System` naming.
+- Do not use `Module` naming.
+
+## New Modules
+
+When creating or moving modules, systems, features, C# files, ScriptableObjects,
+or prefabs, use the local `module-scaffold` skill if available, or read
+`.planning/目录结构规范.md`.

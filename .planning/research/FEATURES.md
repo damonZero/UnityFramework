@@ -15,15 +15,15 @@ These are the features every Unity game framework must have. Without them, the f
 **Why Expected:** The fundamental decoupling mechanism. Every module communicates through events. Without it, modules become tightly coupled spaghetti.
 
 **Complexity:** Medium  
-**Status:** ✅ Done — MessagePipe with `[GameEvent]` attribute-driven registration
+**Status:** ✅ Done — `Framework.Event` unified `[GameEvent]` marker with MessagePipe backend registration
 
 **Requirements:**
 - [x] Type-safe events via `IPublisher<T>` / `ISubscriber<T>` (compile-time safety, no `object` boxing)
 - [x] Attribute-based auto-registration (`[GameEvent]` structs scanned and registered as MessagePipe brokers)
 - [x] Auto-cleanup via `IDisposable` subscription (caller owns the subscription token)
-- [x] Core and General/Project have separate `[GameEvent]` attributes for scoped scanning
+- [x] Core and General/Project share `Framework.Event.GameEventAttribute`; scanner validates event structs centrally
 
-**Backend:** MessagePipe + MessagePipe.VContainer bridge
+**Backend:** MessagePipe + MessagePipe.VContainer bridge, registered from Core/General container stages
 
 ---
 
@@ -80,17 +80,17 @@ UIManager.Instance.CloseAll();
 **Why Expected:** Loading assets is the most fundamental Unity operation. Without a proper resource manager, projects end up with hard references, memory leaks, and no hot-update support.
 
 **Complexity:** High  
-**Status:** ✅ Done — YooAsset 3.0 封装为 `Core/Asset/AssetSystem`
+**Status:** ✅ Done — YooAsset 3.0 adapter lives in `Framework/Asset`, with `Core/Asset/AssetSystem` as lifecycle orchestration
 
 **Requirements:**
 - [x] Async resource loading (UniTask-based)
 - [x] Dual-channel handle management: owned (caller manages lifecycle) / cached (system manages lifecycle)
 - [x] Type-aware caching via `AssetCacheKey` (path + Type)
 - [x] Scene loading with serialized unload/load per path
-- [x] Downloader exposure for update pipeline
-- [x] Unity API regardless of backend — `IAssetSystem` interface hides YooAsset
+- [x] Downloader exposure through `AssetDownloadHandle` without leaking YooAsset types
+- [x] Unity API regardless of backend — `Framework.Asset.IAssetSystem` interface hides YooAsset
 
-**Backend:** YooAsset 3.0 (UPM git URL). PlayMode: EditorSimulate / Offline / Host. CDN URL configurable via `AssetConfig` ScriptableObject.
+**Backend:** YooAsset 3.0 (UPM git URL) behind `Framework.Asset.AssetRuntime`. PlayMode: EditorSimulate / Offline / Host. CDN URL configurable via `AssetConfig` ScriptableObject.
 
 ---
 

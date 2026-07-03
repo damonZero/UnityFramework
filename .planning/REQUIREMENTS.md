@@ -11,7 +11,8 @@
 - 依赖方向固定为 `Boot <- Core <- General <- Project`，下层不得依赖上层
 - Boot 层保持最小依赖，只保留稳定启动壳、阶段协议和 prefab 链式启动能力
 - 启动采用当前阶段启动下一阶段：Boot prefab → Core prefab → General prefab → Project prefab
-- 依赖注入采用 VContainer，MessagePipe 作为类型安全事件管线
+- 依赖注入采用 VContainer，MessagePipe 作为当前类型安全事件后端
+- 稳定底层模块下沉到 `Assets/Framework/`，上层通过统一接口访问，不直接绑定第三方实现
 - Core 使用 System，业务层使用 Model + ViewModel，不引入业务 System
 
 ## 需求清单
@@ -20,12 +21,22 @@
 2. 建立 Boot 层稳定启动协议：`BootstrapContext` / `IBootstrapStage`
 3. 建立 prefab 字符串链式启动：每层初始化完成后启动下一层 prefab
 4. 建立 Core Architecture：`ISystem`、`[CoreSystem]`、`SystemManager`
-5. 建立类型安全事件注册：`[GameEvent]` + MessagePipe `IPublisher<T>` / `ISubscriber<T>`
+5. 建立类型安全事件注册：`Framework.Event.GameEventAttribute` + 当前 MessagePipe `IPublisher<T>` / `ISubscriber<T>` 后端
 6. 删除旧式 `EventId + object payload` 事件总线设计
 7. 建立业务 Model 注册：`IModel`、`[Model]`、`ModelLifecycle`
 8. 确保热更新模块可独立替换，不因 Project/General 改动要求重启 App
 9. 保持四层 .asmdef 编译隔离和单向依赖约束
 10. 建立对象池/缓存体系：纯 C# 对象池（`Framework/Pool/`）、Unity 资源缓存（`Framework/Cache/`）、集合租借 `using` 统一入口（`Framework/Pool/Collections/`），由 Core 层 `PoolService` 桥接注册到 DI 容器
+11. 建立底层资源统一接口：`Framework/Asset/` 封装资源配置、句柄、下载器和 YooAsset 适配，上层只依赖 `IAssetSystem`
+
+## Framework 下沉硬约束
+
+- `Assets/Framework/` 直接承载稳定底层模块，不创建 `Assets/Framework/Package/` 子目录。
+- Framework 不引用 `Assets/Scripts/` 下任何汇编。
+- Framework 可以封装第三方库，但对上层暴露 KJ 自己的稳定 API，例如 `IAssetSystem`、`AssetHandle<T>`、`AssetDownloadHandle`、`GameEventAttribute`。
+- Core 负责项目编排：DI 注册、System 生命周期、ready 事件、Framework 委托注入。
+- General/Project 优先依赖 Core/General 门面；确需直接使用底层能力时，只依赖 Framework 的稳定接口。
+- 切换 YooAsset、MessagePipe 等第三方库时，优先只修改 Framework 适配代码和 Core 注册代码。
 
 ## 对象池 / 缓存硬约束
 

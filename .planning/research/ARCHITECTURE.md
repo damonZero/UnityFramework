@@ -1,17 +1,18 @@
 # Unity 游戏框架架构研究
 
 **项目:** KJ Unity Framework
-**研究日期:** 2026-06-26 / 实际实现更新: 2026-06-30
+**研究日期:** 2026-06-26 / 实际实现更新: 2026-07-02
 **置信度:** 中高 (基于业界成熟模式和开源框架实践)
 
 > **⚠️ 本文档 §§2-9 为设计阶段草稿，使用 `IModule` / `ModuleManager` / `EventManager` 等早期概念。**
 > **实际实现以代码为准：**
 > - `IModule` → `ISystem` + `[CoreSystem]` + VContainer DI
 > - `ModuleManager` → `SystemManager`
-> - `EventManager` → MessagePipe + `[GameEvent]`
-> - `ResourceManager` → `AssetSystem` (YooAsset 3.0 封装)
+> - `EventManager` → `Framework.Event.GameEventAttribute` + MessagePipe 后端注册
+> - `ResourceManager` → `Framework.Asset.IAssetSystem` + `AssetRuntime` (YooAsset 3.0 适配) + `Core.AssetSystem` 生命周期编排
 > - `ObjectPoolManager` → `Framework/Pool/ObjectPool<T>` + `Framework/Pool/Unity/GameObjectPool` + `Core/Pool/PoolService` (DI 桥接)
-> - §6 (资源管理) 已重写对齐实际实现。本章节 §1 的整体架构方向仍有效。
+> - 稳定底层模块直接放 `Assets/Framework/`，不使用 `Assets/Framework/Package/`。
+> - §6 (资源管理) 的旧 Core 直接封装描述已被 `Framework.Asset` 下沉方案取代。本章节 §1 的整体架构方向仍有效。
 
 ---
 
@@ -40,7 +41,7 @@
 | 层级 | 职责 | 依赖方向 | 典型内容 |
 |------|------|----------|----------|
 | **Boot** | 程序入口、热更新引导、启动流程 | 无依赖，被所有层依赖 | `Entry.cs`、`AppLifetimeScope`、`BootstrapContext`、HybridCLR入口 |
-| **Core** | 框架基础设施、引擎级Manager | 依赖Boot + Framework + Packages | `SystemManager`、`AssetSystem`、`NetManager`、`UIManager` |
+| **Core** | 框架基础设施编排、DI 注册、生命周期管理 | 依赖Boot + Framework + Packages | `SystemManager`、`AssetSystem`、`NetManager`、`UIManager` |
 | **General** | 通用游戏系统 | 依赖Core | `ConfigManager`(Luban)、`AudioManager`、`RedDotManager`、`GuideManager`、`ModelLifecycle` |
 | **Project** | 具体游戏业务 | 依赖所有层 | 具体UI窗口、游戏逻辑、业务流程 |
 
@@ -57,9 +58,11 @@ Assets/
 
 **依赖关系:**
 - `Boot` → `VContainer`
-- `Core` → `Boot`, `Framework.Pool`, `Framework.Cache`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`, `YooAsset`
-- `General` → `Boot`, `Core`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
-- `Project` → `Boot`, `General`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
+- `Framework.Asset` → `UniTask`, `YooAsset`
+- `Framework.Event` → no third-party dependency
+- `Core` → `Boot`, `Framework.Asset`, `Framework.Event`, `Framework.Pool`, `Framework.Cache`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`
+- `General` → `Boot`, `Core`, `Framework.Event`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
+- `Project` → `Boot`, `General`, `Framework.Event`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
 
 **优势:** 编译隔离、依赖清晰、防止循环引用、支持增量编译
 
@@ -177,9 +180,8 @@ public class ModuleManager : MonoBehaviour
 
 | 优先级 | 模块 | 说明 |
 |--------|------|------|
-| -999 | AssetInitSystem | YooAsset 底层初始化 |
-| 50 | PoolService | Framework 委托注入，池注册到 DI |
-| 100 | AssetSystem | 资源加载是其他模块的基础 |
+| 100 | AssetSystem | 初始化 `Framework.Asset.AssetRuntime`，发布资源就绪事件；资源加载是其他模块的基础 |
+| 110 | PoolService | Framework.Pool 委托注入，池注册到 DI |
 | 200 | UIManager | UI框架需要资源和事件支持 |
 | 300 | NetManager | 网络模块需要事件系统支持 |
 | 400 | ConfigManager | 配置表需要资源加载支持 |
@@ -547,14 +549,14 @@ public enum WindowMode
 
 ## 6. 资源管理设计
 
-底层引擎: **YooAsset 3.0** (8300+ GitHub Stars, 5年持续维护)，通过 UPM git URL 安装。
+当前底层引擎: **YooAsset 3.0** (8300+ GitHub Stars, 5年持续维护)，通过 UPM git URL 安装。
 
-封装层: `Core/Asset/AssetSystem`，YooAsset 类型完全限定在 Core assembly，上层代码通过 `IAssetSystem` 接口使用。
+封装层: `Framework/Asset/AssetRuntime`，YooAsset 类型限定在 `Framework.Asset` assembly。`Core/Asset/AssetSystem` 只负责生命周期编排和 ready 事件发布，上层代码通过 `Framework.Asset.IAssetSystem` 接口使用。
 
 ### 6.1 AssetSystem 核心接口
 
 ```csharp
-// 对上层暴露的接口 (Core.Asset.IAssetSystem)
+// 对上层暴露的接口 (Framework.Asset.IAssetSystem)
 public interface IAssetSystem
 {
     // 异步加载并返回带生命周期的句柄（调用者负责 Dispose）
@@ -569,9 +571,9 @@ public interface IAssetSystem
     // 场景加载（返回可激活/卸载的句柄，串行化同 path 的 load/unload）
     UniTask<AssetSceneHandle> LoadSceneAsync(string path, LoadSceneMode mode, Action<float> onProgress);
 
-    // YooAsset 下载器（供更新管线使用）
-    ResourceDownloaderOperation CreateDownloader(string tag = null);
-    ResourceDownloaderOperation CreateDownloader(string[] tags);
+    // Framework 下载器句柄（供更新管线使用，不暴露 YooAsset 类型）
+    AssetDownloadHandle CreateDownloader(string tag = null);
+    AssetDownloadHandle CreateDownloader(string[] tags);
 
     // 按类型释放缓存
     void Release<T>(string path) where T : Object;

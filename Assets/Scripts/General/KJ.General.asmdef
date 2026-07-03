@@ -4,6 +4,7 @@
     "references": [
         "Boot",
         "Core",
+        "Event",
         "MessagePipe",
         "MessagePipe.VContainer",
         "VContainer"

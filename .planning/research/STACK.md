@@ -111,6 +111,31 @@ https://github.com/Cysharp/UniTask.git
 
 **Confidence:** HIGH - Verified latest version from GitHub releases (May 2025)
 
+### Logging and Allocation Tools
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| ZLogger | 2.5.10 | Structured logging backend | Built on `Microsoft.Extensions.Logging`, supports source-generated zero-allocation log methods |
+| ZString | 2.6.0 | Low-allocation string construction | Reduces formatting/string builder allocations in hot paths |
+| ZLinq | 1.5.6 | Zero-allocation LINQ-style queries | Keeps query code readable while avoiding regular LINQ allocations |
+
+**Installation:** UPM Git packages plus NuGetForUnity packages where required.
+
+```json
+"com.cysharp.zlogger": "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
+"com.cysharp.zlinq": "https://github.com/Cysharp/ZLinq.git?path=src/ZLinq.Unity/Assets/ZLinq.Unity",
+"com.cysharp.zstring": "https://github.com/Cysharp/ZString.git?path=src/ZString.Unity/Assets/Scripts/ZString"
+```
+
+**Usage Policy:**
+- Prefer ZLogger source-generated `static partial` extension methods with `[ZLoggerMessage]` for stable high-frequency logs.
+- Register logging in Core through VContainer (`ILoggerFactory`, `ILogger<T>`, providers and levels). Keep Framework independent by using interfaces or delegate bridges when it needs logging.
+- Prefer ZString for hot-path string building and ZLinq `AsValueEnumerable()` for allocation-sensitive collection queries.
+- Unity 2022.3.62f2 satisfies the Unity source generator version floor. If a generator path requires preview syntax, configure `-langVersion:preview`.
+- Do not enable ZLinq DropIn Generator globally without a scoped compatibility review.
+
+**Confidence:** HIGH - Installed in manifest/packages and compatible with current Unity version.
+
 ### Animation/Tweening
 
 | Technology | Version | Purpose | Why |
@@ -179,6 +204,9 @@ https://github.com/Cysharp/UniTask.git
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.cysharp.messagepipe": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe",
     "com.cysharp.messagepipe.vcontainer": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",
+    "com.cysharp.zlogger": "https://github.com/Cysharp/ZLogger.git?path=src/ZLogger.Unity/Assets/ZLogger.Unity",
+    "com.cysharp.zlinq": "https://github.com/Cysharp/ZLinq.git?path=src/ZLinq.Unity/Assets/ZLinq.Unity",
+    "com.cysharp.zstring": "https://github.com/Cysharp/ZString.git?path=src/ZString.Unity/Assets/Scripts/ZString",
     "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
     "com.tuyoogame.yooasset": "https://github.com/tuyoogame/YooAsset.git?path=Assets/YooAsset"
   }
@@ -191,6 +219,7 @@ https://github.com/Cysharp/UniTask.git
 
 ```
 Google.Protobuf.dll (netstandard2.0)
+ZLogger / ZLinq / Microsoft.Extensions.* dependencies via NuGetForUnity
 ```
 
 ### Asset Store
@@ -242,6 +271,9 @@ Assets/
 | VContainer 1.1.0 | GitHub | 2026-06-30 | HIGH |
 | MessagePipe | GitHub | 2026-06-30 | HIGH |
 | YooAsset 3.0 | GitHub | 2026-06-30 | HIGH |
+| ZLogger 2.5.10 | UPM + NuGetForUnity | 2026-07-03 | HIGH |
+| ZLinq 1.5.6 | UPM + NuGetForUnity | 2026-07-03 | HIGH |
+| ZString 2.6.0 | UPM | 2026-07-03 | HIGH |
 | Luban v4.10.1 | GitHub | 2026-06-26 | HIGH |
 | HybridCLR (no version tags) | GitHub | 2026-06-26 | HIGH (use main branch) |
 | DOTween | Asset Store | N/A | MEDIUM (version not verified) |

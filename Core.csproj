@@ -41,8 +41,37 @@
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
   </PropertyGroup>
   <ItemGroup>
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\pt-BR\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\es\Microsoft.Extensions.Logging.Generators.resources.dll" />
     <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\VContainerSourceGenerator.1.1.0\analyzers\dotnet\cs\VContainerSourceGenerator.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\es\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\zh-Hans\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\ZLogger.2.5.10\analyzers\dotnet\roslyn4.3\cs\ZLogger.Generator.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\it\Microsoft.Extensions.Logging.Generators.resources.dll" />
     <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\MessagePipe.Analyzer.1.8.2\analyzers\dotnet\cs\MessagePipe.Analyzer.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\de\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\zh-Hans\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\fr\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\zh-Hant\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\de\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\ja\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\tr\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\ja\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\pt-BR\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\ru\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\zh-Hant\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\it\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\ko\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\ru\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\cs\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\pl\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\fr\Microsoft.Extensions.Logging.Generators.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\tr\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\pl\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\cs\System.Text.Json.SourceGeneration.resources.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\System.Text.Json.SourceGeneration.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\analyzers\dotnet\roslyn4.0\cs\Microsoft.Extensions.Logging.Generators.dll" />
+    <Analyzer Include="G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\analyzers\dotnet\roslyn4.0\cs\ko\System.Text.Json.SourceGeneration.resources.dll" />
     <Analyzer Include="F:\Unity\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="F:\Unity\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
@@ -50,25 +79,15 @@
     <Compile Include="Assets\Scripts\Core\Architecture\Bootstrap\ArchitectureContainerRegistration.cs" />
     <Compile Include="Assets\Scripts\Core\Architecture\Events\AppStartedEvent.cs" />
     <Compile Include="Assets\Scripts\Core\StartupProbeSystem.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\AssetConstants.cs" />
-    <Compile Include="Assets\Scripts\Core\Bootstrap\CoreLifetimeScope.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\IAssetSystem.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\AssetSceneHandle.cs" />
     <Compile Include="Assets\Scripts\Core\Bootstrap\CoreContainerRegistration.cs" />
     <Compile Include="Assets\Scripts\Core\PoolService.cs" />
     <Compile Include="Assets\Scripts\Core\Asset\AssetSystem.cs" />
     <Compile Include="Assets\Scripts\Core\ISystem.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\IAssetPackageProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\AssetInitSystem.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\AssetHandle.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\AssetInstanceHandle.cs" />
-    <Compile Include="Assets\Scripts\Core\Architecture\Events\GameEventAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\SystemManager.cs" />
     <Compile Include="Assets\Scripts\Core\Architecture\Attributes\CoreSystemAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Asset\AssetSystemReadyEvent.cs" />
     <Compile Include="Assets\Scripts\Core\Architecture\Events\AppShuttingDownEvent.cs" />
     <Compile Include="Assets\Scripts\Core\Bootstrap\CoreBootstrapStage.cs" />
-    <Compile Include="Assets\Scripts\Core\Asset\AssetConfig.cs" />
     <None Include="Assets\Scripts\Core\KJ.Core.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -351,6 +370,60 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
       <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
+    </Reference>
+    <Reference Include="ZLinq">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\ZLinq.1.5.6\lib\netstandard2.1\ZLinq.dll</HintPath>
+    </Reference>
+    <Reference Include="ZLogger">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\ZLogger.2.5.10\lib\netstandard2.1\ZLogger.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.TimeProvider">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Bcl.TimeProvider.8.0.0\lib\netstandard2.0\Microsoft.Bcl.TimeProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.8.0.0\lib\netstandard2.1\Microsoft.Extensions.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Options.8.0.0\lib\netstandard2.1\Microsoft.Extensions.Options.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Collections.Immutable.8.0.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Hashing">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.IO.Hashing.8.0.0\lib\netstandard2.0\System.IO.Hashing.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.DependencyInjection.8.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Channels">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Threading.Channels.8.0.0\lib\netstandard2.1\System.Threading.Channels.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Utf8StringInterpolation">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Utf8StringInterpolation.1.3.1\lib\netstandard2.1\Utf8StringInterpolation.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\lib\netstandard2.0\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Primitives">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Primitives.8.0.0\lib\netstandard2.0\Microsoft.Extensions.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Diagnostics.DiagnosticSource">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Diagnostics.DiagnosticSource.8.0.0\lib\netstandard2.0\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Assets\Packages\System.Text.Encodings.Web.8.0.0\lib\netstandard2.0\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.iOS.Extensions.Xcode">
       <HintPath>F:\Unity\Editor\Data\PlaybackEngines\iOSSupport\UnityEditor.iOS.Extensions.Xcode.dll</HintPath>
@@ -745,9 +818,6 @@
     <Reference Include="UniTask">
       <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Library\ScriptAssemblies\UniTask.dll</HintPath>
     </Reference>
-    <Reference Include="YooAsset">
-      <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Library\ScriptAssemblies\YooAsset.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ\Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
     </Reference>
@@ -759,6 +829,14 @@
     <ProjectReference Include="Boot.csproj">
       <Project>{1235a294-2906-ceaf-fb3a-c7ec04de06ec}</Project>
       <Name>Boot</Name>
+    </ProjectReference>
+    <ProjectReference Include="Asset.csproj">
+      <Project>{70c30947-18d5-62ad-3828-b771d649d1f7}</Project>
+      <Name>Asset</Name>
+    </ProjectReference>
+    <ProjectReference Include="Event.csproj">
+      <Project>{0587169f-e39f-b53a-de6f-f72b957cc415}</Project>
+      <Name>Event</Name>
     </ProjectReference>
     <ProjectReference Include="Pool.csproj">
       <Project>{db87d42d-bea0-93ac-4589-121e4ed0cc2c}</Project>

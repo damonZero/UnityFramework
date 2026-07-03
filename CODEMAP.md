@@ -68,7 +68,7 @@ References: VContainer only
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
 | `Entry.cs` | `Assets/Scripts/Boot/Entry.cs` | `Entry : MonoBehaviour` | Game entry point. Sets DontDestroyOnLoad on itself. Minimal startup shell. | none |
-| `AppLifetimeScope.cs` | `Assets/Scripts/Boot/AppLifetimeScope.cs` | `AppLifetimeScope : LifetimeScope` | Abstract base LifetimeScope for the app. Subclassed by BootLifetimeScope and CoreLifetimeScope. | `VContainer.Unity` |
+| `AppLifetimeScope.cs` | `Assets/Scripts/Boot/AppLifetimeScope.cs` | `AppLifetimeScope : LifetimeScope` | Abstract base LifetimeScope for the app. Subclassed by BootLifetimeScope. | `VContainer.Unity` |
 | `BootstrapContext.cs` | `Assets/Scripts/Boot/Bootstrap/BootstrapContext.cs` | `BootstrapContext` | Stage context holding `IContainerBuilder` + `Transform`. Stores typed values in `Dictionary<Type, object>`. `ConfigurePrefab(path)` -- loads a Resources prefab, instantiates it, finds all `IBootstrapStage` children sorted by Priority, calls `stage.Configure(this)`. | `VContainer` |
 | `IBootstrapStage.cs` | `Assets/Scripts/Boot/Bootstrap/IBootstrapStage.cs` | `IBootstrapStage` | Stage protocol: `int Priority`, `string StageName`, `void Configure(BootstrapContext context)` | none |
 | `BootLifetimeScope.cs` | `Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs` | `BootLifetimeScope : AppLifetimeScope` | The initial LifetimeScope. Reads `nextBootstrapPrefabPath` from serialized field, creates a `BootstrapContext`, calls `context.ConfigurePrefab()` to load the next stage prefab. | `VContainer` |
@@ -85,24 +85,20 @@ References: Boot, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, 
 | `StartupProbeSystem.cs` | `Assets/Scripts/Core/StartupProbeSystem.cs` | `StartupProbeSystem : ISystem` `[CoreSystem]` | Minimal verification system. Logs Init/Shutdown. Priority=0. | none |
 | `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework/Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath` using `IAssetSystem`. Creates `GameObjectPool`. Exposes static shortcuts for `CollectionPool.RentList<>()` etc. Priority=110 (SystemPriority+10). | `IAssetSystem`, `Framework.Pool` |
 | `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Architecture/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` `[AttributeUsage(Class)]` | Marks a Core system class for automatic reflection-based DI registration. | none |
-| `GameEventAttribute.cs` | `Assets/Scripts/Core/Architecture/Events/GameEventAttribute.cs` | `GameEventAttribute : Attribute` `[AttributeUsage(Struct)]` | Marks a struct as a MessagePipe event for automatic broker registration. Core-layer events only. | none |
 | `AppStartedEvent.cs` | `Assets/Scripts/Core/Architecture/Events/AppStartedEvent.cs` | `AppStartedEvent : struct` `[GameEvent]` | Published by `SystemManager` after all systems have initialized. | none |
 | `AppShuttingDownEvent.cs` | `Assets/Scripts/Core/Architecture/Events/AppShuttingDownEvent.cs` | `AppShuttingDownEvent : struct` `[GameEvent]` | Published by `SystemManager` before shutting down systems. | none |
 | `ArchitectureContainerRegistration.cs` | `Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs` | `static ArchitectureContainerRegistration` | Reflection scanner. `RegisterArchitecture(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and registers MessageBroker, scans for `[CoreSystem]` classes and registers `AsSelf().AsImplementedInterfaces()`. Validates that `[CoreSystem]` types implement `ISystem` and are in `Core.*` namespace. | `VContainer`, `MessagePipe` |
 | `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry point: `RegisterCoreServices(IContainerBuilder)`. Calls `RegisterMessagePipe()`, then `RegisterArchitecture()` scanning the Core assembly, then `RegisterEntryPoint<SystemManager>()`. | `VContainer`, `MessagePipe` |
 | `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `CoreBootstrapStage : MonoBehaviour, IBootstrapStage` | Priority=100, StageName="Core". Calls `builder.RegisterCoreServices()`, stores `MessagePipeOptions` in context, calls `context.ConfigurePrefab(nextBootstrapPrefabPath)`. | `Boot`, `MessagePipe` |
-| `CoreLifetimeScope.cs` | `Assets/Scripts/Core/Bootstrap/CoreLifetimeScope.cs` | `CoreLifetimeScope : AppLifetimeScope` | Standalone LifetimeScope variant. Calls `builder.RegisterCoreServices()`. Not used in the prefab chain (CoreBootstrapStage is used instead). | `Boot` |
 
 #### Asset System (Core.Asset namespace)
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
-| `AssetConfig.cs` | `Assets/Scripts/Core/Asset/AssetConfig.cs` | `AssetConfig : ScriptableObject`, `AssetConfig.PlayMode` (enum) | Configuration ScriptableObject. PlayMode: `EditorSimulate`, `Offline`, `Host`. Fields: `PackageName`, `CdnBaseUrl`, `DownloadTimeout`, `DownloadMaxConcurrency`, `FailedRetryCount`. | none |
-| `AssetConstants.cs` | `Assets/Scripts/Core/Asset/AssetConstants.cs` | `static AssetConstants` | Constants: `InitPriority=-999`, `SystemPriority=100`. | none |
-| `AssetInitSystem.cs` | `Assets/Scripts/Core/Asset/AssetInitSystem.cs` | `AssetInitSystem : ISystem, IAssetPackageProvider` `[CoreSystem]` | YooAsset bootstrap. Priority=-999. Loads `AssetConfig` from `Resources.Load`, initializes YooAsset with appropriate PlayMode. Contains inner class `CdnRemoteService : IRemoteService` for Host mode CDN URL resolution. | `YooAsset` |
-| `AssetSystem.cs` | `Assets/Scripts/Core/Asset/AssetSystem.cs` | `AssetSystem : ISystem, IAssetSystem` `[CoreSystem]` | Central asset service. Two cache channels: cached handles (`_assetHandles` dictionary keyed by `AssetCacheKey`), owned handles (`_ownedAssetHandles` HashSet). Scene handles serialized via `_sceneUnloadTasks`. Uses `SemaphoreSlim(1,1)` for concurrent load protection. Contains inner `AssetCacheKey` struct (path + type). | `YooAsset`, `UniTask`, `MessagePipe` |
+| `AssetConfig.cs` | `Assets/Framework/Asset/AssetConfig.cs` | `AssetConfig : ScriptableObject`, `AssetConfig.PlayMode` (enum) | Configuration ScriptableObject. PlayMode: `EditorSimulate`, `Offline`, `Host`. Fields: `PackageName`, `CdnBaseUrl`, `DownloadTimeout`, `DownloadMaxConcurrency`, `FailedRetryCount`. | none |
+| `AssetConstants.cs` | `Assets/Framework/Asset/AssetConstants.cs` | `static AssetConstants` | Constants: `InitPriority=-999`, `SystemPriority=100`. | none |
+| `AssetSystem.cs` | `Assets/Scripts/Core/Asset/AssetSystem.cs` | `AssetSystem : ISystem` `[CoreSystem]` | Thin orchestration layer. Loads `AssetConfig` from Resources, initializes/deinitializes `IAssetRuntime`, publishes `AssetSystemReadyEvent`. | `Framework.Asset`, `MessagePipe` |
 | `IAssetSystem.cs` | `Assets/Scripts/Core/Asset/IAssetSystem.cs` | `IAssetSystem` (interface) | Public API: `LoadAssetHandleAsync<T>(path)`, `LoadAssetAsync<T>(path)`, `InstantiateAsync(path, parent)`, `LoadSceneAsync(path, mode, onProgress)`, `CreateDownloader(tag/tags)`, `Release<T>(path)`, `Release(path)`, `UnloadUnused()`. | `UniTask` |
-| `IAssetPackageProvider.cs` | `Assets/Scripts/Core/Asset/IAssetPackageProvider.cs` | `IAssetPackageProvider` (interface) | Internal bridge: `ResourcePackage DefaultPackage`, `AssetConfig Config`, `bool IsReady`. | `YooAsset` |
 | `AssetHandle.cs` | `Assets/Scripts/Core/Asset/AssetHandle.cs` | `AssetHandle<T> : IDisposable` where T : Object | Typed handle wrapping `YooAsset.AssetHandle`. Properties: `Asset`, `Progress`, `IsDone`, `IsValid`, `Error`. Methods: `Instantiate(parent)`, `Dispose()`. Dispose releases the underlying handle and calls `onDispose` callback. | none |
 | `AssetInstanceHandle.cs` | `Assets/Scripts/Core/Asset/AssetInstanceHandle.cs` | `AssetInstanceHandle : IDisposable` | Joint lifecycle for a GameObject instance + its source handle. `Instance` property. `Dispose()` destroys the GameObject and disposes the source handle. | none |
 | `AssetSceneHandle.cs` | `Assets/Scripts/Core/Asset/AssetSceneHandle.cs` | `AssetSceneHandle : IDisposable` | Scene handle wrapping `YooAsset.SceneHandle`. `ActivateScene()`, `UnloadAsync()` (awaits unload), `Dispose()` (fire-and-forget unload). | `UniTask` |
@@ -176,7 +172,7 @@ References: (none -- zero external dependencies)
 - `int Priority` -- lower values initialize first
 - `void Init()` -- called in priority order by SystemManager
 - `void Shutdown()` -- called in reverse priority order by SystemManager
-- Implementations: `StartupProbeSystem`, `AssetInitSystem`, `AssetSystem`, `PoolService`
+- Implementations: `StartupProbeSystem`, `AssetSystem`, `PoolService`
 
 ### `ITickableSystem : ISystem` (Core.Architecture)
 - `void Update(float deltaTime)`
@@ -193,12 +189,6 @@ References: (none -- zero external dependencies)
 - `void Release<T>(string path)` / `void Release(string path)`
 - `void UnloadUnused()`
 - Implementation: `AssetSystem`
-
-### `IAssetPackageProvider` (Core.Asset, internal bridge)
-- `ResourcePackage DefaultPackage`
-- `AssetConfig Config`
-- `bool IsReady`
-- Implementation: `AssetInitSystem`
 
 ### `IBootstrapStage` (Boot)
 - `int Priority`
@@ -266,9 +256,8 @@ References: (none -- zero external dependencies)
 
 | Class | Namespace | Priority | Interfaces | Dependencies injected |
 |-------|-----------|----------|------------|----------------------|
-| `AssetInitSystem` | `Core.Asset` | -999 | `ISystem`, `IAssetPackageProvider` | (none) |
 | `StartupProbeSystem` | `Core.Architecture` | 0 | `ISystem` | (none) |
-| `AssetSystem` | `Core.Asset` | 100 | `ISystem`, `IAssetSystem` | `IAssetPackageProvider`, `IPublisher<AssetSystemReadyEvent>` |
+| `AssetSystem` | `Core.Asset` | 100 | `ISystem` | `IAssetRuntime`, `IPublisher<AssetSystemReadyEvent>` |
 | `PoolService` | `Core` | 110 | `ISystem` | `IAssetSystem` |
 
 ### Registration Flow
@@ -370,10 +359,9 @@ VContainer calls IStartable.Start() on registered entry points
 SystemManager.Start() -> InitAll()
   |-- Sorts systems by Priority
   |-- Calls Init() on each system in order:
-  |     1. AssetInitSystem (Priority=-999) -- initializes YooAsset
-  |     2. StartupProbeSystem (Priority=0) -- logs probe
-  |     3. AssetSystem (Priority=100) -- publishes AssetSystemReadyEvent
-  |     4. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
+  |     1. StartupProbeSystem (Priority=0) -- logs probe
+  |     2. AssetSystem (Priority=100) -- initializes AssetRuntime via Resources.Load, publishes AssetSystemReadyEvent
+  |     3. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
   |-- Publishes AppStartedEvent
 
 [Unity main loop]
@@ -396,10 +384,9 @@ VContainer disposes LifetimeScope
 SystemManager.Dispose() -> ShutdownAll()
   |-- Publishes AppShuttingDownEvent
   |-- Calls Shutdown() in reverse priority order
-  |     4. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
-  |     3. AssetSystem (Priority=100) -- releases all handles and scene handles
-  |     2. StartupProbeSystem (Priority=0) -- logs shutdown
-  |     1. AssetInitSystem (Priority=-999) -- YooAssets.Destroy()
+  |     3. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
+  |     2. AssetSystem (Priority=100) -- releases all handles and scene handles
+  |     1. StartupProbeSystem (Priority=0) -- logs shutdown
 ```
 
 ---

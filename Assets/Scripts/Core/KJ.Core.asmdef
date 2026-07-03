@@ -3,13 +3,14 @@
     "rootNamespace": "Core",
     "references": [
         "Boot",
+        "Asset",
+        "Event",
         "Pool",
         "Cache",
         "VContainer",
         "MessagePipe",
         "MessagePipe.VContainer",
-        "UniTask",
-        "YooAsset"
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
