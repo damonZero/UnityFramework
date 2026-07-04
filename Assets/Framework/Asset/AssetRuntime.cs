@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Framework.Log;
 using UnityEngine;
@@ -20,7 +20,9 @@ namespace Framework.Asset
         private readonly HashSet<YooAsset.AssetHandle> _ownedAssetHandles = new();
         private readonly HashSet<YooAsset.SceneHandle> _ownedSceneHandles = new();
         private readonly List<AssetCacheKey> _releaseKeys = new();
-        private readonly SemaphoreSlim _gate = new(1, 1);
+        private readonly Dictionary<AssetCacheKey, PendingAssetLoad> _loadingTasks = new();
+        private readonly object _gate = new();
+        private int _lifecycleVersion;
         private int _downloadMaxConcurrency = 10;
         private int _failedRetryCount = 3;
 
@@ -36,6 +38,7 @@ namespace Framework.Asset
             if (_defaultPackage != null)
                 Shutdown();
 
+            _lifecycleVersion++;
             var yooAssetsInitialized = false;
             try
             {
@@ -91,9 +94,31 @@ namespace Framework.Asset
             IsReady = false;
             _config = null;
 
-            foreach (var kv in _assetHandles)
+            List<YooAsset.AssetHandle> handlesToRelease = new();
+            List<PendingAssetLoad> pendingLoads = new();
+            lock (_gate)
             {
-                try { kv.Value.Release(); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error releasing {kv.Key}: {e}"); }
+                _lifecycleVersion++;
+                foreach (var kv in _assetHandles)
+                {
+                    handlesToRelease.Add(kv.Value);
+                }
+                foreach (var kv in _loadingTasks)
+                {
+                    pendingLoads.Add(kv.Value);
+                }
+                _assetHandles.Clear();
+                _loadingTasks.Clear();
+            }
+
+            foreach (var pending in pendingLoads)
+            {
+                pending.Cancel();
+            }
+
+            foreach (var handle in handlesToRelease)
+            {
+                try { handle.Release(); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error releasing cached handle: {e}"); }
             }
 
             foreach (var handle in _ownedAssetHandles)
@@ -106,7 +131,6 @@ namespace Framework.Asset
                 try { UnloadSceneSynchronously(handle); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error unloading owned scene handle: {e}"); }
             }
 
-            _assetHandles.Clear();
             _sceneHandles.Clear();
             _sceneUnloadTasks.Clear();
             _ownedAssetHandles.Clear();
@@ -141,30 +165,84 @@ namespace Framework.Asset
             EnsureReady();
 
             var key = AssetCacheKey.Create<T>(path);
-            if (_assetHandles.TryGetValue(key, out var cached) && cached.AssetObject is T asset)
-                return asset;
+            PendingAssetLoad pendingLoad;
+            bool shouldStartLoad = false;
 
-            await _gate.WaitAsync();
+            lock (_gate)
+            {
+                EnsureReady();
+
+                if (_assetHandles.TryGetValue(key, out var cached) && cached.AssetObject is T asset)
+                    return asset;
+
+                if (!_loadingTasks.TryGetValue(key, out pendingLoad))
+                {
+                    pendingLoad = new PendingAssetLoad(_lifecycleVersion, _defaultPackage);
+                    _loadingTasks[key] = pendingLoad;
+                    shouldStartLoad = true;
+                }
+            }
+
+            if (shouldStartLoad)
+            {
+                LoadAssetInternalAsync<T>(key, path, pendingLoad).Forget();
+            }
+
+            var loadedObj = await pendingLoad.Task;
+            return loadedObj as T;
+        }
+
+        private async UniTaskVoid LoadAssetInternalAsync<T>(AssetCacheKey key, string path, PendingAssetLoad pendingLoad) where T : Object
+        {
+            YooAsset.AssetHandle handle = null;
             try
             {
-                if (_assetHandles.TryGetValue(key, out cached) && cached.AssetObject is T cachedAsset)
-                    return cachedAsset;
-
-                var handle = _defaultPackage.LoadAssetAsync<T>(path);
+                handle = pendingLoad.Package.LoadAssetAsync<T>(path);
                 await handle.ToUniTask();
                 if (handle.Status != EOperationStatus.Succeeded)
                 {
                     GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}");
                     handle.Release();
-                    return null;
+                    pendingLoad.TrySetResult(null);
+                    return;
                 }
 
-                _assetHandles[key] = handle;
-                return handle.AssetObject as T;
+                var shouldCache = false;
+                lock (_gate)
+                {
+                    shouldCache = IsReady &&
+                        pendingLoad.LifecycleVersion == _lifecycleVersion &&
+                        ReferenceEquals(pendingLoad.Package, _defaultPackage) &&
+                        !pendingLoad.ReleaseRequested;
+
+                    if (shouldCache)
+                    {
+                        _assetHandles[key] = handle;
+                    }
+                }
+
+                var loadedObject = shouldCache ? handle.AssetObject : null;
+                if (!shouldCache)
+                {
+                    handle.Release();
+                }
+                pendingLoad.TrySetResult(loadedObject);
+            }
+            catch (Exception e)
+            {
+                GameLog.Error($"[AssetRuntime] Load exception: {path} - {e}");
+                handle?.Release();
+                pendingLoad.TrySetResult(null);
             }
             finally
             {
-                _gate.Release();
+                lock (_gate)
+                {
+                    if (_loadingTasks.TryGetValue(key, out var current) && ReferenceEquals(current, pendingLoad))
+                    {
+                        _loadingTasks.Remove(key);
+                    }
+                }
             }
         }
 
@@ -241,28 +319,68 @@ namespace Framework.Asset
         public void Release<T>(string path) where T : Object
         {
             var key = AssetCacheKey.Create<T>(path);
-            if (!_assetHandles.TryGetValue(key, out var handle))
-                return;
+            YooAsset.AssetHandle? handle = null;
+            lock (_gate)
+            {
+                if (_loadingTasks.TryGetValue(key, out var pendingLoad))
+                {
+                    pendingLoad.Cancel();
+                    _loadingTasks.Remove(key);
+                }
 
-            handle.Release();
-            _assetHandles.Remove(key);
+                if (_assetHandles.TryGetValue(key, out handle))
+                {
+                    _assetHandles.Remove(key);
+                }
+            }
+
+            handle?.Release();
         }
 
         public void Release(string path)
         {
-            _releaseKeys.Clear();
-            foreach (var key in _assetHandles.Keys)
+            List<YooAsset.AssetHandle> handlesToRelease = new();
+            lock (_gate)
             {
-                if (key.Path == path)
-                    _releaseKeys.Add(key);
+                _releaseKeys.Clear();
+                foreach (var key in _assetHandles.Keys)
+                {
+                    if (key.Path == path)
+                        _releaseKeys.Add(key);
+                }
+
+                foreach (var key in _releaseKeys)
+                {
+                    if (_assetHandles.TryGetValue(key, out var handle))
+                    {
+                        handlesToRelease.Add(handle);
+                        _assetHandles.Remove(key);
+                    }
+                }
+                _releaseKeys.Clear();
+
+                foreach (var kv in _loadingTasks)
+                {
+                    if (kv.Key.Path == path)
+                    {
+                        _releaseKeys.Add(kv.Key);
+                    }
+                }
+                foreach (var key in _releaseKeys)
+                {
+                    if (_loadingTasks.TryGetValue(key, out var pendingLoad))
+                    {
+                        pendingLoad.Cancel();
+                        _loadingTasks.Remove(key);
+                    }
+                }
+                _releaseKeys.Clear();
             }
 
-            foreach (var key in _releaseKeys)
+            foreach (var handle in handlesToRelease)
             {
-                _assetHandles[key].Release();
-                _assetHandles.Remove(key);
+                handle.Release();
             }
-            _releaseKeys.Clear();
 
             if (_sceneHandles.TryGetValue(path, out var sceneHandle))
             {
@@ -379,6 +497,28 @@ namespace Framework.Asset
             public bool Equals(AssetCacheKey other) => Path == other.Path && _type == other._type;
             public override bool Equals(object obj) => obj is AssetCacheKey other && Equals(other);
             public override int GetHashCode() => HashCode.Combine(Path, _type);
+        }
+
+        private sealed class PendingAssetLoad
+        {
+            private readonly TaskCompletionSource<Object> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            public PendingAssetLoad(int lifecycleVersion, ResourcePackage package)
+            {
+                LifecycleVersion = lifecycleVersion;
+                Package = package;
+            }
+
+            public int LifecycleVersion { get; }
+            public ResourcePackage Package { get; }
+            public bool ReleaseRequested { get; set; }
+            public Task<Object> Task => _completion.Task;
+            public void TrySetResult(Object asset) => _completion.TrySetResult(asset);
+            public void Cancel()
+            {
+                ReleaseRequested = true;
+                TrySetResult(null);
+            }
         }
 
         private sealed class CdnRemoteService : IRemoteService

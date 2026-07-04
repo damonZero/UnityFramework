@@ -7,15 +7,22 @@
         "Event",
         "UniTask",
         "Cache",
-        "Pool"
+        "Pool",
+        "Core",
+        "General",
+        "MessagePipe",
+        "ZLogger.Unity"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.Extensions.Logging.Abstractions.dll",
+        "Microsoft.Extensions.Logging.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
