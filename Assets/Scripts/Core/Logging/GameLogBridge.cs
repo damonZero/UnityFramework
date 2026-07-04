@@ -1,6 +1,4 @@
 using System;
-using Core.Systems;
-using Core.Systems.Attributes;
 using Framework.Log;
 using Microsoft.Extensions.Logging;
 
@@ -8,50 +6,52 @@ namespace Core.Logging
 {
     /// <summary>
     /// Bridges Framework-layer <see cref="GameLog"/> static delegates to the
-    /// DI-managed ZLogger pipeline. Must run before any other system that logs.
+    /// DI-managed ZLogger pipeline.
     /// </summary>
-    [CoreSystem]
-    public sealed class GameLogBridge : ISystem
+    public sealed class GameLogBridge : IGameLogSink
     {
         private readonly ILogger<GameLogBridge> _logger;
-        public int Priority => int.MinValue;
 
         public GameLogBridge(ILogger<GameLogBridge> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public void Init()
+        public static void Install(ILogger<GameLogBridge> logger)
         {
-            GameLog.Write = (level, message) =>
-            {
-                switch (level)
-                {
-                    case GameLogLevel.Trace:
-                        _logger.LogTrace(message);
-                        break;
-                    case GameLogLevel.Debug:
-                        _logger.LogDebug(message);
-                        break;
-                    case GameLogLevel.Information:
-                        _logger.LogInformation(message);
-                        break;
-                    case GameLogLevel.Warning:
-                        _logger.LogWarning(message);
-                        break;
-                    case GameLogLevel.Error:
-                        _logger.LogError(message);
-                        break;
-                    case GameLogLevel.Critical:
-                        _logger.LogCritical(message);
-                        break;
-                }
-            };
+            GameLog.Sink = new GameLogBridge(logger);
         }
 
-        public void Shutdown()
+        public static void Uninstall()
         {
-            GameLog.Write = null;
+            if (GameLog.Sink is GameLogBridge)
+                GameLog.Sink = null;
+        }
+
+        public void Write(in GameLogEntry entry)
+        {
+            var logLevel = ToMicrosoftLogLevel(entry.Level);
+            if (entry.Exception != null)
+            {
+                _logger.Log(logLevel, entry.Exception, "[{Module}] {Message}", entry.Module, entry.Message);
+                return;
+            }
+
+            _logger.Log(logLevel, "[{Module}] {Message}", entry.Module, entry.Message);
+        }
+
+        private static LogLevel ToMicrosoftLogLevel(GameLogLevel level)
+        {
+            return level switch
+            {
+                GameLogLevel.Trace => LogLevel.Trace,
+                GameLogLevel.Debug => LogLevel.Debug,
+                GameLogLevel.Information => LogLevel.Information,
+                GameLogLevel.Warning => LogLevel.Warning,
+                GameLogLevel.Error => LogLevel.Error,
+                GameLogLevel.Critical => LogLevel.Critical,
+                _ => LogLevel.None
+            };
         }
     }
 }

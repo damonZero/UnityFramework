@@ -1,5 +1,7 @@
+using Core.Logging;
 using Core.Systems;
 using Framework.Asset;
+using Framework.Log;
 using MessagePipe;
 using Microsoft.Extensions.Logging;
 using VContainer;
@@ -19,11 +21,21 @@ namespace Core.Bootstrap
             // ── ZLogger / Microsoft.Extensions.Logging ──
             var loggerFactory = LoggerFactory.Create(logging =>
             {
-                logging.SetMinimumLevel(LogLevel.Debug);
-                logging.AddZLoggerUnityDebug();
+                logging.SetMinimumLevel(LogLevel.Trace);
+                logging.AddFilter((category, level) =>
+                    GameLog.Profile.IsEnabled(category ?? GameLog.DefaultModule, ToGameLogLevel(level)));
+                logging.AddZLoggerUnityDebug(options =>
+                {
+                    options.PrettyStacktrace = true;
+                });
             });
             builder.RegisterInstance(loggerFactory).As<ILoggerFactory>();
-            builder.RegisterDisposeCallback(_ => loggerFactory.Dispose());
+            GameLogBridge.Install(loggerFactory.CreateLogger<GameLogBridge>());
+            builder.RegisterDisposeCallback(_ =>
+            {
+                GameLogBridge.Uninstall();
+                loggerFactory.Dispose();
+            });
             builder.Register(typeof(Logger<>), Lifetime.Singleton).As(typeof(ILogger<>));
 
             // ── MessagePipe ──
@@ -38,6 +50,20 @@ namespace Core.Bootstrap
             builder.RegisterCoreTypes(options, typeof(CoreContainerRegistration).Assembly);
             builder.RegisterEntryPoint<SystemManager>();
             return options;
+        }
+
+        private static GameLogLevel ToGameLogLevel(LogLevel level)
+        {
+            return level switch
+            {
+                LogLevel.Trace => GameLogLevel.Trace,
+                LogLevel.Debug => GameLogLevel.Debug,
+                LogLevel.Information => GameLogLevel.Information,
+                LogLevel.Warning => GameLogLevel.Warning,
+                LogLevel.Error => GameLogLevel.Error,
+                LogLevel.Critical => GameLogLevel.Critical,
+                _ => GameLogLevel.None
+            };
         }
     }
 }
