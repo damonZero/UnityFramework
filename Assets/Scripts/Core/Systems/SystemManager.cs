@@ -1,32 +1,42 @@
 using System;
 using System.Collections.Generic;
+using Core.Systems.Events;
 using MessagePipe;
+using Microsoft.Extensions.Logging;
 using UnityEngine;
 using VContainer.Unity;
 
-namespace Core.Architecture
+namespace Core.Systems
 {
     /// <summary>
     /// 系统管理器 — 统一管理所有 ISystem 的生命周期。
     /// 由 VContainer 注入系统列表，Boot 不再手动注册。
     /// </summary>
-    public class SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable
+    public class SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable, ICoreStartupStatus
     {
         public bool Initialized { get; private set; }
+        public bool IsStarted => Initialized;
+        public bool HasInitFailures => _failedSystemNames.Count > 0;
+        public IReadOnlyList<string> FailedSystemNames => _failedSystemNames;
 
         private readonly List<ISystem> _systems = new();
+        private readonly List<ISystem> _initializedSystems = new();
         private readonly List<ITickableSystem> _tickableSystems = new();
+        private readonly List<string> _failedSystemNames = new();
         private readonly Dictionary<Type, ISystem> _systemMap = new();
         private readonly IPublisher<AppStartedEvent> _appStartedPublisher;
         private readonly IPublisher<AppShuttingDownEvent> _appShuttingDownPublisher;
+        private readonly ILogger<SystemManager> _logger;
 
         public SystemManager(
             IEnumerable<ISystem> systems,
             IPublisher<AppStartedEvent> appStartedPublisher,
-            IPublisher<AppShuttingDownEvent> appShuttingDownPublisher)
+            IPublisher<AppShuttingDownEvent> appShuttingDownPublisher,
+            ILogger<SystemManager> logger)
         {
             _appStartedPublisher = appStartedPublisher;
             _appShuttingDownPublisher = appShuttingDownPublisher;
+            _logger = logger;
 
             if (systems == null)
                 return;
@@ -49,14 +59,14 @@ namespace Core.Architecture
 
             if (Initialized)
             {
-                Debug.LogWarning($"[SystemManager] 已初始化，禁止再次注册: {system.GetType().Name}");
+                SystemManagerLog.AlreadyInitialized(_logger, system.GetType().Name);
                 return this;
             }
 
             var type = system.GetType();
             if (_systemMap.ContainsKey(type))
             {
-                Debug.LogWarning($"[SystemManager] 系统已注册，跳过: {type.Name}");
+                SystemManagerLog.SystemAlreadyRegistered(_logger, type.Name);
                 return this;
             }
 
@@ -78,13 +88,15 @@ namespace Core.Architecture
         {
             if (Initialized)
             {
-                Debug.LogWarning("[SystemManager] 已初始化，跳过");
+                SystemManagerLog.AlreadyInitializedSkip(_logger);
                 return;
             }
 
             _systems.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+            _initializedSystems.Clear();
+            _failedSystemNames.Clear();
 
-            Debug.Log($"[SystemManager] 开始初始化 {_systems.Count} 个系统");
+            SystemManagerLog.InitStart(_logger, _systems.Count);
 
             for (var i = 0; i < _systems.Count; i++)
             {
@@ -92,17 +104,26 @@ namespace Core.Architecture
                 try
                 {
                     sys.Init();
-                    Debug.Log($"[SystemManager] Init [{i + 1}/{_systems.Count}] {sys.GetType().Name} (Priority={sys.Priority})");
+                    _initializedSystems.Add(sys);
+                    SystemManagerLog.InitProgress(_logger, i + 1, _systems.Count, sys.GetType().Name, sys.Priority);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[SystemManager] Init 失败: {sys.GetType().Name}\n{e}");
+                    _failedSystemNames.Add(sys.GetType().Name);
+                    SystemManagerLog.InitFailed(_logger, sys.GetType().Name, e);
                 }
             }
 
-            Initialized = true;
-            _appStartedPublisher.Publish(new AppStartedEvent());
-            Debug.Log("[SystemManager] 全部初始化完成");
+            Initialized = !HasInitFailures;
+            if (Initialized)
+            {
+                _appStartedPublisher.Publish(new AppStartedEvent());
+                SystemManagerLog.InitComplete(_logger);
+            }
+            else
+            {
+                SystemManagerLog.InitCompleteWithFailures(_logger, string.Join(", ", _failedSystemNames));
+            }
         }
 
         public void ShutdownAll()
@@ -113,28 +134,30 @@ namespace Core.Architecture
             if (Initialized)
                 _appShuttingDownPublisher.Publish(new AppShuttingDownEvent());
 
-            Debug.Log("[SystemManager] 开始关闭系统");
+            SystemManagerLog.ShutdownStart(_logger);
 
-            for (var i = _systems.Count - 1; i >= 0; i--)
+            for (var i = _initializedSystems.Count - 1; i >= 0; i--)
             {
-                var sys = _systems[i];
+                var sys = _initializedSystems[i];
                 try
                 {
                     sys.Shutdown();
-                    Debug.Log($"[SystemManager] Shutdown {sys.GetType().Name}");
+                    SystemManagerLog.ShutdownProgress(_logger, sys.GetType().Name);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[SystemManager] Shutdown 失败: {sys.GetType().Name}\n{e}");
+                    SystemManagerLog.ShutdownFailed(_logger, sys.GetType().Name, e);
                 }
             }
 
             _systems.Clear();
+            _initializedSystems.Clear();
             _tickableSystems.Clear();
             _systemMap.Clear();
+            _failedSystemNames.Clear();
             Initialized = false;
 
-            Debug.Log("[SystemManager] 全部关闭完成");
+            SystemManagerLog.ShutdownComplete(_logger);
         }
 
         public void Start()

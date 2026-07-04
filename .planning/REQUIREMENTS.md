@@ -9,8 +9,8 @@
 - 不堆砌代码，不跳过验证
 - 商业级质量：接口设计合理、边界情况处理、可扩展
 - 依赖方向固定为 `Boot <- Core <- General <- Project`，下层不得依赖上层
-- Boot 层保持最小依赖，只保留稳定启动壳、阶段协议和 prefab 链式启动能力
-- 启动采用当前阶段启动下一阶段：Boot prefab → Core prefab → General prefab → Project prefab
+- Boot 层保持最小依赖，只保留稳定启动壳、阶段协议和类型名驱动的 Stage 编排能力
+- 启动采用 Boot 反射创建普通 C# Stage：Core → General → Project，按 Priority 执行
 - 依赖注入采用 VContainer，MessagePipe 作为当前类型安全事件后端
 - 稳定底层模块下沉到 `Assets/Framework/`，上层通过统一接口访问，不直接绑定第三方实现
 - Core 使用 System，业务层使用 Model + ViewModel，不引入业务 System
@@ -19,7 +19,7 @@
 
 1. 建立基于 VContainer 的分阶段容器注册体系
 2. 建立 Boot 层稳定启动协议：`BootstrapContext` / `IBootstrapStage`
-3. 建立 prefab 字符串链式启动：每层初始化完成后启动下一层 prefab
+3. 建立无 prefab 启动链：Boot 通过类型名创建 Stage，按 Priority 执行各层注册
 4. 建立 Core Architecture：`ISystem`、`[CoreSystem]`、`SystemManager`
 5. 建立类型安全事件注册：`Framework.Event.GameEventAttribute` + 当前 MessagePipe `IPublisher<T>` / `ISubscriber<T>` 后端
 6. 删除旧式 `EventId + object payload` 事件总线设计

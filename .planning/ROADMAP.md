@@ -3,7 +3,7 @@
 > **用途：** 记录框架需要哪些模块、每个模块当前处于什么状态、它依赖什么。
 > **不做：** 固定执行顺序、工时估计、强制时间表。什么时候做什么模块取决于当时的需求和优先级判断。
 
-**Last Updated:** 2026-07-02
+**Last Updated:** 2026-07-04
 
 ---
 
@@ -11,11 +11,11 @@
 
 | 模块 | 位置 | 说明 |
 |------|------|------|
-| Boot 启动协议 | `Boot/` | Entry + AppLifetimeScope + BootstrapContext + IBootstrapStage + BootLifetimeScope + prefab 字符串链式启动。Boot 层最小依赖。 |
-| VContainer DI | `Core/Architecture/` | 分层容器注册，`IContainerBuilder` 扩展方法，`BootstrapContext` 传递上下文 |
-| Event 基础层 | `Framework/Event/` + `Core/Architecture/` | 统一 `[GameEvent]` 标记和类型扫描；MessagePipe 是当前 broker 注册后端 |
+| Boot 启动协议 | `Boot/` | Entry + AppLifetimeScope + BootstrapContext + IBootstrapStage + BootLifetimeScope。已迁移为无 prefab 的普通 C# Stage 编排；Boot 通过类型名反射创建阶段，仍不引用 Core/General/Project。 |
+| VContainer DI | `Core/Bootstrap/` + `Core/Systems/` | 分层容器注册，`IContainerBuilder` 扩展方法，`BootstrapContext` 传递上下文 |
+| Event 基础层 | `Framework/Event/` + `Core/Systems/` + `Core/Bootstrap/` | 统一 `[GameEvent]` 标记和类型扫描；MessagePipe 是当前 broker 注册后端 |
 | ISystem + SystemManager | `Core/` | `ISystem` / `ITickableSystem` + `[CoreSystem]` 属性扫描 + `SystemManager` Priority 排序 → Init/Shutdown + VContainer Tick 驱动 |
-| IModel + ModelLifecycle | `General/` | `IModel` / `[Model]` + `ModelLifecycle` Priority 排序 → Load/Unload |
+| IModel + ModelLifecycle | `General/` | `IModel` / `[Model]` + `ModelLifecycle` Priority 排序 → Core 启动成功后 `IPostStartable.PostStart()` Load / Dispose Unload |
 | Asset 基础层 | `Framework/Asset/` + `Core/Asset/` | `Framework.Asset` 提供统一资源 API、句柄和 YooAsset 适配；`Core.AssetSystem` 只负责生命周期编排和 ready 事件 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 
@@ -29,7 +29,7 @@
 |------|--------|------|------|------|
 | Timer | Low | `Core/Timer/` | ISystem | Tick-based（非协程），一次性 + 循环，暂停/恢复，最小 GC |
 | Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | Framework/Pool + Framework/Cache 代码已完成，`PoolService.cs` 负责 DI 桥接注册 |
-| PERF-01 已实现模块性能治理 | Low-Medium | `Core/Architecture/`, `General/Bootstrap/`, `Boot/Bootstrap/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和 Bootstrap stage 收集去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
+| PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/Bootstrap/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和 Bootstrap stage 收集去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
 
 ### 配置与数据
 
@@ -109,4 +109,4 @@ HybridCLR ← Framework.Asset + Boot
 
 ---
 
-*Boards updated: 2026-07-02*
+*Boards updated: 2026-07-04*

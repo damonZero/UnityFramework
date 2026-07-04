@@ -1,4 +1,3 @@
-using Core.Architecture;
 using Framework.Event;
 
 namespace Core.Asset

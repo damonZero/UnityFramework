@@ -1,13 +1,12 @@
 using Boot;
 using MessagePipe;
-using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace General
 {
-    public sealed class GeneralBootstrapStage : MonoBehaviour, IBootstrapStage
+    [Preserve]
+    public sealed class GeneralBootstrapStage : IBootstrapStage
     {
-        [SerializeField] private string nextBootstrapPrefabPath = string.Empty;
-
         public int Priority => 200;
         public string StageName => "General";
 
@@ -15,7 +14,6 @@ namespace General
         {
             var options = context.GetRequired<MessagePipeOptions>();
             context.Builder.RegisterBusinessLayer(options, typeof(GeneralBootstrapStage).Assembly);
-            context.ConfigurePrefab(nextBootstrapPrefabPath);
         }
     }
 }

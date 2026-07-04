@@ -18,14 +18,14 @@ metadata:
 ```
 IAssetSystem (对上层统一 API)
     ↑
-IAssetRuntime (扩展 Initialize/Shutdown/Config)
+        IAssetRuntime (扩展 bool Initialize/Shutdown/Config/IsReady)
     ↑
 AssetRuntime (YooAsset 3.0 适配器，唯一引用 YooAsset 的文件)
 
-AssetHandle<T>        — 类型句柄 (IDisposable)
-AssetInstanceHandle   — 实例+源句柄联合生命周期 (IDisposable)
-AssetSceneHandle      — 场景异步加载/卸载 (IDisposable)
-AssetDownloadHandle   — 下载器封装
+AssetHandle<T>        — 类型句柄 (IDisposable)，构造函数和 Instantiate 为 internal
+AssetInstanceHandle   — 实例+源句柄联合生命周期 (IDisposable)，构造函数为 internal
+AssetSceneHandle      — 场景异步加载/卸载 (IDisposable)，构造函数为 internal
+AssetDownloadHandle   — 下载器封装，构造函数为 internal
 AssetConfig           — ScriptableObject: PlayMode + CDN + 超时/重试
 ```
 
@@ -44,10 +44,13 @@ UniTask<AssetHandle<T>> LoadAssetHandleAsync<T>(string path) where T : Object;
 UniTask<AssetInstanceHandle> InstantiateAsync(string path, Transform parent = null);
 
 // 场景（串行化保护：同路径场景加载会等待前一个卸载完成）
-UniTask<AssetSceneHandle> LoadSceneAsync(string path, LoadSceneMode mode, Action<float> onProgress);
+UniTask<AssetSceneHandle> LoadSceneAsync(
+    string path,
+    LoadSceneMode mode = LoadSceneMode.Single,
+    Action<float> onProgress = null);
 
 // 下载器
-AssetDownloadHandle CreateDownloader(string tag);
+AssetDownloadHandle CreateDownloader(string tag = null);
 AssetDownloadHandle CreateDownloader(string[] tags);
 
 // 释放
@@ -63,9 +66,9 @@ void UnloadUnused();
 | **cached** | `LoadAssetAsync<T>` | 系统管理，`Release<T>(path)` 释放 | 全局共享资源（UI 图集、音频） |
 | **owned** | `LoadAssetHandleAsync<T>` | 调用方 `Dispose()` 释放 | 临时资源、需要独立生命周期的 |
 
-**AssetCacheKey**: `(string path, Type type)` 的 struct key，确保同一 path 的不同类型加载不会冲突。
+**AssetCacheKey**: `AssetRuntime` 内部的 `private readonly struct`，key 为 `(string path, Type type)`，确保同一 path 的不同类型加载不会冲突。外部不可见，仅供理解内部去重逻辑。
 
-**SemaphoreSlim(1,1) 并发保护**: 每个 cached 路径有一个 `SemaphoreSlim`，防止同一资源被并发加载两次。
+**SemaphoreSlim(1,1) 并发保护**: cached 通道在 `LoadAssetAsync<T>` 内部使用 `_gate`（全局 SemaphoreSlim），防止同一资源被并发加载两次。
 
 ### AssetHandle<T> — 类型句柄
 
@@ -74,10 +77,12 @@ var handle = await _assetSystem.LoadAssetHandleAsync<Texture2D>("Assets/Textures
 handle.Progress   // float
 handle.IsDone     // bool
 handle.IsValid    // bool (未 Dispose 且底层有效)
+handle.Error      // string
 handle.Asset      // T (从 AssetObject as T)
-handle.Instantiate(parent)  // 同步实例化
 handle.Dispose()  // 释放底层 YooAsset 句柄
 ```
+
+> **注意**: `AssetHandle<T>` 的构造函数和 `Instantiate(Transform)` 均为 `internal`，外部代码不能直接 new 或调用同步实例化。实例化请通过 `IAssetSystem.InstantiateAsync()` 获取 `AssetInstanceHandle`。
 
 ### AssetInstanceHandle — 实例句柄
 
@@ -124,8 +129,10 @@ PlayMode 对应 YooAsset 初始化策略：
 ## Core 层编排
 
 Core 层的 `AssetSystem` (`[CoreSystem] Priority=100`) 负责：
-1. `Init()` — `Resources.Load<AssetConfig>("AssetConfig")` → `_runtime.Initialize(config)` → 发布 `AssetSystemReadyEvent`
+1. `Init()` — `Resources.Load<AssetConfig>("AssetConfig")` → `_runtime.Initialize(config)` 成功且 `_runtime.IsReady` → 发布 `AssetSystemReadyEvent`
 2. `Shutdown()` — 释放所有 cached handles、场景 handles、owned handles，调 `_runtime.Shutdown()`
+
+`Initialize` 返回 `false` 时必须保持 runtime 不可用并清理 YooAsset 状态；Core 不发布 ready event。
 
 ## 最佳实践
 
@@ -135,3 +142,4 @@ Core 层的 `AssetSystem` (`[CoreSystem] Priority=100`) 负责：
 4. **AssetConfig 放在 Resources/** — 这是唯一必须放 Resources 的配置
 5. **不要在 hot path 上同步 Instantiate** — 重资源实例化尽量异步
 6. **Release 要及时** — cached 通道不释放会累积句柄
+7. **Resources 不放场景或启动 Stage prefab** — 场景放 `Assets/GameRes/Scene/{Layer}/`

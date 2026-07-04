@@ -1,7 +1,7 @@
 # Project State: KJ Unity Framework
 
-**Last Updated:** 2026-07-02
-**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 进行中（资源系统已完成）
+**Last Updated:** 2026-07-04
+**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 进行中（资源系统和无 prefab 启动链已完成；下一步进入 UI/业务示例验证）
 
 ## 进度
 
@@ -14,14 +14,14 @@
 - [x] DI-02: Boot 层最小依赖约束落地（Boot 不引用 Core/General/Project）
 - [x] DI-03: Core System 迁移到容器驱动注册（`[CoreSystem]` + 反射扫描 `AsSelf().AsImplementedInterfaces()`）
 - [x] EVT-01: 删除旧 `EventId + object payload` 事件总线，统一 `Framework.Event.GameEventAttribute`
-- [x] BOOT-CHAIN-01: prefab 字符串链式启动协议
+- [x] BOOT-CHAIN-01: prefab 字符串链式启动协议（历史方案；当前判断 prefab 仅作为 MonoBehaviour/SerializeField 载体，不再作为后续目标）
 - [x] RES-01: `Framework.Asset` — 基于 YooAsset 3.0 的底层资源适配（owned/cached 双通道、SemaphoreSlim 并发保护、AssetCacheKey 类型感知缓存）
 - [x] RES-02: AssetHandle<T> / AssetInstanceHandle / AssetSceneHandle / AssetDownloadHandle / IAssetSystem — Framework 统一 API + 实例生命周期管理 + 场景串行化加载卸载
 - [x] RES-03: `Core.AssetSystem` 薄编排 — 负责资源运行时初始化、Shutdown 和 AssetSystemReadyEvent 发布
 - [x] POOL-01: PoolService.cs — Framework/Pool + Framework/Cache + Framework.Asset 的 DI 桥接
 - [x] TEST-01: `Framework.TestKit` — 基于 Unity Test Framework / NUnit 的通用断言、Fake、Probe、Fixture、手动时间驱动
-- [ ] BOOT-CHAIN-02: Unity prefab 资源配置与场景切换验证
-- [ ] MODEL-01: General/Project Model 生命周期验证
+- [x] BOOT-CHAIN-02: 无 prefab 启动链迁移与验证（Boot 仍保持最小依赖，通过类型名/反射创建普通 C# `IBootstrapStage`，由 VContainer 接管系统生命周期）
+- [x] MODEL-01: General/Project Model 生命周期接入（`ModelLifecycle` 由 VContainer `IPostStartable` 在 Core 系统 Start 后驱动 `LoadAll()`）
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -30,29 +30,35 @@
 ```
 Assets/Scripts/
 ├── Boot/
-│   ├── KJ.Boot.asmdef           ← 仅引用 VContainer
+│   ├── KJ.Boot.asmdef           ← 引用 VContainer + Framework.Log，不引用 Core/General/Project
 │   ├── Entry.cs                 ← 稳定启动入口 MonoBehaviour
 │   ├── AppLifetimeScope.cs      ← Boot 层 LifetimeScope 基类
 │   └── Bootstrap/
 │       ├── BootstrapContext.cs  ← 阶段上下文
 │       ├── IBootstrapStage.cs   ← 阶段协议
-│       └── BootLifetimeScope.cs ← 通过 nextBootstrapPrefabPath 启动下一层 prefab
+│       └── BootLifetimeScope.cs ← 通过类型名/反射创建普通 C# Stage，按 Priority 执行
 ├── Core/
-│   ├── KJ.Core.asmdef          ← 引用 Boot + Asset + Event + Pool + Cache + VContainer + MessagePipe + MessagePipe.VContainer + UniTask
-│   ├── ISystem.cs              ← ISystem + ITickableSystem 接口
-│   ├── SystemManager.cs        ← 系统生命周期管理器（VContainer 驱动）
-│   ├── StartupProbeSystem.cs   ← 启动链路验证系统
+│   ├── KJ.Core.asmdef          ← 引用 Boot + Asset + Event + Pool + Cache + Log + VContainer + MessagePipe + UniTask
 │   ├── PoolService.cs          ← [CoreSystem] Framework.Pool DI 桥接 + 集合池快捷入口
-│   ├── Architecture/
+│   ├── Logging/
+│   │   └── GameLogBridge.cs    ← Framework.Log 到 Core ZLogger 管线的桥接
+│   ├── Bootstrap/
+│   │   ├── CoreTypeRegistration.cs
+│   │   ├── CoreContainerRegistration.cs
+│   │   └── CoreBootstrapStage.cs
+│   ├── Systems/
+│   │   ├── ISystem.cs              ← ISystem + ITickableSystem 接口
+│   │   ├── SystemManager.cs        ← 系统生命周期管理器（VContainer 驱动）
+│   │   ├── SystemManagerLog.cs     ← SystemManager ZLogger 源生成日志
+│   │   ├── StartupProbeSystem.cs   ← 启动链路验证系统
+│   │   ├── StartupProbeSystemLog.cs← StartupProbeSystem ZLogger 源生成日志
 │   │   ├── Attributes/CoreSystemAttribute.cs
 │   │   ├── Events/AppStartedEvent.cs
 │   │   ├── Events/AppShuttingDownEvent.cs
-│   │   └── Bootstrap/ArchitectureContainerRegistration.cs
-│   ├── Bootstrap/
-│   │   ├── CoreContainerRegistration.cs
-│   │   └── CoreBootstrapStage.cs
+│   │   └── ICoreStartupStatus.cs ← Core 启动结果，供业务层决定是否加载
 │   └── Asset/
 │       ├── AssetSystem.cs              ← [CoreSystem] Framework.Asset 生命周期编排 + Ready 事件
+│       ├── AssetSystemLog.cs           ← AssetSystem ZLogger 源生成日志
 │       └── AssetSystemReadyEvent.cs    ← [GameEvent] 就绪通知
 ├── General/
 │   ├── KJ.General.asmdef       ← 引用 Boot + Core + Event
@@ -62,11 +68,13 @@ Assets/Scripts/
 │   └── Models/
 │       ├── IModel.cs
 │       ├── ModelAttribute.cs
+│       ├── ModelLifecycleLog.cs
 │       └── ModelLifecycle.cs
 └── Project/
     ├── KJ.Project.asmdef       ← 引用 Boot + General
-    ├── ProjectBootstrapper.cs
-    └── ProjectBootstrapStage.cs
+    └── Bootstrap/
+        ├── ProjectBootstrapper.cs   ← 静态 Project 注册入口
+        └── ProjectBootstrapStage.cs
 
 Assets/Framework/
 ├── Pool/
@@ -138,8 +146,7 @@ Assets/Framework/
 ## 下一步
 
 Phase 1 剩余事项：
-- BOOT-CHAIN-02: 创建/配置 Boot/Core/General/Project 启动 prefab
-- MODEL-01: 创建示例 Model 并验证 ModelLifecycle Load/Unload
+- MODEL-01 后续: 创建示例 Model 验证真实业务 Load/Unload 行为（生命周期驱动已接入）
 - PERF-01: 已实现模块性能治理（ZLogger + VContainer 日志接入、启动期反射扫描去 LINQ、Bootstrap stage 收集优化、Unity 编译验证）
 - UI-01: UISystem（UI 管理）
 - UI-02: UIWindow 基类
@@ -150,4 +157,4 @@ Phase 2 规划：
 - CFG-01~02: Luban 配置表集成
 
 ---
-*Phase 0 Architecture 完成: 2026-06-29 | Phase 1 资源系统 Framework 化: 2026-07-02*
+*Phase 0 Architecture 完成: 2026-06-29 | Phase 1 资源系统 Framework 化: 2026-07-02 | 启动链去 prefab 化落地: 2026-07-04*

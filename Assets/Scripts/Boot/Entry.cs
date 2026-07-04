@@ -1,3 +1,4 @@
+using Framework.Log;
 using UnityEngine;
 
 namespace Boot
@@ -11,7 +12,7 @@ namespace Boot
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
-            Debug.Log("[Entry] 游戏启动");
+            GameLog.Info("[Entry] 游戏启动");
         }
     }
 }

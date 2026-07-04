@@ -1,7 +1,9 @@
 {
     "name": "Event",
     "rootNamespace": "Framework.Event",
-    "references": [],
+    "references": [
+        "ZLinq"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

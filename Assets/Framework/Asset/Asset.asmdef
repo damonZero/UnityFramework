@@ -3,7 +3,8 @@
     "rootNamespace": "Framework.Asset",
     "references": [
         "UniTask",
-        "YooAsset"
+        "YooAsset",
+        "Log"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

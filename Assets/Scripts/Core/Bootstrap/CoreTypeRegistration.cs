@@ -1,27 +1,31 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Reflection;
+using Core.Systems;
+using Core.Systems.Attributes;
 using Framework.Event;
 using MessagePipe;
 using VContainer;
+using ZLinq;
 
-namespace Core.Architecture
+namespace Core.Bootstrap
 {
     /// <summary>
     /// Reflection is limited to registration-time identity discovery.
     /// Runtime dependencies still have to be expressed through constructors.
     /// </summary>
-    public static class ArchitectureContainerRegistration
+    public static class CoreTypeRegistration
     {
         private static readonly MethodInfo RegisterMessageBrokerMethod =
             typeof(MessagePipe.ContainerBuilderExtensions)
                 .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .AsValueEnumerable()
                 .First(m =>
                     m.Name == "RegisterMessageBroker" &&
                     m.IsGenericMethodDefinition &&
                     m.GetGenericArguments().Length == 1);
 
-        public static void RegisterArchitecture(this IContainerBuilder builder, MessagePipeOptions options, params Assembly[] assemblies)
+        public static void RegisterCoreTypes(this IContainerBuilder builder, MessagePipeOptions options, params Assembly[] assemblies)
         {
             if (builder == null) throw new ArgumentNullException(nameof(builder));
             if (options == null) throw new ArgumentNullException(nameof(options));
@@ -34,9 +38,9 @@ namespace Core.Architecture
         private static Assembly[] NormalizeAssemblies(Assembly[] assemblies)
         {
             if (assemblies == null || assemblies.Length == 0)
-                return new[] { typeof(ArchitectureContainerRegistration).Assembly };
+                return new[] { typeof(CoreTypeRegistration).Assembly };
 
-            return assemblies.Where(a => a != null).Distinct().ToArray();
+            return assemblies.AsValueEnumerable().Where(a => a != null).Distinct().ToArray();
         }
 
         private static void RegisterGameEvents(IContainerBuilder builder, MessagePipeOptions options, Assembly[] assemblies)
@@ -50,6 +54,7 @@ namespace Core.Architecture
         private static void RegisterSystems(IContainerBuilder builder, Assembly[] assemblies)
         {
             foreach (var type in GetLoadableTypes(assemblies)
+                         .AsValueEnumerable()
                          .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttribute<CoreSystemAttribute>() != null))
             {
                 ValidateSystem(type);
@@ -59,17 +64,24 @@ namespace Core.Architecture
 
         private static Type[] GetLoadableTypes(Assembly[] assemblies)
         {
-            return assemblies.SelectMany(assembly =>
+            var result = new List<Type>();
+            foreach (var assembly in assemblies)
             {
                 try
                 {
-                    return assembly.GetTypes();
+                    result.AddRange(assembly.GetTypes());
                 }
                 catch (ReflectionTypeLoadException e)
                 {
-                    return e.Types.Where(t => t != null);
+                    foreach (var type in e.Types)
+                    {
+                        if (type != null)
+                            result.Add(type);
+                    }
                 }
-            }).ToArray();
+            }
+
+            return result.ToArray();
         }
 
         private static void ValidateSystem(Type type)
@@ -78,7 +90,7 @@ namespace Core.Architecture
                 throw new InvalidOperationException($"[CoreSystem] type must implement ISystem: {type.FullName}");
 
             if (type.Namespace == null || !type.Namespace.StartsWith("Core", StringComparison.Ordinal))
-                throw new InvalidOperationException($"[CoreSystem] is reserved for Core architecture types: {type.FullName}");
+                throw new InvalidOperationException($"[CoreSystem] is reserved for Core systems: {type.FullName}");
         }
     }
 }

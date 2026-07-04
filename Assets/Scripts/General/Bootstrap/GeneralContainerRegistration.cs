@@ -1,9 +1,10 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Reflection;
 using Framework.Event;
 using MessagePipe;
 using VContainer;
+using ZLinq;
 
 namespace General
 {
@@ -12,6 +13,7 @@ namespace General
         private static readonly MethodInfo RegisterMessageBrokerMethod =
             typeof(MessagePipe.ContainerBuilderExtensions)
                 .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .AsValueEnumerable()
                 .First(m =>
                     m.Name == "RegisterMessageBroker" &&
                     m.IsGenericMethodDefinition &&
@@ -22,10 +24,16 @@ namespace General
             if (builder == null) throw new ArgumentNullException(nameof(builder));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            var scanAssemblies = assemblies?.Where(a => a != null).Distinct().ToArray() ?? Array.Empty<Assembly>();
+            var scanAssemblies = assemblies?.AsValueEnumerable().Where(a => a != null).Distinct().ToArray() ?? Array.Empty<Assembly>();
             RegisterBusinessEvents(builder, options, scanAssemblies);
             RegisterModels(builder, scanAssemblies);
-            builder.Register<ModelLifecycle>(Lifetime.Singleton);
+            RegisterModelLifecycle(builder);
+        }
+
+        private static void RegisterModelLifecycle(IContainerBuilder builder)
+        {
+            if (!builder.Exists(typeof(ModelLifecycle)))
+                builder.Register<ModelLifecycle>(Lifetime.Singleton).AsSelf().AsImplementedInterfaces();
         }
 
         private static void RegisterBusinessEvents(IContainerBuilder builder, MessagePipeOptions options, Assembly[] assemblies)
@@ -39,28 +47,37 @@ namespace General
         private static void RegisterModels(IContainerBuilder builder, Assembly[] assemblies)
         {
             foreach (var type in GetLoadableTypes(assemblies)
+                         .AsValueEnumerable()
                          .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttribute<ModelAttribute>() != null))
             {
                 if (!typeof(IModel).IsAssignableFrom(type))
                     throw new InvalidOperationException($"[Model] type must implement IModel: {type.FullName}");
 
-                builder.Register(type, Lifetime.Singleton).AsSelf().As<IModel>();
+                if (!builder.Exists(type))
+                    builder.Register(type, Lifetime.Singleton).AsSelf().As<IModel>();
             }
         }
 
         private static Type[] GetLoadableTypes(Assembly[] assemblies)
         {
-            return assemblies.SelectMany(assembly =>
+            var result = new List<Type>();
+            foreach (var assembly in assemblies)
             {
                 try
                 {
-                    return assembly.GetTypes();
+                    result.AddRange(assembly.GetTypes());
                 }
                 catch (ReflectionTypeLoadException e)
                 {
-                    return e.Types.Where(t => t != null);
+                    foreach (var type in e.Types)
+                    {
+                        if (type != null)
+                            result.Add(type);
+                    }
                 }
-            }).ToArray();
+            }
+
+            return result.ToArray();
         }
     }
 }

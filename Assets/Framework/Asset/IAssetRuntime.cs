@@ -10,7 +10,7 @@ namespace Framework.Asset
     {
         AssetConfig Config { get; }
         bool IsReady { get; }
-        void Initialize(AssetConfig config);
+        bool Initialize(AssetConfig config);
         void Shutdown();
     }
 }

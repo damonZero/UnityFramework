@@ -13,7 +13,7 @@ KJ is a Unity client game framework implementing a strict 4-layer unidirectional
 
 **Core pattern:** `ISystem` + `[CoreSystem]` attribute for Core-layer systems, `IModel` + `[Model]` attribute for business-layer models. Lifecycle is driven by VContainer DI.
 
-**Bootstrap pattern:** Prefab chain protocol -- each stage loads the next stage's prefab via a serialized `nextBootstrapPrefabPath` string, avoiding hard-coupled stage lists.
+**Bootstrap pattern:** Boot keeps minimal dependencies and creates ordinary C# `IBootstrapStage` instances from serialized type names. Stages are sorted by Priority and configure Core → General → Project without using prefab stage carriers.
 
 ---
 
@@ -34,10 +34,10 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 | Layer | Can reference |
 |-------|--------------|
-| Boot | VContainer only |
-| Core | Boot, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, YooAsset |
-| General | Boot, Core, VContainer, MessagePipe, MessagePipe.VContainer |
-| Project | Boot, General, VContainer, MessagePipe, MessagePipe.VContainer |
+| Boot | VContainer, Framework.Log |
+| Core | Boot, Log, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, YooAsset |
+| General | Boot, Core, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer |
+| Project | Boot, General, Log, VContainer, MessagePipe, MessagePipe.VContainer |
 | Framework.Pool | UniTask, Cache |
 | Framework.Cache | (none) |
 
@@ -63,33 +63,35 @@ Cache          N      N       N         N        N      -         N             
 ### Layer: Boot (Assembly: `Boot`, Namespace: `Boot`)
 
 Asmdef: `Assets/Scripts/Boot/KJ.Boot.asmdef`
-References: VContainer only
+References: VContainer, Log
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
 | `Entry.cs` | `Assets/Scripts/Boot/Entry.cs` | `Entry : MonoBehaviour` | Game entry point. Sets DontDestroyOnLoad on itself. Minimal startup shell. | none |
 | `AppLifetimeScope.cs` | `Assets/Scripts/Boot/AppLifetimeScope.cs` | `AppLifetimeScope : LifetimeScope` | Abstract base LifetimeScope for the app. Subclassed by BootLifetimeScope. | `VContainer.Unity` |
-| `BootstrapContext.cs` | `Assets/Scripts/Boot/Bootstrap/BootstrapContext.cs` | `BootstrapContext` | Stage context holding `IContainerBuilder` + `Transform`. Stores typed values in `Dictionary<Type, object>`. `ConfigurePrefab(path)` -- loads a Resources prefab, instantiates it, finds all `IBootstrapStage` children sorted by Priority, calls `stage.Configure(this)`. | `VContainer` |
+| `BootstrapContext.cs` | `Assets/Scripts/Boot/Bootstrap/BootstrapContext.cs` | `BootstrapContext` | Stage context holding `IContainerBuilder` and typed values in `Dictionary<Type, object>`. `ConfigureStages(IEnumerable<IBootstrapStage>)` filters nulls, sorts by Priority, rejects duplicate stage types, and calls `stage.Configure(this)`. | `VContainer`, `Log` |
 | `IBootstrapStage.cs` | `Assets/Scripts/Boot/Bootstrap/IBootstrapStage.cs` | `IBootstrapStage` | Stage protocol: `int Priority`, `string StageName`, `void Configure(BootstrapContext context)` | none |
-| `BootLifetimeScope.cs` | `Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs` | `BootLifetimeScope : AppLifetimeScope` | The initial LifetimeScope. Reads `nextBootstrapPrefabPath` from serialized field, creates a `BootstrapContext`, calls `context.ConfigurePrefab()` to load the next stage prefab. | `VContainer` |
+| `BootLifetimeScope.cs` | `Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs` | `BootLifetimeScope : AppLifetimeScope` | The initial LifetimeScope. Reads `bootstrapStageTypeNames`, creates ordinary C# `IBootstrapStage` instances through reflection, and calls `context.ConfigureStages()`. | `VContainer`, `Log` |
 
-### Layer: Core (Assembly: `Core`, Namespace: `Core`, `Core.Architecture`, `Core.Asset`)
+### Layer: Core (Assembly: `Core`, Namespace: `Core`, `Core.Bootstrap`, `Core.Systems`, `Core.Asset`)
 
 Asmdef: `Assets/Scripts/Core/KJ.Core.asmdef`
 References: Boot, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, YooAsset
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
-| `ISystem.cs` | `Assets/Scripts/Core/ISystem.cs` | `ISystem` (interface), `ITickableSystem : ISystem` (interface) | `ISystem`: `int Priority`, `void Init()`, `void Shutdown()`. `ITickableSystem`: adds `Update(float)`, `LateUpdate(float)`, `FixedUpdate(float)`. | none |
-| `SystemManager.cs` | `Assets/Scripts/Core/SystemManager.cs` | `SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable` | Manages all `ISystem` instances. Injected via constructor `IEnumerable<ISystem>`. `InitAll()` sorts by Priority, calls Init. VContainer drives `Start()` -> `InitAll()`, `Tick()` -> `Update()`, `LateTick()` -> `LateUpdate()`, `FixedTick()` -> `FixedUpdate()`. Publishes `AppStartedEvent` after all Init, `AppShuttingDownEvent` before shutdown. | `MessagePipe`, `VContainer.Unity` |
-| `StartupProbeSystem.cs` | `Assets/Scripts/Core/StartupProbeSystem.cs` | `StartupProbeSystem : ISystem` `[CoreSystem]` | Minimal verification system. Logs Init/Shutdown. Priority=0. | none |
+| `ISystem.cs` | `Assets/Scripts/Core/Systems/ISystem.cs` | `ISystem` (interface), `ITickableSystem : ISystem` (interface) | `ISystem`: `int Priority`, `void Init()`, `void Shutdown()`. `ITickableSystem`: adds `Update(float)`, `LateUpdate(float)`, `FixedUpdate(float)`. | none |
+| `SystemManager.cs` | `Assets/Scripts/Core/Systems/SystemManager.cs` | `SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable, ICoreStartupStatus` | Manages all `ISystem` instances. Injected via constructor `IEnumerable<ISystem>`. `InitAll()` sorts by Priority, calls Init, records failures, and publishes `AppStartedEvent` only when all Core systems initialize successfully. VContainer drives `Start()` -> `InitAll()`, `Tick()` -> `Update()`, `LateTick()` -> `LateUpdate()`, `FixedTick()` -> `FixedUpdate()`. `ShutdownAll()` only shuts down systems whose `Init()` succeeded. | `MessagePipe`, `VContainer.Unity` |
+| `GameLogBridge.cs` | `Assets/Scripts/Core/Logging/GameLogBridge.cs` | `GameLogBridge : ISystem` `[CoreSystem]` | Bridges `Framework.Log.GameLog` static delegates into the DI-managed `ILogger<T>`/ZLogger pipeline. Priority=`int.MinValue` so it initializes before other logging systems. | `Framework.Log`, `Microsoft.Extensions.Logging` |
+| `StartupProbeSystem.cs` | `Assets/Scripts/Core/Systems/StartupProbeSystem.cs` | `StartupProbeSystem : ISystem` `[CoreSystem]` | Minimal verification system. Logs Init/Shutdown. Priority=0. | none |
+| `ICoreStartupStatus.cs` | `Assets/Scripts/Core/Systems/ICoreStartupStatus.cs` | `ICoreStartupStatus` | Exposes Core startup result (`IsStarted`, `HasInitFailures`, `FailedSystemNames`) so upper layers can avoid business loading after Core init failures. | none |
 | `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework/Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath` using `IAssetSystem`. Creates `GameObjectPool`. Exposes static shortcuts for `CollectionPool.RentList<>()` etc. Priority=110 (SystemPriority+10). | `IAssetSystem`, `Framework.Pool` |
-| `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Architecture/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` `[AttributeUsage(Class)]` | Marks a Core system class for automatic reflection-based DI registration. | none |
-| `AppStartedEvent.cs` | `Assets/Scripts/Core/Architecture/Events/AppStartedEvent.cs` | `AppStartedEvent : struct` `[GameEvent]` | Published by `SystemManager` after all systems have initialized. | none |
-| `AppShuttingDownEvent.cs` | `Assets/Scripts/Core/Architecture/Events/AppShuttingDownEvent.cs` | `AppShuttingDownEvent : struct` `[GameEvent]` | Published by `SystemManager` before shutting down systems. | none |
-| `ArchitectureContainerRegistration.cs` | `Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs` | `static ArchitectureContainerRegistration` | Reflection scanner. `RegisterArchitecture(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and registers MessageBroker, scans for `[CoreSystem]` classes and registers `AsSelf().AsImplementedInterfaces()`. Validates that `[CoreSystem]` types implement `ISystem` and are in `Core.*` namespace. | `VContainer`, `MessagePipe` |
-| `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry point: `RegisterCoreServices(IContainerBuilder)`. Calls `RegisterMessagePipe()`, then `RegisterArchitecture()` scanning the Core assembly, then `RegisterEntryPoint<SystemManager>()`. | `VContainer`, `MessagePipe` |
-| `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `CoreBootstrapStage : MonoBehaviour, IBootstrapStage` | Priority=100, StageName="Core". Calls `builder.RegisterCoreServices()`, stores `MessagePipeOptions` in context, calls `context.ConfigurePrefab(nextBootstrapPrefabPath)`. | `Boot`, `MessagePipe` |
+| `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` `[AttributeUsage(Class)]` | Marks a Core system class for automatic reflection-based DI registration. | none |
+| `AppStartedEvent.cs` | `Assets/Scripts/Core/Systems/Events/AppStartedEvent.cs` | `AppStartedEvent : struct` `[GameEvent]` | Published by `SystemManager` after all Core systems have initialized successfully. | none |
+| `AppShuttingDownEvent.cs` | `Assets/Scripts/Core/Systems/Events/AppShuttingDownEvent.cs` | `AppShuttingDownEvent : struct` `[GameEvent]` | Published by `SystemManager` before shutting down systems. | none |
+| `CoreTypeRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs` | `static CoreTypeRegistration` | Reflection scanner. `RegisterCoreTypes(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and registers MessageBroker, scans for `[CoreSystem]` classes and registers `AsSelf().AsImplementedInterfaces()`. Validates that `[CoreSystem]` types implement `ISystem` and are in `Core.*` namespace. | `VContainer`, `MessagePipe` |
+| `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry point: `RegisterCoreServices(IContainerBuilder)`. Calls `RegisterMessagePipe()`, then `RegisterCoreTypes()` scanning the Core assembly, then `RegisterEntryPoint<SystemManager>()`. | `VContainer`, `MessagePipe` |
+| `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `CoreBootstrapStage : IBootstrapStage` `[Preserve]` | Priority=100, StageName="Core". Calls `builder.RegisterCoreServices()` and stores `MessagePipeOptions` in context. | `Boot`, `MessagePipe` |
 
 #### Asset System (Core.Asset namespace)
 
@@ -113,10 +115,10 @@ References: Boot, Core, VContainer, MessagePipe, MessagePipe.VContainer
 |------|------|-----------|-------------|-------------|
 | `IModel.cs` | `Assets/Scripts/General/Models/IModel.cs` | `IModel` (interface) | Business lifecycle: `int Priority`, `void Load()`, `void Unload()`. | none |
 | `ModelAttribute.cs` | `Assets/Scripts/General/Models/ModelAttribute.cs` | `ModelAttribute : Attribute` `[AttributeUsage(Class)]` | Marks a business layer class for automatic DI registration as `IModel`. | none |
-| `ModelLifecycle.cs` | `Assets/Scripts/General/Models/ModelLifecycle.cs` | `ModelLifecycle : IDisposable` | Manages `IModel` instances. Constructor sorts by Priority. `LoadAll()` calls Load in priority order. `UnloadAll()` calls Unload in reverse order. `Dispose()` calls UnloadAll. | none |
+| `ModelLifecycle.cs` | `Assets/Scripts/General/Models/ModelLifecycle.cs` | `ModelLifecycle : IPostStartable, IDisposable` | Manages `IModel` instances. Constructor sorts by Priority. `PostStart()` checks `ICoreStartupStatus` and calls `LoadAll()` only after Core start succeeds. `UnloadAll()` calls Unload in reverse order. `Dispose()` calls UnloadAll. | `Core`, `VContainer.Unity` |
 | `GameEventAttribute.cs` | `Assets/Scripts/General/Events/GameEventAttribute.cs` | `GameEventAttribute : Attribute` `[AttributeUsage(Struct)]` | Marks a business event struct for MessagePipe registration. Separate from Core's GameEvent to scope reflection scanning. | none |
-| `GeneralContainerRegistration.cs` | `Assets/Scripts/General/Bootstrap/GeneralContainerRegistration.cs` | `static GeneralContainerRegistration` | `RegisterBusinessLayer(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and `[Model]` classes. Registers `ModelLifecycle` as Singleton. | `VContainer`, `MessagePipe` |
-| `GeneralBootstrapStage.cs` | `Assets/Scripts/General/Bootstrap/GeneralBootstrapStage.cs` | `GeneralBootstrapStage : MonoBehaviour, IBootstrapStage` | Priority=200, StageName="General". Gets `MessagePipeOptions` from context, calls `builder.RegisterBusinessLayer()` scanning its own assembly, chains next prefab. | `Boot`, `MessagePipe` |
+| `GeneralContainerRegistration.cs` | `Assets/Scripts/General/Bootstrap/GeneralContainerRegistration.cs` | `static GeneralContainerRegistration` | `RegisterBusinessLayer(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and `[Model]` classes. Registers `ModelLifecycle` once as Singleton + implemented interfaces. | `VContainer`, `MessagePipe` |
+| `GeneralBootstrapStage.cs` | `Assets/Scripts/General/Bootstrap/GeneralBootstrapStage.cs` | `GeneralBootstrapStage : IBootstrapStage` | Priority=200, StageName="General". Gets `MessagePipeOptions` from context and calls `builder.RegisterBusinessLayer()` scanning its own assembly. | `Boot`, `MessagePipe` |
 
 ### Layer: Project (Assembly: `Project`, Namespace: `Project`)
 
@@ -125,8 +127,8 @@ References: Boot, General, VContainer, MessagePipe, MessagePipe.VContainer
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
-| `ProjectBootstrapper.cs` | `Assets/Scripts/Project/ProjectBootstrapper.cs` | `ProjectBootstrapper : MonoBehaviour` | Project layer registration hook. `Configure(IContainerBuilder, MessagePipeOptions)` -- calls `builder.RegisterBusinessLayer()` scanning the Project assembly. | `General`, `VContainer`, `MessagePipe` |
-| `ProjectBootstrapStage.cs` | `Assets/Scripts/Project/ProjectBootstrapStage.cs` | `ProjectBootstrapStage : MonoBehaviour, IBootstrapStage` | Priority=300, StageName="Project". Gets or adds `ProjectBootstrapper` component, calls its `Configure()`, chains next prefab. | `Boot`, `MessagePipe` |
+| `ProjectBootstrapper.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapper.cs` | `static ProjectBootstrapper` | Project layer registration hook. `Configure(IContainerBuilder, MessagePipeOptions)` -- calls `builder.RegisterBusinessLayer()` scanning the Project assembly. | `General`, `VContainer`, `MessagePipe`, `Log` |
+| `ProjectBootstrapStage.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapStage.cs` | `ProjectBootstrapStage : IBootstrapStage` | Priority=300, StageName="Project". Gets `MessagePipeOptions` from context and calls `ProjectBootstrapper.Configure()`. | `Boot`, `MessagePipe` |
 
 ### Framework: Pool (Assembly: `Pool`, Namespace: `Framework.Pool`)
 
@@ -168,13 +170,13 @@ References: (none -- zero external dependencies)
 
 ## Key Interfaces and Contracts
 
-### `ISystem` (Core.Architecture)
+### `ISystem` (Core.Systems)
 - `int Priority` -- lower values initialize first
 - `void Init()` -- called in priority order by SystemManager
 - `void Shutdown()` -- called in reverse priority order by SystemManager
 - Implementations: `StartupProbeSystem`, `AssetSystem`, `PoolService`
 
-### `ITickableSystem : ISystem` (Core.Architecture)
+### `ITickableSystem : ISystem` (Core.Systems)
 - `void Update(float deltaTime)`
 - `void LateUpdate(float deltaTime)`
 - `void FixedUpdate(float fixedDeltaTime)`
@@ -247,8 +249,8 @@ References: (none -- zero external dependencies)
 
 | Attribute | Target | Validates | Scanned by |
 |-----------|--------|-----------|------------|
-| `[CoreSystem]` | Class | Must implement `ISystem`, namespace must start with "Core" | `ArchitectureContainerRegistration.RegisterSystems()` |
-| `[GameEvent]` (Core) | Struct | Must be value type, non-enum | `ArchitectureContainerRegistration.RegisterGameEvents()` |
+| `[CoreSystem]` | Class | Must implement `ISystem`, namespace must start with "Core" | `CoreTypeRegistration.RegisterSystems()` |
+| `[GameEvent]` (Core) | Struct | Must be value type, non-enum | `CoreTypeRegistration.RegisterGameEvents()` |
 | `[GameEvent]` (General) | Struct | Must be value type, non-enum | `GeneralContainerRegistration.RegisterBusinessEvents()` |
 | `[Model]` | Class | Must implement `IModel` | `GeneralContainerRegistration.RegisterModels()` |
 
@@ -256,25 +258,25 @@ References: (none -- zero external dependencies)
 
 | Class | Namespace | Priority | Interfaces | Dependencies injected |
 |-------|-----------|----------|------------|----------------------|
-| `StartupProbeSystem` | `Core.Architecture` | 0 | `ISystem` | (none) |
+| `StartupProbeSystem` | `Core.Systems` | 0 | `ISystem` | (none) |
 | `AssetSystem` | `Core.Asset` | 100 | `ISystem` | `IAssetRuntime`, `IPublisher<AssetSystemReadyEvent>` |
 | `PoolService` | `Core` | 110 | `ISystem` | `IAssetSystem` |
 
 ### Registration Flow
 
-1. **ArchitectureContainerRegistration.RegisterArchitecture(builder, options, assemblies)**
+1. **CoreTypeRegistration.RegisterCoreTypes(builder, options, assemblies)**
    - `RegisterGameEvents()` -- for each `[GameEvent]` struct, calls `MessagePipe.ContainerBuilderExtensions.RegisterMessageBroker<T>()` via reflection
    - `RegisterSystems()` -- for each `[CoreSystem]` class, calls `builder.Register(type, Lifetime.Singleton).AsSelf().AsImplementedInterfaces()`
 
 2. **CoreContainerRegistration.RegisterCoreServices(builder)**
    - `options = builder.RegisterMessagePipe()`
-   - `builder.RegisterArchitecture(options, CoreAssembly)` -- scans Core assembly
+   - `builder.RegisterCoreTypes(options, CoreAssembly)` -- scans Core assembly
    - `builder.RegisterEntryPoint<SystemManager>()` -- VContainer calls IStartable.Start() -> InitAll()
 
 3. **GeneralContainerRegistration.RegisterBusinessLayer(builder, options, assemblies)**
    - `RegisterBusinessEvents()` -- for each `[GameEvent]` struct in General/Project assemblies
    - `RegisterModels()` -- for each `[Model]` class, `builder.Register(type, Singleton).AsSelf().As<IModel>()`
-   - `builder.Register<ModelLifecycle>(Singleton)`
+   - `builder.Register<ModelLifecycle>(Singleton).AsSelf().AsImplementedInterfaces()` once
 
 ---
 
@@ -284,8 +286,8 @@ All events are `readonly struct` types marked with `[GameEvent]`. MessagePipe au
 
 | Event | Namespace | Publisher | Purpose |
 |-------|-----------|-----------|---------|
-| `AppStartedEvent` | `Core.Architecture` | `SystemManager.InitAll()` | All Core systems initialized |
-| `AppShuttingDownEvent` | `Core.Architecture` | `SystemManager.ShutdownAll()` | Systems about to shut down |
+| `AppStartedEvent` | `Core.Systems.Events` | `SystemManager.InitAll()` | All Core systems initialized successfully |
+| `AppShuttingDownEvent` | `Core.Systems.Events` | `SystemManager.ShutdownAll()` | Systems about to shut down |
 | `AssetSystemReadyEvent` | `Core.Asset` | `AssetSystem.Init()` | Asset system ready to serve requests |
 
 No subscribers are currently registered -- these events are published for future consumers.
@@ -298,57 +300,44 @@ No subscribers are currently registered -- these events are published for future
 Entry.Awake()
   |
   v
-[Unity loads BootLifetimeScope (component on Boot prefab)]
+[Unity loads BootLifetimeScope]
   |
   v
 BootLifetimeScope.Configure(IContainerBuilder builder)
-  |-- Creates BootstrapContext(builder, transform)
-  |-- Calls context.ConfigurePrefab(nextBootstrapPrefabPath)
+  |-- Reads bootstrapStageTypeNames:
+  |     Core.Bootstrap.CoreBootstrapStage, Core
+  |     General.GeneralBootstrapStage, General
+  |     Project.Bootstrap.ProjectBootstrapStage, Project
+  |-- Creates each IBootstrapStage through Type.GetType + Activator.CreateInstance
+  |-- Creates BootstrapContext(builder)
+  |-- Calls context.ConfigureStages(stages)
+       |-- sorts by Priority
+       |-- rejects duplicate stage types
        |
        v
-  Configures "Core" prefab:
-    Loads from Resources/Core.prefab
-    Instantiates under stage root
-    Finds all IBootstrapStage children sorted by Priority
-    |
-    v
-  CoreBootstrapStage.Configure(context)
-    Priority=100, StageName="Core"
+  CoreBootstrapStage.Configure(context)       Priority=100
     |-- builder.RegisterCoreServices()
+    |     |-- Register ZLogger + ILogger<T>
     |     |-- builder.RegisterMessagePipe()
-    |     |-- builder.RegisterArchitecture(options, CoreAssembly)
+    |     |-- builder.RegisterCoreTypes(options, CoreAssembly)
     |     |     |-- Scans [GameEvent] structs -> RegisterMessageBroker<T>
     |     |     |-- Scans [CoreSystem] classes -> Register(type).AsSelf().AsImplementedInterfaces()
     |     |-- builder.RegisterEntryPoint<SystemManager>()
-    |-- context.Set(options) -- stores MessagePipeOptions
-    |-- context.ConfigurePrefab(nextBootstrapPrefabPath)
-         |
-         v
-    Configures "General" prefab:
-      |
-      v
-    GeneralBootstrapStage.Configure(context)
-      Priority=200, StageName="General"
-      |-- Gets MessagePipeOptions from context
-      |-- builder.RegisterBusinessLayer(options, GeneralAssembly)
-      |     |-- Scans [GameEvent] structs -> RegisterMessageBroker<T>
-      |     |-- Scans [Model] classes -> Register(type).AsSelf().As<IModel>()
-      |     |-- builder.Register<ModelLifecycle>(Singleton)
-      |-- context.ConfigurePrefab(nextBootstrapPrefabPath)
-           |
-           v
-      Configures "Project" prefab:
-        |
-        v
-      ProjectBootstrapStage.Configure(context)
-        Priority=300, StageName="Project"
-        |-- Gets or adds ProjectBootstrapper
-        |-- bootstrapper.Configure(builder, options)
-        |     |-- builder.RegisterBusinessLayer(options, ProjectAssembly)
-        |-- context.ConfigurePrefab(nextBootstrapPrefabPath)
-             |
-             v
-        (terminal -- no further prefab configured, chain ends)
+    |-- context.Set(options)
+       |
+       v
+  GeneralBootstrapStage.Configure(context)    Priority=200
+    |-- Gets MessagePipeOptions from context
+    |-- builder.RegisterBusinessLayer(options, GeneralAssembly)
+    |     |-- Scans [GameEvent] structs -> RegisterMessageBroker<T>
+    |     |-- Scans [Model] classes -> Register(type).AsSelf().As<IModel>()
+    |     |-- Registers ModelLifecycle once as Self + implemented interfaces
+       |
+       v
+  ProjectBootstrapStage.Configure(context)    Priority=300
+    |-- Gets MessagePipeOptions from context
+    |-- ProjectBootstrapper.Configure(builder, options)
+    |     |-- builder.RegisterBusinessLayer(options, ProjectAssembly)
 
 [After all Configure() calls return, VContainer finalizes container]
   |
@@ -359,10 +348,15 @@ VContainer calls IStartable.Start() on registered entry points
 SystemManager.Start() -> InitAll()
   |-- Sorts systems by Priority
   |-- Calls Init() on each system in order:
-  |     1. StartupProbeSystem (Priority=0) -- logs probe
-  |     2. AssetSystem (Priority=100) -- initializes AssetRuntime via Resources.Load, publishes AssetSystemReadyEvent
-  |     3. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
-  |-- Publishes AppStartedEvent
+  |     1. GameLogBridge (Priority=int.MinValue) -- routes Framework.GameLog into ZLogger
+  |     2. StartupProbeSystem (Priority=0) -- logs probe
+  |     3. AssetSystem (Priority=100) -- initializes AssetRuntime via Resources.Load, publishes AssetSystemReadyEvent
+  |     4. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
+  |-- Publishes AppStartedEvent only if all Core systems initialized successfully
+  |
+  v
+VContainer calls IPostStartable.PostStart()
+  |-- ModelLifecycle.PostStart() -> LoadAll()
 
 [Unity main loop]
   |
@@ -382,11 +376,12 @@ VContainer disposes LifetimeScope
   |
   v
 SystemManager.Dispose() -> ShutdownAll()
-  |-- Publishes AppShuttingDownEvent
-  |-- Calls Shutdown() in reverse priority order
-  |     3. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
-  |     2. AssetSystem (Priority=100) -- releases all handles and scene handles
-  |     1. StartupProbeSystem (Priority=0) -- logs shutdown
+  |-- Publishes AppShuttingDownEvent only if Core startup succeeded
+  |-- Calls Shutdown() in reverse priority order for systems whose Init() succeeded
+  |     4. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
+  |     3. AssetSystem (Priority=100) -- releases all handles and scene handles
+  |     2. StartupProbeSystem (Priority=0) -- logs shutdown
+  |     1. GameLogBridge (Priority=int.MinValue) -- clears Framework.GameLog delegate
 ```
 
 ---
@@ -417,18 +412,16 @@ SystemManager.Dispose() -> ShutdownAll()
 
 ---
 
-## Scene Objects / Prefabs
+## Scene Objects / Startup Assets
 
-The bootstrap chain relies on Unity prefabs placed in `Resources/` with the following serialized `nextBootstrapPrefabPath` fields:
+Startup stages are ordinary C# classes and do not require Core/General/Project prefabs in `Resources/`.
 
-| Prefab | Contains | Connects to |
-|--------|----------|-------------|
-| Resources/Boot.prefab | `BootLifetimeScope` (+ `Entry` root in scene) | `nextBootstrapPrefabPath = "Core"` |
-| Resources/Core.prefab | `CoreBootstrapStage` | `nextBootstrapPrefabPath = "General"` |
-| Resources/General.prefab | `GeneralBootstrapStage` | `nextBootstrapPrefabPath = "Project"` |
-| Resources/Project.prefab | `ProjectBootstrapStage` (+ `ProjectBootstrapper`) | optional next |
+| Asset | Purpose |
+|-------|---------|
+| `Assets/GameRes/Scene/Boot/Main.unity` | Minimal boot scene containing the entry LifetimeScope setup |
+| `Assets/Resources/AssetConfig.asset` | Minimal Resources config loaded by `AssetSystem` |
 
-These prefabs DO NOT currently exist in the Assets -- they are pending creation (BOOT-CHAIN-02).
+`Assets/Resources/` is reserved for minimal boot configuration only.
 
 ---
 

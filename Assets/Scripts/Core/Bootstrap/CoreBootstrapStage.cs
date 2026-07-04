@@ -1,13 +1,11 @@
 using Boot;
-using MessagePipe;
-using UnityEngine;
+using UnityEngine.Scripting;
 
-namespace Core.Architecture
+namespace Core.Bootstrap
 {
-    public sealed class CoreBootstrapStage : MonoBehaviour, IBootstrapStage
+    [Preserve]
+    public sealed class CoreBootstrapStage : IBootstrapStage
     {
-        [SerializeField] private string nextBootstrapPrefabPath = string.Empty;
-
         public int Priority => 100;
         public string StageName => "Core";
 
@@ -15,7 +13,6 @@ namespace Core.Architecture
         {
             var options = context.Builder.RegisterCoreServices();
             context.Set(options);
-            context.ConfigurePrefab(nextBootstrapPrefabPath);
         }
     }
 }

@@ -22,13 +22,13 @@
 Boot <- Core <- General <- Project
 ```
 
-Boot 层必须保持最小依赖，只承担稳定启动壳、阶段协议和 prefab 链式启动能力。Boot 不引用 Core/General/Project，不集中持有完整阶段列表。
+Boot 层必须保持最小依赖，只承担稳定启动壳、阶段协议和 Stage 类型名编排能力。Boot 不引用 Core/General/Project，通过 assembly-qualified type name 反射创建普通 C# `IBootstrapStage`。
 
-启动流程采用当前阶段启动下一阶段：
+启动流程由 Boot 配置阶段类型名列表，并按 Priority 依次执行：
 
 ```text
 BootLifetimeScope
-  -> nextBootstrapPrefabPath
+  -> bootstrapStageTypeNames
   -> CoreBootstrapStage
   -> GeneralBootstrapStage
   -> ProjectBootstrapStage

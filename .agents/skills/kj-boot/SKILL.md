@@ -1,9 +1,7 @@
 ---
 name: kj-boot
 description: >
-  KJ Framework Boot 层指南。涵盖 Entry（游戏入口+MonoBehaviour+DontDestroyOnLoad）、AppLifetimeScope（VContainer LifetimeScope 抽象基类）、IBootstrapStage（启动阶段协议：Priority+StageName+Configure）、BootstrapContext（启动上下文：IContainerBuilder+Transform+类型化值存储+ConfigurePrefab 链式加载）、BootLifetimeScope（链式启动入口，通过 serializedField nextBootstrapPrefabPath 加载下一阶段 prefab）。
-  触发场景：理解启动流程、添加新启动阶段、调试启动链、配置 BootstrapStage 优先级、链式加载预制体、理解 Entry 点的最小依赖原则。
-  核心规则：Boot 层只能引用 VContainer（最小依赖）；不引用 Core/General/Project；通过 IBootstrapStage 协议发现阶段；ConfigurePrefab 从 Resources 加载 prefab 并链式调用；同一个 prefab 不能配置两次。
+  KJ Framework Boot 层指南。涵盖 Entry（游戏入口+MonoBehaviour+DontDestroyOnLoad）、AppLifetimeScope（VContainer LifetimeScope 抽象基类）、IBootstrapStage（普通 C# 启动阶段协议：Priority+StageName+Configure）、BootstrapContext（启动上下文：IContainerBuilder+类型化值存储+ConfigureStages）、BootLifetimeScope（通过序列化类型名反射创建启动阶段）。触发场景：理解启动流程、添加新启动阶段、调试 Boot/Core/General/Project 注册顺序、配置 BootstrapStage 优先级、保持 Boot 最小依赖。核心规则：Boot 层只引用 VContainer 和稳定 Framework 基础包；不引用 Core/General/Project；Stage 实现为普通 C# 类，不继承 MonoBehaviour；Boot 通过 assembly-qualified type name 反射创建 Stage；启动资源 prefab 不再作为阶段载体。
 metadata:
   doc: CODEMAP.md
   layer: Boot
@@ -16,137 +14,78 @@ metadata:
 ## 架构速查
 
 ```
-Entry.cs                          — Awake() → DontDestroyOnLoad(gameObject)
-AppLifetimeScope.cs               — abstract LifetimeScope 基类
+Entry.cs                 — Awake() → DontDestroyOnLoad(gameObject)
+AppLifetimeScope.cs      — abstract LifetimeScope 基类
 Bootstrap/
-├── IBootstrapStage.cs            — 阶段协议
-├── BootstrapContext.cs           — 上下文 + 链式 prefab 加载
-└── BootLifetimeScope.cs          — 启动入口 LifetimeScope
+├── IBootstrapStage.cs   — 普通 C# 阶段协议
+├── BootstrapContext.cs  — IContainerBuilder + 类型化值存储 + ConfigureStages
+└── BootLifetimeScope.cs — 从序列化类型名反射创建 Stage 并执行
 ```
 
 ## 启动流程
 
 ```
-Entry.Awake() → DontDestroyOnLoad
-    ↓
+Entry.Awake()
+  ↓
 BootLifetimeScope.Configure(IContainerBuilder)
-    └─ BootstrapContext.ConfigurePrefab(nextBootstrapPrefabPath)
-         ├─ Resources.Load<GameObject>(prefabPath)
-         ├─ Instantiate under StageRoot
-         ├─ GetComponentsInChildren<IBootstrapStage> (按 Priority 排序)
-         └─ foreach stage.Configure(context)
+  ├─ 根据 bootstrapStageTypeNames 反射创建 IBootstrapStage 实例
+  ├─ BootstrapContext.ConfigureStages(stages)
+  │   ├─ 去重 stage 类型
+  │   ├─ 按 Priority 升序排序
+  │   └─ 逐个 stage.Configure(context)
   ↓
 CoreBootstrapStage (Priority=100)
-    ├─ builder.RegisterCoreServices()  // MessagePipe + Core 系统
-    ├─ context.Set(options)
-    └─ context.ConfigurePrefab(nextBootstrapPrefabPath)
-         ↓
+  ├─ builder.RegisterCoreServices()
+  └─ context.Set<MessagePipeOptions>(options)
+  ↓
 GeneralBootstrapStage (Priority=200)
-    ├─ context.GetRequired<MessagePipeOptions>()
-    ├─ builder.RegisterBusinessLayer(options, GeneralAssembly)
-    └─ context.ConfigurePrefab(nextBootstrapPrefabPath)
-         ↓
+  ├─ context.GetRequired<MessagePipeOptions>()
+  └─ builder.RegisterBusinessLayer(options, GeneralAssembly)
+  ↓
 ProjectBootstrapStage (Priority=300)
-    ├─ context.GetRequired<MessagePipeOptions>()
-    ├─ ProjectBootstrapper.Configure(builder, options)
-    └─ context.ConfigurePrefab(nextBootstrapPrefabPath)  // 可选终端
+  ├─ context.GetRequired<MessagePipeOptions>()
+  └─ ProjectBootstrapper.Configure(builder, options)
 ```
 
-## 核心组件
+## 核心约束
 
-### Entry — 入口
+- Boot asmdef 只引用 VContainer 和稳定 Framework 基础包（如 `Framework.Log`），不直接引用 Core/General/Project。
+- `IBootstrapStage` 保留在 Boot；实现类放在所属层的 `Bootstrap/` 目录。
+- Stage 是普通 C# 类：不要继承 `MonoBehaviour`，不要依赖 prefab/Inspector 字段传递下一阶段。
+- Boot 通过 assembly-qualified type name 创建 stage，例如 `Core.Bootstrap.CoreBootstrapStage, Core`；序列化列表为空时使用默认 Core/General/Project。
+- 被类型名反射创建的 Stage 必须加 `UnityEngine.Scripting.Preserve`，避免 IL2CPP managed stripping 裁掉。
+- 阶段顺序由 `Priority` 控制，不由配置数组顺序或 Unity 对象层级控制。
+- 阶段间共享值使用 `BootstrapContext.Set<T>()` / `GetRequired<T>()`，不要用静态变量接力。
+
+## 新增 Stage
 
 ```csharp
-// 挂载在场景中的最小启动壳
-// Awake 只做 DontDestroyOnLoad，确保跨场景存活
-public class Entry : MonoBehaviour
+using Boot;
+using UnityEngine.Scripting;
+
+namespace Core.Foo
 {
-    private void Awake()
+    [Preserve]
+    public sealed class FooBootstrapStage : IBootstrapStage
     {
-        DontDestroyOnLoad(gameObject);
-        Debug.Log("[Entry] 游戏启动");
+        public int Priority => 150;
+        public string StageName => "Foo";
+
+        public void Configure(BootstrapContext context)
+        {
+            // 注册本层服务
+        }
     }
 }
 ```
 
-### AppLifetimeScope — VContainer 根 LifetimeScope
-
-```csharp
-// 抽象基类，空实现。由 BootLifetimeScope 继承。
-// 提供扩展点：如果想要不同的启动策略，继承此类。
-public abstract class AppLifetimeScope : LifetimeScope { }
-```
-
-### IBootstrapStage — 阶段协议
-
-```csharp
-public interface IBootstrapStage
-{
-    int Priority { get; }        // 越小越先执行
-    string StageName { get; }     // 日志用
-    void Configure(BootstrapContext context);  // 注册 DI + 链式加载下一阶段
-}
-
-// 实现示例：
-// CoreBootstrapStage — Priority=100, "Core"
-// GeneralBootstrapStage — Priority=200, "General"
-// ProjectBootstrapStage — Priority=300, "Project"
-```
-
-### BootstrapContext — 启动上下文
-
-```csharp
-var context = new BootstrapContext(builder, transform);
-
-// 类型化值存储（阶段间通信）
-context.Set<MessagePipeOptions>(options);           // Core 存入
-var options = context.GetRequired<MessagePipeOptions>(); // General/Project 取出
-
-// 链式 prefab 加载
-context.ConfigurePrefab("Core");  // 从 Resources 加载 Core.prefab
-// 自动: Instantiate → 找所有 IBootstrapStage → 按 Priority 排序 → Configure
-
-// 防护
-// - 空路径跳过
-// - 同一个 prefab 配置两次 → InvalidOperationException
-// - prefab 没有 IBootstrapStage → InvalidOperationException
-// - prefab 不存在 → InvalidOperationException
-```
-
-### BootLifetimeScope — 链式启动入口
-
-```csharp
-public sealed class BootLifetimeScope : AppLifetimeScope
-{
-    [SerializeField] private string nextBootstrapPrefabPath = "Core";
-    // 在 Unity Editor 中配置，指向 CoreBootstrapStage 所在的 prefab
-}
-```
-
-## 启动优先级
-
-| 阶段 | Priority | 职责 |
-|------|----------|------|
-| Core | 100 | RegisterCoreServices (MessagePipe + CoreSystem) |
-| General | 200 | RegisterBusinessLayer (IModel + General 事件) |
-| Project | 300 | ProjectBootstrapper (项目专属 Model + 事件) |
-| 自定义 | 任意 | 插入新阶段，选择合适 Priority |
-
-## 预置 Prefab 清单
-
-这些 prefab 尚未创建（BOOT-CHAIN-02 待实现）：
-
-| Prefab | 包含组件 | 链向 |
-|--------|----------|------|
-| `Resources/Core.prefab` | `CoreBootstrapStage` | `nextBootstrapPrefabPath = "General"` |
-| `Resources/General.prefab` | `GeneralBootstrapStage` | `nextBootstrapPrefabPath = "Project"` |
-| `Resources/Project.prefab` | `ProjectBootstrapStage` + `ProjectBootstrapper` | 可选 |
+然后把类型名加入 `BootLifetimeScope.bootstrapStageTypeNames`。
 
 ## 最佳实践
 
-1. **不要修改 Entry** — 它是最小启动壳，永远只做 DontDestroyOnLoad
-2. **通过 Priority 控制执行顺序** — 不要依赖 prefab 的 Inspector 排序
-3. **用 BootstrapContext.Set/Get 传值** — 而不是 Singleton 或静态变量
-4. **ConfigurePrefab 自动验证** — 利用内置的错误检测（重复配置、无 stage、prefab 不存在）
-5. **新启动阶段实现 IBootstrapStage + MonoBehaviour** — 放在对应层级的 Bootstrap/ 目录
-6. **Boot 只引用 VContainer** — 不要给 Boot.asmdef 加任何 Core/General/Project 引用
+1. Entry 永远保持最小：只做 `DontDestroyOnLoad` 和启动日志。
+2. 启动阶段只负责 DI/MessagePipe/上下文注册，不做运行时业务初始化。
+3. Core 注册 `MessagePipeOptions` 后用 `context.Set(options)` 传给 General/Project。
+4. General/Project 业务用 `[Model]+IModel`，不要在 Boot 阶段里手动 new 业务对象。
+5. 如果一个阶段依赖另一个阶段的上下文值，给被依赖阶段更小的 Priority。
+6. `Resources/` 只放最小启动配置（如 `AssetConfig.asset`），不要放 stage prefab 或场景。

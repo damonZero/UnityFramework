@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Framework.Log;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using YooAsset;
@@ -27,41 +28,59 @@ namespace Framework.Asset
         public bool IsReady { get; private set; }
         public ResourcePackage DefaultPackage => _defaultPackage;
 
-        public void Initialize(AssetConfig config)
+        public bool Initialize(AssetConfig config)
         {
             if (IsReady)
-                return;
+                return true;
 
             if (_defaultPackage != null)
                 Shutdown();
 
-            _config = config;
-            _downloadMaxConcurrency = config == null ? 10 : Math.Max(1, config.DownloadMaxConcurrency);
-            _failedRetryCount = config == null ? 3 : Math.Max(0, config.FailedRetryCount);
+            var yooAssetsInitialized = false;
+            try
+            {
+                _config = config;
+                _downloadMaxConcurrency = config == null ? 10 : Math.Max(1, config.DownloadMaxConcurrency);
+                _failedRetryCount = config == null ? 3 : Math.Max(0, config.FailedRetryCount);
 
-            YooAssets.Initialize();
-            var packageName = config?.PackageName ?? "DefaultPackage";
-            _defaultPackage = YooAssets.CreatePackage(packageName);
+                YooAssets.Initialize();
+                yooAssetsInitialized = true;
+                var packageName = GetPackageName(config);
+                _defaultPackage = YooAssets.CreatePackage(packageName);
 
-            InitializePackageOptions options = config == null
-                ? new EditorSimulateModeOptions
+                InitializePackageOptions options = config == null
+                    ? new EditorSimulateModeOptions
+                    {
+                        EditorFileSystemParameters =
+                            FileSystemParameters.CreateDefaultEditorFileSystemParameters(packageName)
+                    }
+                    : BuildOptions(config);
+
+                var initOp = _defaultPackage.InitializePackageAsync(options);
+                initOp.WaitForCompletion();
+
+                if (initOp.Status == EOperationStatus.Succeeded)
                 {
-                    EditorFileSystemParameters =
-                        FileSystemParameters.CreateDefaultEditorFileSystemParameters(packageName)
+                    IsReady = true;
+                    return true;
                 }
-                : BuildOptions(config);
 
-            var initOp = _defaultPackage.InitializePackageAsync(options);
-            initOp.WaitForCompletion();
+                GameLog.Error($"[AssetRuntime] Initialization failed: {initOp.Error}");
+            }
+            catch (Exception e)
+            {
+                GameLog.Error($"[AssetRuntime] Initialization failed: {e}");
+            }
 
-            if (initOp.Status == EOperationStatus.Succeeded)
-            {
-                IsReady = true;
-            }
-            else
-            {
-                Debug.LogError($"[AssetRuntime] Initialization failed: {initOp.Error}");
-            }
+            if (_defaultPackage != null || IsReady)
+                Shutdown();
+            else if (yooAssetsInitialized)
+                YooAssets.Destroy();
+
+            _config = null;
+            _defaultPackage = null;
+            IsReady = false;
+            return false;
         }
 
         public void Shutdown()
@@ -74,17 +93,17 @@ namespace Framework.Asset
 
             foreach (var kv in _assetHandles)
             {
-                try { kv.Value.Release(); } catch (Exception e) { Debug.LogError($"[AssetRuntime] Error releasing {kv.Key}: {e}"); }
+                try { kv.Value.Release(); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error releasing {kv.Key}: {e}"); }
             }
 
             foreach (var handle in _ownedAssetHandles)
             {
-                try { handle.Release(); } catch (Exception e) { Debug.LogError($"[AssetRuntime] Error releasing owned asset handle: {e}"); }
+                try { handle.Release(); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error releasing owned asset handle: {e}"); }
             }
 
             foreach (var handle in _ownedSceneHandles)
             {
-                try { UnloadSceneSynchronously(handle); } catch (Exception e) { Debug.LogError($"[AssetRuntime] Error unloading owned scene handle: {e}"); }
+                try { UnloadSceneSynchronously(handle); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error unloading owned scene handle: {e}"); }
             }
 
             _assetHandles.Clear();
@@ -106,7 +125,7 @@ namespace Framework.Asset
             await handle.ToUniTask();
             if (handle.Status != EOperationStatus.Succeeded)
             {
-                Debug.LogError($"[AssetRuntime] Load failed: {path} — {handle.Error}");
+                GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}");
                 handle.Release();
                 return null;
             }
@@ -135,7 +154,7 @@ namespace Framework.Asset
                 await handle.ToUniTask();
                 if (handle.Status != EOperationStatus.Succeeded)
                 {
-                    Debug.LogError($"[AssetRuntime] Load failed: {path} — {handle.Error}");
+                    GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}");
                     handle.Release();
                     return null;
                 }
@@ -186,7 +205,7 @@ namespace Framework.Asset
             onProgress?.Invoke(1f);
             if (handle.Status != EOperationStatus.Succeeded)
             {
-                Debug.LogError($"[AssetRuntime] Scene load failed: {path} — {handle.Error}");
+                GameLog.Error($"[AssetRuntime] Scene load failed: {path} - {handle.Error}");
                 _sceneHandles.Remove(path);
                 handle.UnloadSceneAsync();
                 return null;
@@ -265,24 +284,30 @@ namespace Framework.Asset
                 throw new InvalidOperationException("AssetRuntime is not initialized.");
         }
 
+        private static string GetPackageName(AssetConfig config)
+        {
+            return string.IsNullOrWhiteSpace(config?.PackageName) ? "DefaultPackage" : config.PackageName;
+        }
+
         private InitializePackageOptions BuildOptions(AssetConfig config)
         {
+            var packageName = GetPackageName(config);
             return config.Mode switch
             {
                 AssetConfig.PlayMode.EditorSimulate => new EditorSimulateModeOptions
                 {
                     EditorFileSystemParameters =
-                        FileSystemParameters.CreateDefaultEditorFileSystemParameters(config.PackageName)
+                        FileSystemParameters.CreateDefaultEditorFileSystemParameters(packageName)
                 },
                 AssetConfig.PlayMode.Offline => new OfflinePlayModeOptions
                 {
                     BuiltinFileSystemParameters =
-                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(config.PackageName)
+                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(packageName)
                 },
                 AssetConfig.PlayMode.Host => new HostPlayModeOptions
                 {
                     BuiltinFileSystemParameters =
-                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(config.PackageName),
+                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(packageName),
                     CacheFileSystemParameters = BuildSandboxParameters(config)
                 },
                 _ => throw new ArgumentOutOfRangeException(nameof(config.Mode), config.Mode, null)
@@ -291,8 +316,12 @@ namespace Framework.Asset
 
         private FileSystemParameters BuildSandboxParameters(AssetConfig config)
         {
+            var packageName = GetPackageName(config);
+            var cdnBaseUrl = string.IsNullOrWhiteSpace(config.CdnBaseUrl)
+                ? "http://127.0.0.1:8080/CDN"
+                : config.CdnBaseUrl;
             var parameters = FileSystemParameters.CreateDefaultSandboxFileSystemParameters(
-                new CdnRemoteService(config.CdnBaseUrl), config.PackageName);
+                new CdnRemoteService(cdnBaseUrl), packageName);
             parameters.AddParameter(EFileSystemParameter.DownloadMaxConcurrency, config.DownloadMaxConcurrency);
             parameters.AddParameter(EFileSystemParameter.DownloadWatchdogTimeout, config.DownloadTimeout);
             return parameters;

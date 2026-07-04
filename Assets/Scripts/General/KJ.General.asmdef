@@ -7,7 +7,9 @@
         "Event",
         "MessagePipe",
         "MessagePipe.VContainer",
-        "VContainer"
+        "VContainer",
+        "VContainer.Unity",
+        "ZLinq"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

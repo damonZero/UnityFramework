@@ -10,7 +10,10 @@
         "VContainer",
         "MessagePipe",
         "MessagePipe.VContainer",
-        "UniTask"
+        "UniTask",
+        "Log",
+        "ZLinq",
+        "ZLogger.Unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

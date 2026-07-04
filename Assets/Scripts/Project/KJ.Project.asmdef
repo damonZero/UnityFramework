@@ -5,6 +5,7 @@
         "Boot",
         "General",
         "Event",
+        "Log",
         "MessagePipe",
         "MessagePipe.VContainer",
         "VContainer"

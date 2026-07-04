@@ -12,7 +12,7 @@
 - Role: dependency injection container for app composition
 - In this project: each layer (Boot → Core → General → Project) registers its own services progressively
 - Main API shapes:
-  - `AppLifetimeScope` for prefab-chain bootstrap
+  - `AppLifetimeScope` for type-name driven bootstrap
   - `BootstrapContext` carries `IContainerBuilder` + `MessagePipeOptions` between stages
   - `IBootstrapStage.Configure(BootstrapContext)` — each layer's registration hook
   - `[CoreSystem]` attribute + reflection scanning → `Register(type, Singleton).AsSelf().AsImplementedInterfaces()`
@@ -32,7 +32,7 @@
 ## 2. Project Wiring Map
 
 ### Startup Chain
-`BootLifetimeScope` → `BootstrapContext.ConfigurePrefab("Core")` → `CoreBootstrapStage.Configure()` → `builder.RegisterCoreServices()` → Core registers Framework services → `CoreContainerRegistration.RegisterArchitecture()` scans `[CoreSystem]` + `[GameEvent]` → `builder.RegisterEntryPoint<SystemManager>()` → VContainer calls `SystemManager.Start()` → `InitAll()` → sorted by Priority
+`BootLifetimeScope` → creates configured `IBootstrapStage` instances by type name → `BootstrapContext.ConfigureStages()` → `CoreBootstrapStage.Configure()` → `builder.RegisterCoreServices()` → Core registers Framework services → `CoreTypeRegistration.RegisterCoreTypes()` scans `[CoreSystem]` + `[GameEvent]` → `builder.RegisterEntryPoint<SystemManager>()` → VContainer calls `SystemManager.Start()` → `InitAll()` → sorted by Priority
 
 ### Event Chain
 `[GameEvent] struct` → auto-registered at container build time → `IPublisher<T>.Publish()` / `ISubscriber<T>.Subscribe()` at runtime
@@ -47,17 +47,17 @@
 ### Boot Layer
 - `[Entry.cs](../../Assets/Scripts/Boot/Entry.cs)` — root MonoBehaviour, `DontDestroyOnLoad`
 - `[AppLifetimeScope.cs](../../Assets/Scripts/Boot/AppLifetimeScope.cs)` — abstract base
-- `[BootLifetimeScope.cs](../../Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs)` — creates BootstrapContext, starts prefab chain
+- `[BootLifetimeScope.cs](../../Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs)` — creates BootstrapContext, starts configured Stage chain
 - `[BootstrapContext.cs](../../Assets/Scripts/Boot/Bootstrap/BootstrapContext.cs)` — stage context + chain driver
 - `[IBootstrapStage.cs](../../Assets/Scripts/Boot/Bootstrap/IBootstrapStage.cs)` — stage protocol
 
 ### Core Layer
-- `[ISystem.cs](../../Assets/Scripts/Core/ISystem.cs)` — `ISystem` / `ITickableSystem`
-- `[SystemManager.cs](../../Assets/Scripts/Core/SystemManager.cs)` — lifecycle driver
+- `[ISystem.cs](../../Assets/Scripts/Core/Systems/ISystem.cs)` — `ISystem` / `ITickableSystem`
+- `[SystemManager.cs](../../Assets/Scripts/Core/Systems/SystemManager.cs)` — lifecycle driver
 - `[CoreContainerRegistration.cs](../../Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs)` — `RegisterCoreServices()` entry
 - `[CoreBootstrapStage.cs](../../Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs)` — stage implementation
-- `[ArchitectureContainerRegistration.cs](../../Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs)` — `[CoreSystem]` scanner + MessagePipe broker registration
-- `[CoreSystemAttribute.cs](../../Assets/Scripts/Core/Architecture/Attributes/CoreSystemAttribute.cs)` — marker attribute
+- `[CoreTypeRegistration.cs](../../Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs)` — `[CoreSystem]` scanner + MessagePipe broker registration
+- `[CoreSystemAttribute.cs](../../Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs)` — marker attribute
 - `[AssetSystem.cs](../../Assets/Scripts/Core/Asset/AssetSystem.cs)` — Framework.Asset lifecycle orchestration (example [CoreSystem])
 
 ### Framework Layer
@@ -68,8 +68,8 @@
 - `[AssetDownloadHandle.cs](../../Assets/Framework/Asset/AssetDownloadHandle.cs)` — downloader wrapper that hides YooAsset types
 
 ### Event Layer (Core)
-- `[AppStartedEvent.cs](../../Assets/Scripts/Core/Architecture/Events/AppStartedEvent.cs)` — published after all systems init
-- `[AppShuttingDownEvent.cs](../../Assets/Scripts/Core/Architecture/Events/AppShuttingDownEvent.cs)` — published before shutdown
+- `[AppStartedEvent.cs](../../Assets/Scripts/Core/Systems/Events/AppStartedEvent.cs)` — published after all Core systems init successfully
+- `[AppShuttingDownEvent.cs](../../Assets/Scripts/Core/Systems/Events/AppShuttingDownEvent.cs)` — published before shutdown
 - `[AssetSystemReadyEvent.cs](../../Assets/Scripts/Core/Asset/AssetSystemReadyEvent.cs)` — published when asset system is ready
 
 ### General Layer
@@ -93,7 +93,7 @@ Use this when the user mentions:
 - `IContainerBuilder`, `RegisterEntryPoint`
 - `RegisterCoreServices`, `RegisterBusinessLayer`
 - `[CoreSystem]`, `[Model]`
-- `Boot 最小依赖`, `容器启动`, `prefab 链式启动`
+- `Boot 最小依赖`, `容器启动`, `普通 C# Stage 启动`
 
 ### MessagePipe Triggers
 Use this when the user mentions:
@@ -114,7 +114,7 @@ Use both when the user mentions:
 ## 5. Usage Rules
 
 ### VContainer Rules
-1. Boot only creates `BootstrapContext` and starts the prefab chain.
+1. Boot only creates `BootstrapContext` and starts configured `IBootstrapStage` instances.
 2. Core/General/Project own their service registration via `IBootstrapStage`.
 3. Keep Boot dependencies minimal (Boot.asmdef references only VContainer).
 4. Prefer `[CoreSystem]` attribute + reflection scanning for Core systems; `[Model]` for business models.
@@ -132,7 +132,7 @@ Use both when the user mentions:
 
 - Startup bug: search `BootLifetimeScope`, `BootstrapContext`, `CoreBootstrapStage`, `SystemManager.Start`
 - Event leak: search `IDisposable`, `subscription`, `Shutdown`
-- DI wiring: search `RegisterCoreServices`, `RegisterBusinessLayer`, `RegisterArchitecture`
+- DI wiring: search `RegisterCoreServices`, `RegisterBusinessLayer`, `RegisterCoreTypes`
 - Asset loading: search `Framework.Asset`, `AssetRuntime`, `IAssetSystem`, `AssetSystem`
 
 ---
@@ -153,7 +153,7 @@ Use both when the user mentions:
 - Boot entry: `Assets/Scripts/Boot/Entry.cs`
 - Container chain entry: `Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs`
 - Core registration: `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs`
-- System scanner: `Assets/Scripts/Core/Architecture/Bootstrap/ArchitectureContainerRegistration.cs`
+- System scanner: `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs`
 - Event marker: `Assets/Framework/Event/GameEventAttribute.cs`
 - Asset API/runtime: `Assets/Framework/Asset/`
 - Asset lifecycle bridge: `Assets/Scripts/Core/Asset/AssetSystem.cs`

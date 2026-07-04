@@ -1,49 +1,53 @@
-using Core.Architecture;
+using Core.Systems;
+using Core.Systems.Attributes;
 using Framework.Asset;
 using MessagePipe;
+using Microsoft.Extensions.Logging;
 using UnityEngine;
 
 namespace Core.Asset
 {
     /// <summary>
     /// Central asset loading service.
-    /// Caches handles keyed by path, protects concurrent loads, and releases
-    /// handles on explicit Release or system shutdown.
     /// </summary>
     [CoreSystem]
     public sealed class AssetSystem : ISystem
     {
         private readonly IAssetRuntime _runtime;
         private readonly IPublisher<AssetSystemReadyEvent> _readyPublisher;
+        private readonly ILogger<AssetSystem> _logger;
 
         public int Priority => AssetConstants.SystemPriority;
 
         public AssetSystem(
             IAssetRuntime runtime,
-            IPublisher<AssetSystemReadyEvent> readyPublisher)
+            IPublisher<AssetSystemReadyEvent> readyPublisher,
+            ILogger<AssetSystem> logger)
         {
             _runtime = runtime;
             _readyPublisher = readyPublisher;
+            _logger = logger;
         }
-
-        // ──────────────────────────────────────────────
-        //  ISystem lifecycle
-        // ──────────────────────────────────────────────
 
         public void Init()
         {
             var config = Resources.Load<AssetConfig>("AssetConfig");
             if (config == null)
-                Debug.LogWarning("[AssetSystem] AssetConfig.asset not found; using editor-simulate defaults.");
-            _runtime.Initialize(config);
+                AssetSystemLog.ConfigNotFound(_logger);
+            if (!_runtime.Initialize(config) || !_runtime.IsReady)
+            {
+                AssetSystemLog.InitializeFailed(_logger);
+                throw new System.InvalidOperationException("AssetSystem failed to initialize runtime.");
+            }
+
             _readyPublisher.Publish(new AssetSystemReadyEvent());
-            Debug.Log("[AssetSystem] Ready");
+            AssetSystemLog.Ready(_logger);
         }
 
         public void Shutdown()
         {
             _runtime.Shutdown();
-            Debug.Log("[AssetSystem] Shutdown");
+            AssetSystemLog.Shutdown(_logger);
         }
     }
 }

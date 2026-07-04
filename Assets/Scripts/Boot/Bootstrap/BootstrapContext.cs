@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+using Framework.Log;
 using VContainer;
 
 namespace Boot
@@ -9,17 +8,14 @@ namespace Boot
     public sealed class BootstrapContext
     {
         private readonly Dictionary<Type, object> _values = new();
-        private readonly HashSet<string> _configuredPrefabPaths = new();
-        private readonly List<GameObject> _stageInstances = new();
+        private readonly HashSet<Type> _configuredStageTypes = new();
 
-        public BootstrapContext(IContainerBuilder builder, Transform stageRoot)
+        public BootstrapContext(IContainerBuilder builder)
         {
             Builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            StageRoot = stageRoot;
         }
 
         public IContainerBuilder Builder { get; }
-        public Transform StageRoot { get; }
 
         public void Set<T>(T value) where T : class
         {
@@ -46,32 +42,30 @@ namespace Boot
             throw new InvalidOperationException($"Bootstrap value is missing: {typeof(T).FullName}");
         }
 
-        public void ConfigurePrefab(string prefabPath)
+        public void ConfigureStages(IEnumerable<IBootstrapStage> stages)
         {
-            if (string.IsNullOrWhiteSpace(prefabPath))
-                return;
+            if (stages == null)
+                throw new ArgumentNullException(nameof(stages));
 
-            if (!_configuredPrefabPaths.Add(prefabPath))
-                throw new InvalidOperationException($"Bootstrap prefab configured more than once: {prefabPath}");
-
-            var prefab = Resources.Load<GameObject>(prefabPath);
-            if (prefab == null)
-                throw new InvalidOperationException($"Bootstrap prefab not found in Resources: {prefabPath}");
-
-            var instance = UnityEngine.Object.Instantiate(prefab, StageRoot);
-            instance.name = prefab.name;
-            _stageInstances.Add(instance);
-
-            var stages = instance.GetComponentsInChildren<IBootstrapStage>(true)
-                .OrderBy(stage => stage.Priority)
-                .ToArray();
-
-            if (stages.Length == 0)
-                throw new InvalidOperationException($"Bootstrap prefab has no IBootstrapStage: {prefabPath}");
-
+            var orderedStages = new List<IBootstrapStage>();
             foreach (var stage in stages)
             {
-                Debug.Log($"[Boot] Configure stage: {stage.StageName} (Priority={stage.Priority})");
+                if (stage == null)
+                    continue;
+                orderedStages.Add(stage);
+            }
+            orderedStages.Sort(static (a, b) => a.Priority.CompareTo(b.Priority));
+
+            if (orderedStages.Count == 0)
+                throw new InvalidOperationException("[Boot] Bootstrap stage list is empty.");
+
+            foreach (var stage in orderedStages)
+            {
+                var type = stage.GetType();
+                if (!_configuredStageTypes.Add(type))
+                    throw new InvalidOperationException($"Bootstrap stage configured more than once: {type.FullName}");
+
+                GameLog.Info($"[Boot] Configure stage: {stage.StageName} (Priority={stage.Priority})");
                 stage.Configure(this);
             }
         }

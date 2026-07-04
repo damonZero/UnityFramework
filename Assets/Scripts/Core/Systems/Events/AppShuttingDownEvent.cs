@@ -1,6 +1,6 @@
 using Framework.Event;
 
-namespace Core.Architecture
+namespace Core.Systems.Events
 {
     [GameEvent]
     public readonly struct AppShuttingDownEvent

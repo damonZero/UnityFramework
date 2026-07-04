@@ -1,5 +1,6 @@
 using System;
-using Core.Architecture;
+using Core.Systems;
+using Core.Systems.Attributes;
 using Framework.Asset;
 using Framework.Pool;
 using UnityEngine;

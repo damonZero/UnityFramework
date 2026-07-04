@@ -1,20 +1,20 @@
 using System.Reflection;
+using Framework.Log;
 using General;
 using MessagePipe;
-using UnityEngine;
 using VContainer;
 
-namespace Project
+namespace Project.Bootstrap
 {
     /// <summary>
     /// Project layer container hook. It only depends on General and external DI packages.
     /// </summary>
-    public class ProjectBootstrapper : MonoBehaviour
+    public static class ProjectBootstrapper
     {
-        public void Configure(IContainerBuilder builder, MessagePipeOptions options)
+        public static void Configure(IContainerBuilder builder, MessagePipeOptions options)
         {
             builder.RegisterBusinessLayer(options, Assembly.GetExecutingAssembly());
-            Debug.Log("[ProjectBootstrapper] Project 层容器注册已接入");
+            GameLog.Info("[ProjectBootstrapper] Project layer container registration ready");
         }
     }
 }
