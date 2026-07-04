@@ -5,7 +5,9 @@
         "TestKit",
         "Asset",
         "Event",
-        "UniTask"
+        "UniTask",
+        "Cache",
+        "Pool"
     ],
     "includePlatforms": [
         "Editor"

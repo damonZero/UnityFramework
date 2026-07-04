@@ -67,35 +67,72 @@ namespace Framework.Cache
                     _policy.Touch(key);
                     return existing;
                 }
-
-                var value = factory(key);
-                PutUnsafe(key, value);
-                return value;
             }
+
+            var value = factory(key);
+            List<(TKey Key, TValue Value)>? evictions = null;
+            TValue finalValue;
+            bool valueDiscarded = false;
+
+            lock (_gate)
+            {
+                if (_values.TryGetValue(key, out var existing))
+                {
+                    _policy.Touch(key);
+                    finalValue = existing;
+                    valueDiscarded = true;
+                }
+                else
+                {
+                    PutUnsafe(key, value, ref evictions);
+                    finalValue = value;
+                }
+            }
+
+            if (valueDiscarded)
+            {
+                _onEvicted?.Invoke(key, value);
+            }
+
+            InvokeEvictions(evictions);
+            return finalValue;
         }
 
         public void Put(TKey key, TValue value)
         {
+            List<(TKey Key, TValue Value)>? evictions = null;
             lock (_gate)
             {
-                PutUnsafe(key, value);
+                PutUnsafe(key, value, ref evictions);
             }
+
+            InvokeEvictions(evictions);
         }
 
         public bool Remove(TKey key)
         {
+            TValue value;
+            bool removed;
             lock (_gate)
             {
-                if (!_values.TryGetValue(key, out var value))
+                if (_values.TryGetValue(key, out value!))
                 {
-                    return false;
+                    _values.Remove(key);
+                    _policy.Remove(key);
+                    removed = true;
                 }
-
-                _values.Remove(key);
-                _policy.Remove(key);
-                _onEvicted?.Invoke(key, value);
-                return true;
+                else
+                {
+                    removed = false;
+                }
             }
+
+            if (removed)
+            {
+                _onEvicted?.Invoke(key, value);
+            }
+
+            return removed;
         }
 
         public void Clear()
@@ -107,7 +144,20 @@ namespace Framework.Cache
             }
         }
 
-        private void PutUnsafe(TKey key, TValue value)
+        private void InvokeEvictions(List<(TKey Key, TValue Value)>? evictions)
+        {
+            if (evictions == null || _onEvicted == null)
+            {
+                return;
+            }
+
+            foreach (var eviction in evictions)
+            {
+                _onEvicted.Invoke(eviction.Key, eviction.Value);
+            }
+        }
+
+        private void PutUnsafe(TKey key, TValue value, ref List<(TKey Key, TValue Value)>? evictions)
         {
             _values[key] = value;
             _policy.Touch(key);
@@ -118,7 +168,11 @@ namespace Framework.Cache
                 {
                     _values.Remove(evictKey);
                     _policy.Remove(evictKey);
-                    _onEvicted?.Invoke(evictKey, evictValue);
+                    if (_onEvicted != null)
+                    {
+                        evictions ??= new List<(TKey Key, TValue Value)>();
+                        evictions.Add((evictKey, evictValue));
+                    }
                 }
                 else
                 {

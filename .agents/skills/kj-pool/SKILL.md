@@ -125,6 +125,12 @@ pool.Clear();
 - `ChangeParent` — 回收时移回 root（层级整洁，但有 Transform 变更开销）
 - `MovePos` — 回收时移到远处（无层级变更，但不整洁）
 
+**生命周期范围 (Lifecycle Scope)：**
+- **全局对象池**：生命期等同于游戏进程（如由 `PoolService` 单例托管的池），其挂载的 `root` 节点通常设置为 `DontDestroyOnLoad`。
+- **局部/功能对象池**：跟随特定的 UI 窗口、场景或预制体存在。其挂载的 `root` 节点**不应**设置 `DontDestroyOnLoad`，必须跟随父节点自然销毁以自动释放内存。
+- **防止内存泄漏**：局部对象池在其持有者（如 Model 或 UI 窗口）卸载或销毁时（如 `Unload` / `OnDestroy`），**必须显式调用 `pool.Clear()`**，以释放未归还的对象和 Prefab 引用，确保 GC 和 YooAsset 底层资源正常释放。
+
+
 ### PoolDependencies — 静态委托桥接
 
 ```csharp
