@@ -136,6 +136,10 @@ Asmdef: `Assets/Framework/Pool/Pool.asmdef`
 References: UniTask, Cache
 Note: Cannot reference any `Assets/Scripts/` code.
 
+**GameObjectPool Lifecycle Rule**:
+- **Global Scope (全局对象池)**: 生命期等同于游戏进程，挂载的 root 节点应该设置 `DontDestroyOnLoad`（例如由全局单例 `PoolService` 托管的池）。
+- **Local/Scoped Scope (局部/功能对象池)**: 生命期跟随特定的 UI、场景或玩法预制体。挂载的 root 节点**不应该**设置 `DontDestroyOnLoad`，必须跟随父节点自然销毁以回收内存。其持有者（如 Model 或 UI 窗口）需在 `Unload`/`OnDestroy` 时显式调用 `GameObjectPool.Clear()` 释放未归还的对象和 Prefab 引用，防内存泄漏。
+
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
 | `IPool.cs` | `Assets/Framework/Pool/Interfaces/IPool.cs` | `IPool<T>` (interface) | `T Rent()`, `void Return(T)`, `int IdleCount`. | none |
