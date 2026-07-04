@@ -17,6 +17,7 @@
 | ISystem + SystemManager | `Core/` | `ISystem` / `ITickableSystem` + `[CoreSystem]` 属性扫描 + `SystemManager` Priority 排序 → Init/Shutdown + VContainer Tick 驱动 |
 | IModel + ModelLifecycle | `General/` | `IModel` / `[Model]` + `ModelLifecycle` Priority 排序 → Core 启动成功后 `IPostStartable.PostStart()` Load / Dispose Unload |
 | Asset 基础层 | `Framework/Asset/` + `Core/Asset/` | `Framework.Asset` 提供统一资源 API、句柄和 YooAsset 适配；`Core.AssetSystem` 只负责生命周期编排和 ready 事件 |
+| Log 基础层 | `Framework/Log/` + `Core/Logging/` | `GameLog` 稳定门面、环境/模块开关配置、编译期裁剪符号；Core 通过 ZLogger Unity provider 输出到 Console |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 
 ---
@@ -30,6 +31,7 @@
 | Timer | Low | `Core/Timer/` | ISystem | Tick-based（非协程），一次性 + 循环，暂停/恢复，最小 GC |
 | Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | Framework/Pool + Framework/Cache 代码已完成，`PoolService.cs` 负责 DI 桥接注册 |
 | PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/Bootstrap/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和 Bootstrap stage 收集去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
+| LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则 |
 
 ### 配置与数据
 
@@ -93,7 +95,7 @@ Framework.Asset ← YooAsset adapter
 Core.AssetSystem ← ISystem + Framework.Asset
 Timer ← ISystem
 ObjectPool ← Framework.Asset
-PERF-01 ← ZLogger + ZLinq + Pool/Cache
+PERF-01 ← Framework.Log + ZLogger + ZLinq + Pool/Cache
 UIManager ← ISystem + Framework.Asset
 UIWindow ← UIManager
 ConfigManager (Luban) ← Framework.Asset

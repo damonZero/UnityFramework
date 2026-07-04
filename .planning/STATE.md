@@ -22,6 +22,7 @@
 - [x] TEST-01: `Framework.TestKit` — 基于 Unity Test Framework / NUnit 的通用断言、Fake、Probe、Fixture、手动时间驱动
 - [x] BOOT-CHAIN-02: 无 prefab 启动链迁移与验证（Boot 仍保持最小依赖，通过类型名/反射创建普通 C# `IBootstrapStage`，由 VContainer 接管系统生命周期）
 - [x] MODEL-01: General/Project Model 生命周期接入（`ModelLifecycle` 由 VContainer `IPostStartable` 在 Core 系统 Start 后驱动 `LoadAll()`）
+- [x] LOG-01: `Framework.Log` 稳定日志门面 + 环境/模块开关接口 + Core ZLogger Unity Console provider 桥接（含现有 ZLoggerMessage 调用点裁剪）
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -41,7 +42,7 @@ Assets/Scripts/
 │   ├── KJ.Core.asmdef          ← 引用 Boot + Asset + Event + Pool + Cache + Log + VContainer + MessagePipe + UniTask
 │   ├── PoolService.cs          ← [CoreSystem] Framework.Pool DI 桥接 + 集合池快捷入口
 │   ├── Logging/
-│   │   └── GameLogBridge.cs    ← Framework.Log 到 Core ZLogger 管线的桥接
+│   │   └── GameLogBridge.cs    ← IGameLogSink 到 Core ZLogger 管线的桥接（adapter，不是 CoreSystem）
 │   ├── Bootstrap/
 │   │   ├── CoreTypeRegistration.cs
 │   │   ├── CoreContainerRegistration.cs
@@ -61,7 +62,7 @@ Assets/Scripts/
 │       ├── AssetSystemLog.cs           ← AssetSystem ZLogger 源生成日志
 │       └── AssetSystemReadyEvent.cs    ← [GameEvent] 就绪通知
 ├── General/
-│   ├── KJ.General.asmdef       ← 引用 Boot + Core + Event
+│   ├── KJ.General.asmdef       ← 引用 Boot + Core + Event + Log
 │   ├── Bootstrap/
 │   │   ├── GeneralContainerRegistration.cs
 │   │   └── GeneralBootstrapStage.cs
@@ -110,6 +111,18 @@ Assets/Framework/
 │   ├── Event.asmdef                  ← 无第三方依赖
 │   ├── GameEventAttribute.cs         ← 统一事件标记
 │   └── GameEventTypeScanner.cs       ← 事件类型扫描与 struct 校验
+├── Log/
+│   ├── Log.asmdef                    ← 无外部依赖，noEngineReferences=true
+│   ├── GameLog.cs                    ← 稳定日志门面、模块树声明
+│   ├── GameLogSymbols.cs             ← 编译期裁剪符号唯一常量入口
+│   ├── GameLogProfile.cs             ← 环境默认级别 + 模块覆盖规则
+│   ├── GameLogConfig.cs              ← 面板/打包脚本配置入口数据
+│   ├── GameLogSwitches.cs            ← 应用配置到 GameLog 的统一入口
+│   ├── GameLogEntry.cs               ← 日志条目
+│   ├── IGameLogSink.cs               ← 输出端口，由 Core 桥接到 ZLogger
+│   ├── GameLogEnvironment.cs         ← dev/formal/qa 等环境枚举
+│   ├── GameLogModuleRule*.cs         ← 模块规则数据
+│   └── GameLog*Attribute.cs          ← 未来 Editor 面板扫描用声明属性
 └── TestKit/
     ├── TestKit.asmdef                ← 引用 Unity Test Framework / NUnit，autoReferenced=false
     ├── Assertions/AssertEx.cs        ← NUnit 断言扩展
@@ -136,8 +149,10 @@ Assets/Framework/
 ## 编码约束补充
 
 - ZLogger / ZString / ZLinq 已纳入技术栈；后续新模块默认考虑这些库，尤其是 Framework/Core 的热路径。
-- 日志集成优先在 Core 层通过 VContainer 注册 `ILoggerFactory` / `ILogger<T>` 和 ZLogger provider；Framework 如需日志，使用稳定接口或静态委托由 Core 桥接。
-- 高频日志优先使用 ZLogger Source Generator：`static partial` 扩展方法 + `[ZLoggerMessage]`，减少格式化分配。
+- 日志接口在 `Framework.Log`；Core 只注册 `ILoggerFactory` / `ILogger<T>` / ZLogger Unity provider，并通过 `GameLogBridge : IGameLogSink` 桥接。
+- 普通日志使用 `GameLog` 门面，业务层不直接 `Debug.Log`，也不散写 `[Conditional]`。
+- 高频日志优先使用 ZLogger Source Generator：`static partial` 扩展方法 + `[ZLoggerMessage]`，并在 `XxxLog.cs` 日志声明方法上集中加对应 `[Conditional(GameLogSymbols...)]` 以支持 formal 包裁剪。
+- dev/formal/qa 等打包环境通过 `KJ_LOG_*` 编译符号控制调用点保留，符号常量唯一入口是 `Framework.Log.GameLogSymbols`；多个 `[Conditional]` 是 OR 关系，模块开关通过 `GameLogConfig` / `GameLogSwitches` / `GameLogProfile` 控制。
 - ZString 用于热路径字符串构建；ZLinq 用于可读但低分配的集合查询，优先 `AsValueEnumerable()`，暂不默认开启全局 DropIn Generator。
 - 已建 `Framework.Pool` / `Framework.Cache` 是后续模块的默认性能基础设施：临时集合用 `CollectionPool` / `PooledCollections`，短生命周期对象用 `ObjectPool<T>` / `TypePool`，GameObject 复用走 `GameObjectPool` + `PoolService`，有容量/淘汰需求的数据用 `Cache<TKey,TValue>` + 策略。
 - 新模块不得重复实现私有对象池或缓存容器；确有特殊需求时，优先扩展 Framework.Pool / Framework.Cache 的稳定接口，再由 Core 层桥接。

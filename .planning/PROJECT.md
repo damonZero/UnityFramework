@@ -10,7 +10,7 @@
 - 网络通信: Google.Protobuf 3.35.1
 - 异步: UniTask v2.5.11
 - 事件: MessagePipe
-- 日志: ZLogger 2.5.10 + Framework.Log 适配（规划）
+- 日志: Framework.Log 稳定门面 + ZLogger 2.5.10 Unity Console provider
 - 性能工具: ZString 2.6.0, ZLinq 1.5.6
 - UI: UGUI (内置)
 
@@ -69,24 +69,37 @@ Framework 模块不能引用 `Assets/Scripts/` 下任何汇编；也不放 `Asse
 
 项目已引入 ZLogger / ZString / ZLinq。后续搭建 Framework、Core、General、Project 模块时，应主动利用这些库降低 GC 和运行时反射/格式化开销。
 
-- **ZLogger**：日志后端优先采用 `Microsoft.Extensions.Logging` + ZLogger。稳定高频日志应优先写成 `static partial` 扩展方法并标注 `[ZLoggerMessage]`，让 Source Generator 生成零分配格式化代码；临时调试日志才使用普通插值或 `Debug.Log`。
-- **VContainer 集成**：日志工厂、`ILogger<T>` 注册、日志等级和输出 provider 由 Core 层接入 VContainer。Framework 可定义稳定日志接口或静态委托桥接，但不要直接依赖 Core；如果某个 Framework 包本身需要日志，优先让 Core 注入桥接能力。
+- **Framework.Log**：日志稳定接口位于 `Assets/Framework/Log/`，包含 `GameLog`、`GameLogProfile`、`GameLogConfig`、`GameLogSwitches`、`IGameLogSink` 等。Framework.Log 不引用 Core、VContainer、ZLogger、Microsoft.Extensions.Logging 或 UnityEngine（`Log.asmdef noEngineReferences=true`）。
+- **ZLogger**：日志后端采用 `Microsoft.Extensions.Logging` + ZLogger Unity provider。Core 注册 `AddZLoggerUnityDebug(options => options.PrettyStacktrace = true)`，日志输出到 Unity Console 并保留良好的堆栈/跳转体验。业务代码不直接使用 `Debug.Log/LogWarning/LogError`。
+- **环境与模块开关**：打包脚本通过 `KJ_LOG_TRACE` / `KJ_LOG_DEBUG` / `KJ_LOG_INFORMATION` / `KJ_LOG_WARNING` / `KJ_LOG_ERROR` / `KJ_LOG_CRITICAL` 控制编译期裁剪，符号常量统一从 `Framework.Log.GameLogSymbols` 引用；多个 `[Conditional]` 是 OR 关系，运行时再由 `GameLogProfile` 做模块/级别过滤。Editor 面板或打包脚本通过 `GameLogSwitches.Configure(GameLogConfig)`、`GameLog.ApplyEnvironment(...)`、`GameLog.SetModuleMinimumLevel(...)`、`GameLog.SetModuleEnabled(...)` 控制模块过滤。
+- **VContainer 集成**：日志工厂、`ILogger<T>` 注册、日志等级和输出 provider 由 Core 层接入 VContainer。`Core.Logging.GameLogBridge` 只实现 `IGameLogSink`，把 Framework.Log 日志条目桥接到 ZLogger；它不是 `[CoreSystem]`。
 - **Source Generator 前提**：当前 Unity 2022.3.62f2 高于 2022.3.12f1，可使用 Incremental Source Generator；需要使用 ZLoggerMessage / ZLinq DropIn Generator 等预览语法时，确保项目编译参数启用 `-langVersion:preview`。
 - **ZString**：热路径字符串拼接、格式化、日志 message 构建、资源路径组合优先使用 ZString 或 Utf8StringInterpolation，避免 `string.Format`、频繁插值和临时 `StringBuilder` 分配。
 - **ZLinq**：集合查询优先使用 `AsValueEnumerable()` 和 ZLinq 操作符；在系统初始化、资源扫描、事件类型扫描、UI 列表构建等路径避免普通 LINQ 产生枚举器/闭包分配。暂不默认启用全局 DropIn Generator，除非单独评估 asmdef 范围和兼容性。
 - **Pool / Cache**：临时集合、短生命周期对象、GameObject 实例、LRU/FIFO 数据缓存优先使用已建 `Framework.Pool` / `Framework.Cache`。ZString/ZLinq 负责减少格式化和查询分配，Pool/Cache 负责减少对象生命周期 churn，两者应组合使用。
 
-推荐日志扩展示例：
+推荐日志扩展示例（稳定高频日志）：
 
 ```csharp
 using Microsoft.Extensions.Logging;
 using ZLogger;
+using Framework.Log;
 
 public static partial class AssetLogExtensions
 {
+    [System.Diagnostics.Conditional(GameLogSymbols.UnityEditor)]
+    [System.Diagnostics.Conditional(GameLogSymbols.DevelopmentBuild)]
+    [System.Diagnostics.Conditional(GameLogSymbols.Debug)]
     [ZLoggerMessage(LogLevel.Debug, "Asset loaded. Path: {path}")]
     public static partial void AssetLoaded(this ILogger<AssetSystem> logger, string path);
 }
+```
+
+普通 Framework/Boot 日志示例：
+
+```csharp
+GameLog.Info("Asset runtime initialized", "Framework.Asset");
+GameLog.Error("Asset load failed", "Framework.Asset");
 ```
 
 测试用例放在 `Assets/Tests/EditMode/` 和 `Assets/Tests/PlayMode/`；第三方测试框架通过 Packages 引入。

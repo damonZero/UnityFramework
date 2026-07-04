@@ -3,7 +3,7 @@ name: kj-core-architecture
 description: >
   KJ Framework Core 架构层指南。涵盖 ISystem（系统生命周期：Priority+Init+Shutdown）、ITickableSystem（可驱动系统：Update/LateUpdate/FixedUpdate）、SystemManager（VContainer 驱动的系统管理器：IStartable+ITickable+ILateTickable+IFixedTickable+IDisposable）、CoreSystemAttribute（标记 Core 系统用于自动 DI 注册）、CoreTypeRegistration（反射扫描注册：[CoreSystem]→VContainer + [GameEvent]→MessagePipe）、CoreContainerRegistration（RegisterCoreServices 扩展方法）、启动事件（AppStartedEvent/AppShuttingDownEvent）、StartupProbeSystem（启动链路验证）。
   触发场景：创建新 Core 系统、理解系统生命周期、配置 DI 注册、添加事件订阅、理解 SystemManager Tick 调度、注册 MessagePipe 事件 Broker、ZLinq 使用（禁止 System.Linq，必须用 AsValueEnumerable() 入口）。
-  核心规则：Core 层用 [CoreSystem]+ISystem（业务层用 [Model]+IModel）；SystemManager 由 VContainer 驱动；反射只在注册时使用，运行时走构造函数 DI；[CoreSystem] 类必须在 Core.* 命名空间；日志模板跟随所属类；禁止 System.Linq，必须用 ZLinq + AsValueEnumerable()。
+  核心规则：Core 层用 [CoreSystem]+ISystem（业务层用 [Model]+IModel）；SystemManager 由 VContainer 驱动；反射只在注册时使用，运行时走构造函数 DI；[CoreSystem] 类必须在 Core.* 命名空间；日志模板跟随所属类，日志系统细节走 kj-log；禁止 System.Linq，必须用 ZLinq + AsValueEnumerable()。
 metadata:
   doc: CODEMAP.md
   layer: Core
@@ -125,7 +125,6 @@ Unity 主循环:
 
 | 系统 | Priority | 接口 | 依赖 |
 |------|----------|------|------|
-| `GameLogBridge` | int.MinValue | ISystem | ILogger&lt;GameLogBridge&gt;, Framework.Log |
 | `StartupProbeSystem` | 0 | ISystem | 无（纯验证） |
 | `AssetSystem` | 100 | ISystem | IAssetRuntime, IPublisher&lt;AssetSystemReadyEvent&gt; |
 | `PoolService` | 110 | ISystem | IAssetSystem |
@@ -155,7 +154,7 @@ AssetSystemReadyEvent  // AssetSystem.Init() 发布
 6. **系统命名用 XxxSystem** — 放在 Core 下对应功能目录
 7. **[CoreSystem] 类必须在 Core.* 命名空间** — CoreTypeRegistration 运行时会校验
 8. **不要手动持有 SystemManager 引用** — 用 VContainer 注入依赖系统
-9. **日志模板跟随所属类** — `SystemManagerLog.cs` 放在 `Core/Systems/`，不要集中塞到 `Core/Logging/`
+9. **日志模板跟随所属类** — `SystemManagerLog.cs` 放在 `Core/Systems/`，不要集中塞到 `Core/Logging/`；日志规则细节使用 `kj-log`
 10. **容器级对象由容器释放** — `ILoggerFactory` 等不应在某个 `ISystem.Shutdown()` 中 dispose
 11. **Ready 事件必须真实** — 如 `AssetSystemReadyEvent` 只能在底层 runtime 初始化成功且 `IsReady` 后发布
 12. **Core 启动失败要可观测** — `SystemManager` 记录 Init 失败到 `ICoreStartupStatus`，失败时不发布 `AppStartedEvent`
