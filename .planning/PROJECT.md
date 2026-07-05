@@ -10,7 +10,7 @@
 - 网络通信: Google.Protobuf 3.35.1
 - 异步: UniTask v2.5.11
 - 事件: MessagePipe
-- 日志: Framework.Log 稳定门面 + ZLogger 2.5.10 Unity Console provider
+- 日志: Framework.Log 稳定门面 + ZLogger 2.5.10 Unity Console provider；AI 运行日志落盘规范见 `.planning/AI_RUNTIME_LOGGING.md`
 - 性能工具: ZString 2.6.0, ZLinq 1.5.6
 - UI: UGUI (内置)
 
@@ -22,19 +22,22 @@
 Boot <- Core <- General <- Project
 ```
 
-Boot 层必须保持最小依赖，只承担稳定启动壳、阶段协议和 Stage 类型名编排能力。Boot 不引用 Core/General/Project，通过 assembly-qualified type name 反射创建普通 C# `IBootstrapStage`。
+Boot 层必须保持最小依赖，只承担稳定启动壳、最小更新界面、资源版本检查、清单/资源下载、热更 DLL/AOT metadata 加载，以及反射调用正式游戏入口。Boot 不引用 Core/General/Project，不创建正式游戏容器。
+HybridCLR 边界见 `.planning/HOT_UPDATE_BOUNDARY.md`：当前工具默认把 `Core` / `General` / `Project` 作为正式运行时热更程序集；`Boot` 与 `Framework/*` 作为启动加载器和稳定契约保持极薄、稳定。C# 层改动不等同于必须换包；已加载程序集的新 DLL 需要重启 APP/下次启动生效，真正换包仅限 native/player/HybridCLR 底层加载机制或旧包缺少加载能力。目标形态是把 Boot 拆成极薄 BootLoader 和可热更但更新后需重启/下次启动生效的 `Boot.Update`。Boot 必须先完成资源/代码更新，再反射调用热更层的 `Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)`。
 
-启动流程由 Boot 配置阶段类型名列表，并按 Priority 依次执行：
+启动流程由 Entry 的序列化启动配置驱动，Boot 完成更新后再进入热更层正式组合根：
 
 ```text
-BootLifetimeScope
-  -> bootstrapStageTypeNames
-  -> CoreBootstrapStage
-  -> GeneralBootstrapStage
-  -> ProjectBootstrapStage
+Entry
+  -> BootStartupSettings（Entry prefab/场景序列化，正式环境可由版本清单覆盖）
+  -> Framework.Asset 最小资源运行时
+  -> 资源版本检查/清单更新/下载/修复
+  -> HybridCLR AOT metadata + Core/General/Project DLL
+  -> Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
+  -> Project 创建 VContainer root 并按 Core -> General -> Project 注册
 ```
 
-依赖注入主体通过 VContainer 在 Core / General / Project 各阶段逐步注册。阶段之间通过 Boot 层稳定协议 `BootstrapContext` / `IBootstrapStage` 传递上下文。
+依赖注入主体通过 VContainer 在 Core / General / Project 各阶段逐步注册。Boot 不参与正式容器构建；`ProjectStartup` 创建 VContainer root，并通过 `CoreStartupContext` 传递注册上下文。
 
 每层对应一个 .asmdef 文件，实现编译隔离。
 
@@ -71,6 +74,7 @@ Framework 模块不能引用 `Assets/Scripts/` 下任何汇编；也不放 `Asse
 
 - **Framework.Log**：日志稳定接口位于 `Assets/Framework/Log/`，包含 `GameLog`、`GameLogProfile`、`GameLogConfig`、`GameLogSwitches`、`IGameLogSink` 等。Framework.Log 不引用 Core、VContainer、ZLogger、Microsoft.Extensions.Logging 或 UnityEngine（`Log.asmdef noEngineReferences=true`）。
 - **ZLogger**：日志后端采用 `Microsoft.Extensions.Logging` + ZLogger Unity provider。Core 注册 `AddZLoggerUnityDebug(options => options.PrettyStacktrace = true)`，日志输出到 Unity Console 并保留良好的堆栈/跳转体验。业务代码不直接使用 `Debug.Log/LogWarning/LogError`。
+- **AI Runtime Logging**：运行日志必须可以落盘为 AI 可读取的 session 产物。规范格式是 JSON Lines + session 清单；Editor/dev/QA 环境默认保留文件日志，Player smoke、资源矩阵和热更 smoke 的验证报告应引用日志文件，而不是依赖用户截图 Console。实现边界见 `.planning/AI_RUNTIME_LOGGING.md`。
 - **环境与模块开关**：打包脚本通过 `KJ_LOG_TRACE` / `KJ_LOG_DEBUG` / `KJ_LOG_INFORMATION` / `KJ_LOG_WARNING` / `KJ_LOG_ERROR` / `KJ_LOG_CRITICAL` 控制编译期裁剪，符号常量统一从 `Framework.Log.GameLogSymbols` 引用；多个 `[Conditional]` 是 OR 关系，运行时再由 `GameLogProfile` 做模块/级别过滤。Editor 面板或打包脚本通过 `GameLogSwitches.Configure(GameLogConfig)`、`GameLog.ApplyEnvironment(...)`、`GameLog.SetModuleMinimumLevel(...)`、`GameLog.SetModuleEnabled(...)` 控制模块过滤。
 - **VContainer 集成**：日志工厂、`ILogger<T>` 注册、日志等级和输出 provider 由 Core 层接入 VContainer。`Core.Logging.GameLogBridge` 只实现 `IGameLogSink`，把 Framework.Log 日志条目桥接到 ZLogger；它不是 `[CoreSystem]`。
 - **Source Generator 前提**：当前 Unity 2022.3.62f2 高于 2022.3.12f1，可使用 Incremental Source Generator；需要使用 ZLoggerMessage / ZLinq DropIn Generator 等预览语法时，确保项目编译参数启用 `-langVersion:preview`。

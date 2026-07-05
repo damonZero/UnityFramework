@@ -1,18 +1,10 @@
-using Boot;
-using UnityEngine.Scripting;
-
 namespace Core.Bootstrap
 {
-    [Preserve]
-    public sealed class CoreBootstrapStage : IBootstrapStage
+    public static class CoreBootstrapStage
     {
-        public int Priority => 100;
-        public string StageName => "Core";
-
-        public void Configure(BootstrapContext context)
+        public static void Configure(CoreStartupContext context)
         {
-            var options = context.Builder.RegisterCoreServices();
-            context.Set(options);
+            context.MessagePipeOptions = context.Builder.RegisterCoreServices(context.AssetRuntime);
         }
     }
 }

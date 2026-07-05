@@ -11,6 +11,7 @@
 > - `EventManager` → `Framework.Event.GameEventAttribute` + MessagePipe 后端注册
 > - `ResourceManager` → `Framework.Asset.IAssetSystem` + `AssetRuntime` (YooAsset 3.0 适配) + `Core.AssetSystem` 生命周期编排
 > - `ObjectPoolManager` → `Framework/Pool/ObjectPool<T>` + `Framework/Pool/Unity/GameObjectPool` + `Core/Pool/PoolService` (DI 桥接)
+> - `AppLifetimeScope` / `BootstrapContext` / `IBootstrapStage` / `BootLifetimeScope` 旧启动链已替换为 `Entry` + `BootUpdateRunner` + `ProjectStartup` + `ProjectLifetimeScope`。
 > - 稳定底层模块直接放 `Assets/Framework/`，不使用 `Assets/Framework/Package/`。
 > - §6 (资源管理) 的旧 Core 直接封装描述已被 `Framework.Asset` 下沉方案取代。本章节 §1 的整体架构方向仍有效。
 
@@ -40,10 +41,10 @@
 
 | 层级 | 职责 | 依赖方向 | 典型内容 |
 |------|------|----------|----------|
-| **Boot** | 程序入口、热更新引导、启动流程 | 无依赖，被所有层依赖 | `Entry.cs`、`AppLifetimeScope`、`BootstrapContext`、HybridCLR入口 |
-| **Core** | 框架基础设施编排、DI 注册、生命周期管理 | 依赖Boot + Framework + Packages | `SystemManager`、`AssetSystem`、`NetManager`、`UIManager` |
-| **General** | 通用游戏系统 | 依赖Core | `ConfigManager`(Luban)、`AudioManager`、`RedDotManager`、`GuideManager`、`ModelLifecycle` |
-| **Project** | 具体游戏业务 | 依赖所有层 | 具体UI窗口、游戏逻辑、业务流程 |
+| **Boot** | 程序入口、资源/代码更新、HybridCLR 引导、反射正式入口 | 依赖 Framework.Asset，不依赖 Core/General/Project/VContainer | `Entry.cs`、`BootStartupSettings`、`BootUpdateRunner`、HybridCLR入口 |
+| **Core** | 框架基础设施编排、DI 注册、生命周期管理 | 依赖 Framework + Packages | `SystemManager`、`AssetSystem`、`NetManager`、`UIManager` |
+| **General** | 通用游戏系统 | 依赖 Core | `ConfigManager`(Luban)、`AudioManager`、`RedDotManager`、`GuideManager`、`ModelLifecycle` |
+| **Project** | 具体游戏业务和正式组合根 | 依赖 Core + General + Framework.Asset | `ProjectStartup`、`ProjectLifetimeScope`、具体UI窗口、游戏逻辑、业务流程 |
 
 ### 1.3 Assembly Definition 分离
 
@@ -56,13 +57,13 @@ Assets/
 │   └── Project/        → Project.asmdef
 ```
 
-**依赖关系:**
-- `Boot` → `VContainer`
-- `Framework.Asset` → `UniTask`, `YooAsset`
+**依赖关系（实际实现摘要）:**
+- `Boot` → `Framework.Asset`
+- `Framework.Asset` → `UniTask`, `YooAsset`, `Framework.Log`
 - `Framework.Event` → no third-party dependency
-- `Core` → `Boot`, `Framework.Asset`, `Framework.Event`, `Framework.Pool`, `Framework.Cache`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`
-- `General` → `Boot`, `Core`, `Framework.Event`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
-- `Project` → `Boot`, `General`, `Framework.Event`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
+- `Core` → `Framework.Asset`, `Framework.Event`, `Framework.Pool`, `Framework.Cache`, `Framework.Log`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`, `UniTask`
+- `General` → `Core`, `Framework.Event`, `Framework.Log`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
+- `Project` → `Framework.Asset`, `Core`, `General`, `Framework.Event`, `Framework.Log`, `VContainer`, `MessagePipe`, `MessagePipe.VContainer`
 
 **优势:** 编译隔离、依赖清晰、防止循环引用、支持增量编译
 

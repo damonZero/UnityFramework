@@ -9,6 +9,7 @@
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
+HybridCLRData/
 
 # Unity meta 文件必须提交（记录资源 GUID、脚本 GUID、Inspector 引用等）
 # *.meta 不能忽略

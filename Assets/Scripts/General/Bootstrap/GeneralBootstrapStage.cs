@@ -1,18 +1,16 @@
-using Boot;
+using Core.Bootstrap;
 using MessagePipe;
-using UnityEngine.Scripting;
 
 namespace General
 {
-    [Preserve]
-    public sealed class GeneralBootstrapStage : IBootstrapStage
+    public static class GeneralBootstrapStage
     {
-        public int Priority => 200;
-        public string StageName => "General";
-
-        public void Configure(BootstrapContext context)
+        public static void Configure(CoreStartupContext context)
         {
-            var options = context.GetRequired<MessagePipeOptions>();
+            var options = context.MessagePipeOptions;
+            if (options == null)
+                throw new System.InvalidOperationException("MessagePipeOptions is missing. CoreBootstrapStage must run before GeneralBootstrapStage.");
+
             context.Builder.RegisterBusinessLayer(options, typeof(GeneralBootstrapStage).Assembly);
         }
     }

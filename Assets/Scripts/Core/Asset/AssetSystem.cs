@@ -3,7 +3,6 @@ using Core.Systems.Attributes;
 using Framework.Asset;
 using MessagePipe;
 using Microsoft.Extensions.Logging;
-using UnityEngine;
 
 namespace Core.Asset
 {
@@ -31,17 +30,16 @@ namespace Core.Asset
 
         public void Init()
         {
-            var config = Resources.Load<AssetConfig>("AssetConfig");
-            if (config == null)
-                AssetSystemLog.ConfigNotFound(_logger);
-            if (!_runtime.Initialize(config) || !_runtime.IsReady)
+            if (_runtime.IsReady)
             {
-                AssetSystemLog.InitializeFailed(_logger);
-                throw new System.InvalidOperationException("AssetSystem failed to initialize runtime.");
+                _readyPublisher.Publish(new AssetSystemReadyEvent());
+                AssetSystemLog.Ready(_logger);
+                return;
             }
 
-            _readyPublisher.Publish(new AssetSystemReadyEvent());
-            AssetSystemLog.Ready(_logger);
+            AssetSystemLog.InitializeFailed(_logger);
+            throw new System.InvalidOperationException(
+                $"AssetSystem requires a ready IAssetRuntime. Boot should initialize resources before Core starts. Error={_runtime.LastError}");
         }
 
         public void Shutdown()

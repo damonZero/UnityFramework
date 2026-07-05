@@ -80,9 +80,11 @@ public sealed class MySystem : ISystem
 ### 2. 自动 DI 注册流程
 
 ```
-CoreContainerRegistration.RegisterCoreServices(builder)
+CoreContainerRegistration.RegisterCoreServices(builder, optionalBootAssetRuntime)
   ├─ 1. builder.RegisterMessagePipe()                          → MessagePipeOptions
-  ├─ 2. builder.Register<AssetRuntime>(Singleton).AsSelf().AsImplementedInterfaces()
+  ├─ 2. Framework Asset
+  │     ├─ 如果 Boot 传入 IAssetRuntime：注册同一实例为 IAssetRuntime/IAssetSystem
+  │     └─ 否则注册 AssetRuntime(Singleton).AsSelf().AsImplementedInterfaces()
   ├─ 3. builder.RegisterCoreTypes(options, CoreAssembly)     → CoreTypeRegistration
   │     ├─ RegisterGameEvents():
   │     │     GameEventTypeScanner.FindGameEventTypes(assemblies)

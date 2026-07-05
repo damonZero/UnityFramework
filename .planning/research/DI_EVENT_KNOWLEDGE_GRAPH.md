@@ -1,7 +1,7 @@
 # DI Event Knowledge Graph
 
 **Scope:** VContainer + MessagePipe integration for Unity Framework  
-**Updated:** 2026-07-02  
+**Updated:** 2026-07-05  
 **Purpose:** 快速查阅依赖注入、事件系统、启动链路和 AI 触发关键词
 
 ---
@@ -10,11 +10,11 @@
 
 ### VContainer
 - Role: dependency injection container for app composition
-- In this project: each layer (Boot → Core → General → Project) registers its own services progressively
+- In this project: Boot does not build the formal container. Boot updates resources/code, then reflects into ProjectStartup. ProjectLifetimeScope builds the formal Core → General → Project container.
 - Main API shapes:
-  - `AppLifetimeScope` for type-name driven bootstrap
-  - `BootstrapContext` carries `IContainerBuilder` + `MessagePipeOptions` between stages
-  - `IBootstrapStage.Configure(BootstrapContext)` — each layer's registration hook
+  - `ProjectStartup.Start(IAssetRuntime)` creates the formal `ProjectLifetimeScope`
+  - `CoreStartupContext` carries `IContainerBuilder`, `IAssetRuntime`, and `MessagePipeOptions` between Core/General/Project registration stages
+  - `CoreBootstrapStage.Configure(CoreStartupContext)` / `GeneralBootstrapStage.Configure(CoreStartupContext)` / `ProjectBootstrapStage.Configure(CoreStartupContext)`
   - `[CoreSystem]` attribute + reflection scanning → `Register(type, Singleton).AsSelf().AsImplementedInterfaces()`
   - `SystemManager` as `IStartable` entry point — VContainer drives its lifecycle
 
@@ -24,7 +24,7 @@
 - Main API shapes:
   - `IPublisher<T>` / `ISubscriber<T>` — inject via constructor
   - `[GameEvent]` attribute from `Framework.Event` — marks a struct for auto-registration
-  - `MessagePipeOptions` — passed through `BootstrapContext` between stages
+  - `MessagePipeOptions` — passed through `CoreStartupContext` between stages
   - `IDisposable` subscription token — caller owns cleanup
 
 ---
@@ -32,7 +32,7 @@
 ## 2. Project Wiring Map
 
 ### Startup Chain
-`BootLifetimeScope` → creates configured `IBootstrapStage` instances by type name → `BootstrapContext.ConfigureStages()` → `CoreBootstrapStage.Configure()` → `builder.RegisterCoreServices()` → Core registers Framework services → `CoreTypeRegistration.RegisterCoreTypes()` scans `[CoreSystem]` + `[GameEvent]` → `builder.RegisterEntryPoint<SystemManager>()` → VContainer calls `SystemManager.Start()` → `InitAll()` → sorted by Priority
+`Entry` → `BootUpdateRunner` initializes `Framework.Asset` and updates resources/code → loads AOT metadata + hot-update DLLs → reflects `Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)` → creates `ProjectLifetimeScope` → `CoreBootstrapStage.Configure()` → `builder.RegisterCoreServices(assetRuntime)` → `GeneralBootstrapStage.Configure()` → `ProjectBootstrapStage.Configure()` → `CoreTypeRegistration.RegisterCoreTypes()` scans `[CoreSystem]` + `[GameEvent]` → `builder.RegisterEntryPoint<SystemManager>()` → VContainer calls `SystemManager.Start()` → `InitAll()` → sorted by Priority
 
 ### Event Chain
 `[GameEvent] struct` → auto-registered at container build time → `IPublisher<T>.Publish()` / `ISubscriber<T>.Subscribe()` at runtime
@@ -46,16 +46,18 @@
 
 ### Boot Layer
 - `[Entry.cs](../../Assets/Scripts/Boot/Entry.cs)` — root MonoBehaviour, `DontDestroyOnLoad`
-- `[AppLifetimeScope.cs](../../Assets/Scripts/Boot/AppLifetimeScope.cs)` — abstract base
-- `[BootLifetimeScope.cs](../../Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs)` — creates BootstrapContext, starts configured Stage chain
-- `[BootstrapContext.cs](../../Assets/Scripts/Boot/Bootstrap/BootstrapContext.cs)` — stage context + chain driver
-- `[IBootstrapStage.cs](../../Assets/Scripts/Boot/Bootstrap/IBootstrapStage.cs)` — stage protocol
+- `[BootStartupSettings.cs](../../Assets/Scripts/Boot/BootStartupSettings.cs)` — Entry serialized startup/update settings
+- `[BootUpdateRunner.cs](../../Assets/Scripts/Boot/BootUpdateRunner.cs)` — resource/code update, metadata/DLL loading, reflection startup
+- `[BootAssemblyEntry.cs](../../Assets/Scripts/Boot/BootAssemblyEntry.cs)` — hot-update DLL entry
+- `[BootMetadataEntry.cs](../../Assets/Scripts/Boot/BootMetadataEntry.cs)` — AOT metadata entry
+- `[HybridClrReflection.cs](../../Assets/Scripts/Boot/HybridClrReflection.cs)` — reflection wrapper for HybridCLR.RuntimeApi
 
 ### Core Layer
 - `[ISystem.cs](../../Assets/Scripts/Core/Systems/ISystem.cs)` — `ISystem` / `ITickableSystem`
 - `[SystemManager.cs](../../Assets/Scripts/Core/Systems/SystemManager.cs)` — lifecycle driver
 - `[CoreContainerRegistration.cs](../../Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs)` — `RegisterCoreServices()` entry
-- `[CoreBootstrapStage.cs](../../Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs)` — stage implementation
+- `[CoreStartupContext.cs](../../Assets/Scripts/Core/Bootstrap/CoreStartupContext.cs)` — registration context for Core/General/Project
+- `[CoreBootstrapStage.cs](../../Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs)` — Core registration stage
 - `[CoreTypeRegistration.cs](../../Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs)` — `[CoreSystem]` scanner + MessagePipe broker registration
 - `[CoreSystemAttribute.cs](../../Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs)` — marker attribute
 - `[AssetSystem.cs](../../Assets/Scripts/Core/Asset/AssetSystem.cs)` — Framework.Asset lifecycle orchestration (example [CoreSystem])
@@ -89,11 +91,11 @@
 ### VContainer Triggers
 Use this when the user mentions:
 - `VContainer`, `DI`, `依赖注入`
-- `LifetimeScope`, `AppLifetimeScope`
+- `LifetimeScope`, `ProjectLifetimeScope`
 - `IContainerBuilder`, `RegisterEntryPoint`
 - `RegisterCoreServices`, `RegisterBusinessLayer`
 - `[CoreSystem]`, `[Model]`
-- `Boot 最小依赖`, `容器启动`, `普通 C# Stage 启动`
+- `Boot 最小依赖`, `容器启动`, `ProjectStartup`
 
 ### MessagePipe Triggers
 Use this when the user mentions:
@@ -114,9 +116,9 @@ Use both when the user mentions:
 ## 5. Usage Rules
 
 ### VContainer Rules
-1. Boot only creates `BootstrapContext` and starts configured `IBootstrapStage` instances.
-2. Core/General/Project own their service registration via `IBootstrapStage`.
-3. Keep Boot dependencies minimal (Boot.asmdef references only VContainer).
+1. Boot updates resources/code and reflects into ProjectStartup; it does not create the formal VContainer root.
+2. Core/General/Project own their service registration via `CoreStartupContext` stages.
+3. Keep Boot dependencies minimal (Boot.asmdef references only Framework.Asset).
 4. Prefer `[CoreSystem]` attribute + reflection scanning for Core systems; `[Model]` for business models.
 5. `AsImplementedInterfaces()` automatically registers `IAssetSystem` etc.
 
@@ -130,7 +132,7 @@ Use both when the user mentions:
 
 ## 6. Common Search Hints
 
-- Startup bug: search `BootLifetimeScope`, `BootstrapContext`, `CoreBootstrapStage`, `SystemManager.Start`
+- Startup bug: search `BootUpdateRunner`, `ProjectStartup`, `ProjectLifetimeScope`, `CoreBootstrapStage`, `SystemManager.Start`
 - Event leak: search `IDisposable`, `subscription`, `Shutdown`
 - DI wiring: search `RegisterCoreServices`, `RegisterBusinessLayer`, `RegisterCoreTypes`
 - Asset loading: search `Framework.Asset`, `AssetRuntime`, `IAssetSystem`, `AssetSystem`
@@ -151,7 +153,8 @@ Use both when the user mentions:
 ## 8. Quick Reference
 
 - Boot entry: `Assets/Scripts/Boot/Entry.cs`
-- Container chain entry: `Assets/Scripts/Boot/Bootstrap/BootLifetimeScope.cs`
+- Startup update runner: `Assets/Scripts/Boot/BootUpdateRunner.cs`
+- Container chain entry: `Assets/Scripts/Project/Bootstrap/ProjectLifetimeScope.cs`
 - Core registration: `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs`
 - System scanner: `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs`
 - Event marker: `Assets/Framework/Event/GameEventAttribute.cs`

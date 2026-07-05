@@ -3,7 +3,7 @@
 > **用途：** 记录框架需要哪些模块、每个模块当前处于什么状态、它依赖什么。
 > **不做：** 固定执行顺序、工时估计、强制时间表。什么时候做什么模块取决于当时的需求和优先级判断。
 
-**Last Updated:** 2026-07-04
+**Last Updated:** 2026-07-05
 
 ---
 
@@ -11,14 +11,30 @@
 
 | 模块 | 位置 | 说明 |
 |------|------|------|
-| Boot 启动协议 | `Boot/` | Entry + AppLifetimeScope + BootstrapContext + IBootstrapStage + BootLifetimeScope。已迁移为无 prefab 的普通 C# Stage 编排；Boot 通过类型名反射创建阶段，仍不引用 Core/General/Project。 |
-| VContainer DI | `Core/Bootstrap/` + `Core/Systems/` | 分层容器注册，`IContainerBuilder` 扩展方法，`BootstrapContext` 传递上下文 |
+| Boot 启动协议 | `Boot/` | Entry + 序列化启动配置 + 最小启动更新 UI。Boot 只做资源/代码更新和反射启动，不引用 VContainer/Core/General/Project。 |
+| VContainer DI | `Project/Bootstrap/` + `Core/Bootstrap/` + `Core/Systems/` | `ProjectStartup` 创建正式 VContainer root，`CoreStartupContext` 串联 Core → General → Project 注册 |
 | Event 基础层 | `Framework/Event/` + `Core/Systems/` + `Core/Bootstrap/` | 统一 `[GameEvent]` 标记和类型扫描；MessagePipe 是当前 broker 注册后端 |
 | ISystem + SystemManager | `Core/` | `ISystem` / `ITickableSystem` + `[CoreSystem]` 属性扫描 + `SystemManager` Priority 排序 → Init/Shutdown + VContainer Tick 驱动 |
 | IModel + ModelLifecycle | `General/` | `IModel` / `[Model]` + `ModelLifecycle` Priority 排序 → Core 启动成功后 `IPostStartable.PostStart()` Load / Dispose Unload |
 | Asset 基础层 | `Framework/Asset/` + `Core/Asset/` | `Framework.Asset` 提供统一资源 API、句柄和 YooAsset 适配；`Core.AssetSystem` 只负责生命周期编排和 ready 事件 |
 | Log 基础层 | `Framework/Log/` + `Core/Logging/` | `GameLog` 稳定门面、环境/模块开关配置、编译期裁剪符号；Core 通过 ZLogger Unity provider 输出到 Console |
+| LOG-AI-00 AI 运行日志规范 | `.planning/AI_RUNTIME_LOGGING.md` | 确立 JSONL + session 清单、Boot/Core 分层职责、AI 分析工作流和验收标准 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
+| HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，正式构建前走完整 `Generate All And Sync` |
+
+---
+
+## 🚧 当前验证 Gate
+
+在继续 UI/Login/Config/Network 等新模块前，先确认已有底层框架在 Editor 和 Player 中稳定可用。
+
+| 验证项 | 状态 | 范围 | 说明 |
+|------|------|------|------|
+| Editor Play 启动链 smoke | Done | Boot + YooAsset + HybridCLR + Core | 用户已确认无报错；`Editor.log` 已看到 `[AssetSystem] Ready` 与 `[SystemManager] 全部初始化完成` |
+| Player 打包 smoke | Next | Boot + HybridCLR + YooAsset + Core | 构建并运行 Player，验证完整启动链、AOT metadata/DLL 加载、资源清单/下载流程、无启动期 Error/Exception |
+| 资源加载矩阵 | Next | Framework.Asset + Core.AssetSystem | 验证 RawFile bytes、cached/owned 资源加载、实例化、场景加载/卸载、下载器、Release、UnloadUnused |
+| PlayMode 覆盖 | Next | EditorSimulate / Offline / Host | 已通过 EditorSimulate Play；下一步至少覆盖 Player Offline，Host/CDN 后续用本地 HTTP 或测试服验证 |
+| 热更新行为 smoke | Next | Core/General/Project DLL + 资源 | 修改 Project 层代码/资源后重新同步，验证无需整包；已加载 DLL 替换需重启/下次启动生效 |
 
 ---
 
@@ -30,14 +46,17 @@
 |------|--------|------|------|------|
 | Timer | Low | `Core/Timer/` | ISystem | Tick-based（非协程），一次性 + 循环，暂停/恢复，最小 GC |
 | Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | Framework/Pool + Framework/Cache 代码已完成，`PoolService.cs` 负责 DI 桥接注册 |
-| PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/Bootstrap/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和 Bootstrap stage 收集去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
-| LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则 |
+| PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和注册链路去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
+| LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Framework/Log.Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则；跨层入口才放 `Assets/Editor/` |
+| LOG-AI-01 运行日志落盘与会话清单 | Medium | `Assets/Framework/Log/` + `Assets/Scripts/Core/Logging/` | Framework.Log, ZLogger | 生成 AI 可读 JSONL session 日志、session 清单、latest 指针；支持 Boot 早期日志缓冲/回放；Editor/dev Player 默认开启 |
+| LOG-AI-02 日志收集与 AI 分析入口 | Medium | `Assets/Scripts/Core.Editor/Logging/` + `Assets/Framework/Log.Editor/` | LOG-AI-01, LOG-TOOLS | Editor 菜单打开 latest、导出诊断包、清理旧日志、生成错误摘要；Player smoke 报告引用日志产物 |
 
 ### 配置与数据
 
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
 | ConfigManager (Luban) | Medium | `General/Config/` | Framework.Asset | Luban v4.10.1 集成，二进制格式，懒加载策略，快速 ID 查找 |
+| Login | Medium | `General/Login/` | UIManager, NetManager, ConfigManager | 登录/公告/服务器列表/账号状态属于业务层；Boot 只负责更新界面和修复入口 |
 
 ### UI
 
@@ -70,7 +89,10 @@
 
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
-| HybridCLR 集成 | High | `Boot/` | 稳定 Framework 资源接口 | 热更 DLL 加载，AOT 元数据补充，版本检查 + 更新管线 |
+| HYB-00 热更边界固化 | Medium | `.planning/` + asmdef 策略 | Boot, Framework | 明确托管 DLL 下发、重启生效、真正换包三类边界，作为 UI/Config/Net 前置约束 |
+| HYB-01 HybridCLR 最小加载闭环 | High | `Boot/` | 稳定 Framework 资源接口 | Boot 侧热更配置、AOT 元数据补充、Core/General/Project DLL 加载、再反射创建热更 Stage |
+| HYB-02B 热更 smoke test | Medium | Unity Editor + Player | HYB-02A, YooAsset | 先完成当前验证 gate：Player 打包 smoke、资源加载矩阵、PlayMode 覆盖、“改 Project 代码后无整包更新”验证；正式包前再跑完整 `Generate All And Sync` |
+| HYB-03 Boot.Update 拆分 | High | `Scripts/Boot/` + `Scripts/Boot.Update/` | HYB-01, HYB-02 | 将当前 Boot 拆为极薄 BootLoader 与可热更启动更新流程；Boot.Update 变更可下载但需重启/下次启动生效 |
 
 ---
 
@@ -96,6 +118,8 @@ Core.AssetSystem ← ISystem + Framework.Asset
 Timer ← ISystem
 ObjectPool ← Framework.Asset
 PERF-01 ← Framework.Log + ZLogger + ZLinq + Pool/Cache
+LOG-AI-01 ← Framework.Log + ZLogger + Core.Logging
+LOG-AI-02 ← LOG-AI-01 + LOG-TOOLS
 UIManager ← ISystem + Framework.Asset
 UIWindow ← UIManager
 ConfigManager (Luban) ← Framework.Asset
@@ -107,8 +131,10 @@ RedDot ← Event backend
 Guide ← Event backend + UIManager + ConfigManager
 Localization ← ConfigManager + Framework.Asset
 HybridCLR ← Framework.Asset + Boot
+UIManager ← HybridCLR boundary + ISystem + Framework.Asset
+ConfigManager (Luban) ← HybridCLR boundary + Framework.Asset
 ```
 
 ---
 
-*Boards updated: 2026-07-04*
+*Boards updated: 2026-07-05*

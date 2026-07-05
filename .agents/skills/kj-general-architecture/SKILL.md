@@ -1,7 +1,7 @@
 ---
 name: kj-general-architecture
 description: >
-  KJ Framework General 层架构指南。涵盖 IModel（业务模型生命周期：Priority+Load+Unload）、ModelAttribute（标记 class 用于自动 DI 注册）、ModelLifecycle（VContainer IPostStartable 驱动的模型管理器：LoadAll/UnloadAll/IDisposable）、GeneralContainerRegistration（反射扫描注册：[Model]→VContainer + [GameEvent]→MessagePipe）、GeneralBootstrapStage（启动阶段 Priority=200，编排业务层注册）。
+  KJ Framework General 层架构指南。涵盖 IModel（业务模型生命周期：Priority+Load+Unload）、ModelAttribute（标记 class 用于自动 DI 注册）、ModelLifecycle（VContainer IPostStartable 驱动的模型管理器：LoadAll/UnloadAll/IDisposable）、GeneralContainerRegistration（反射扫描注册：[Model]→VContainer + [GameEvent]→MessagePipe）、GeneralBootstrapStage（由 ProjectLifetimeScope 在 Core 之后调用，编排业务层注册）。
   触发场景：创建新业务模型、理解 IModel 生命周期、配置 General 层 DI 注册、添加业务事件订阅、理解 Model vs System 的命名约定、GeneralBootstrapStage 排错。
   核心规则：业务层用 [Model]+IModel（而不是 [CoreSystem]+ISystem）；ModelLifecycle 由 VContainer IPostStartable 在 Core Start 成功后驱动；反射只在注册时使用，运行时走构造函数 DI；[Model] 类必须在 General.* 或 Project.* 命名空间；单个 model Load/Unload 失败不阻塞其他 model。
 metadata:
@@ -96,23 +96,23 @@ public static class GeneralContainerRegistration
 2. **RegisterModels** — 扫描 assemblies 中所有带 `[Model]` 且实现 `IModel` 的非抽象 class，注册为 `AsSelf().As<IModel>()` + `Lifetime.Singleton`。如果 `[Model]` 标记的类未实现 `IModel` → `InvalidOperationException`
 3. 幂等注册 `ModelLifecycle` 为 Singleton；General 和 Project 分批调用时只能有一个生命周期管理器
 
-### GeneralBootstrapStage — 启动阶段
+### GeneralBootstrapStage — 业务层注册阶段
 
 ```csharp
-public sealed class GeneralBootstrapStage : IBootstrapStage
+public static class GeneralBootstrapStage
 {
-    public int Priority => 200;
-    public string StageName => "General";
-
-    public void Configure(BootstrapContext context)
+    public static void Configure(CoreStartupContext context)
     {
-        var options = context.GetRequired<MessagePipeOptions>();
+        var options = context.MessagePipeOptions;
+        if (options == null)
+            throw new InvalidOperationException("MessagePipeOptions is missing. CoreBootstrapStage must run before GeneralBootstrapStage.");
+
         context.Builder.RegisterBusinessLayer(options, typeof(GeneralBootstrapStage).Assembly);
     }
 }
 ```
 
-在启动链中位于 Core (100) 之后、Project (300) 之前。从 BootstrapContext 获取 Core 阶段存入的 `MessagePipeOptions`，然后调用 `RegisterBusinessLayer` 扫描 General 程序集。
+在正式游戏容器构建中由 `ProjectLifetimeScope` 在 `CoreBootstrapStage.Configure(context)` 之后、`ProjectBootstrapStage.Configure(context)` 之前调用。从 `CoreStartupContext` 获取 Core 阶段存入的 `MessagePipeOptions`，然后调用 `RegisterBusinessLayer` 扫描 General 程序集。
 
 ## 创建新 Model 的步骤
 

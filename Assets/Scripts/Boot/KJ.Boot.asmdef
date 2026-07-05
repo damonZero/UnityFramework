@@ -2,8 +2,7 @@
     "name": "Boot",
     "rootNamespace": "Boot",
     "references": [
-        "VContainer",
-        "Log"
+        "Asset"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

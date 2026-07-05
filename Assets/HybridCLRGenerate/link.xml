@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="Asset">
+    <type fullname="Framework.Asset.AssetConfig" preserve="all" />
+    <type fullname="Framework.Asset.AssetRuntime" preserve="all" />
+    <type fullname="Framework.Asset.IAssetRuntime" preserve="all" />
+    <type fullname="Framework.Asset.IAssetSystem" preserve="all" />
+  </assembly>
+  <assembly fullname="Event">
+    <type fullname="Framework.Event.GameEventAttribute" preserve="all" />
+    <type fullname="Framework.Event.GameEventTypeScanner" preserve="all" />
+  </assembly>
+  <assembly fullname="Log">
+    <type fullname="Framework.Log.GameLog" preserve="all" />
+    <type fullname="Framework.Log.GameLogEntry" preserve="all" />
+    <type fullname="Framework.Log.GameLogLevel" preserve="all" />
+    <type fullname="Framework.Log.GameLogProfile" preserve="all" />
+    <type fullname="Framework.Log.IGameLogSink" preserve="all" />
+  </assembly>
+  <assembly fullname="MessagePipe">
+    <type fullname="MessagePipe.IPublisher`1" preserve="all" />
+    <type fullname="MessagePipe.MessagePipeOptions" preserve="all" />
+  </assembly>
+  <assembly fullname="MessagePipe.VContainer">
+    <type fullname="MessagePipe.ContainerBuilderExtensions" preserve="all" />
+  </assembly>
+  <assembly fullname="Microsoft.Extensions.Logging">
+    <type fullname="Microsoft.Extensions.Logging.FilterLoggingBuilderExtensions" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.LoggerFactory" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.LoggingBuilderExtensions" preserve="all" />
+  </assembly>
+  <assembly fullname="Microsoft.Extensions.Logging.Abstractions">
+    <type fullname="Microsoft.Extensions.Logging.EventId" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.ILogger" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.ILoggerFactory" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.ILogger`1" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.ILoggingBuilder" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.LogLevel" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.LoggerExtensions" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.LoggerFactoryExtensions" preserve="all" />
+    <type fullname="Microsoft.Extensions.Logging.Logger`1" preserve="all" />
+  </assembly>
+  <assembly fullname="Pool">
+    <type fullname="Framework.Pool.CollectionPool" preserve="all" />
+    <type fullname="Framework.Pool.GameObjectPool" preserve="all" />
+    <type fullname="Framework.Pool.PoolContainerMode" preserve="all" />
+    <type fullname="Framework.Pool.PoolDependencies" preserve="all" />
+    <type fullname="Framework.Pool.PooledDictionary`2" preserve="all" />
+    <type fullname="Framework.Pool.PooledHashSet`1" preserve="all" />
+    <type fullname="Framework.Pool.PooledList`1" preserve="all" />
+    <type fullname="Framework.Pool.PooledQueue`1" preserve="all" />
+    <type fullname="Framework.Pool.PooledStack`1" preserve="all" />
+  </assembly>
+  <assembly fullname="System.Runtime.CompilerServices.Unsafe">
+    <type fullname="System.Runtime.CompilerServices.Unsafe" preserve="all" />
+  </assembly>
+  <assembly fullname="System.Text.Encodings.Web">
+    <type fullname="System.Text.Encodings.Web.JavaScriptEncoder" preserve="all" />
+  </assembly>
+  <assembly fullname="System.Text.Json">
+    <type fullname="System.Text.Json.JsonEncodedText" preserve="all" />
+    <type fullname="System.Text.Json.JsonSerializerOptions" preserve="all" />
+    <type fullname="System.Text.Json.Utf8JsonWriter" preserve="all" />
+  </assembly>
+  <assembly fullname="UniTask">
+    <type fullname="Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder`1" preserve="all" />
+    <type fullname="Cysharp.Threading.Tasks.UniTask`1" preserve="all" />
+    <type fullname="Cysharp.Threading.Tasks.UniTask`1/Awaiter" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.CoreModule">
+    <type fullname="UnityEngine.GameObject" preserve="all" />
+    <type fullname="UnityEngine.Object" preserve="all" />
+    <type fullname="UnityEngine.Resources" preserve="all" />
+    <type fullname="UnityEngine.Time" preserve="all" />
+    <type fullname="UnityEngine.Transform" preserve="all" />
+    <type fullname="UnityEngine.Vector3" preserve="all" />
+  </assembly>
+  <assembly fullname="Utf8StringInterpolation">
+    <type fullname="Utf8StringInterpolation.Utf8StringWriter`1" preserve="all" />
+  </assembly>
+  <assembly fullname="VContainer">
+    <type fullname="VContainer.ContainerBuilderExtensions" preserve="all" />
+    <type fullname="VContainer.IContainerBuilder" preserve="all" />
+    <type fullname="VContainer.IObjectResolver" preserve="all" />
+    <type fullname="VContainer.Lifetime" preserve="all" />
+    <type fullname="VContainer.RegistrationBuilder" preserve="all" />
+    <type fullname="VContainer.Unity.ContainerBuilderUnityExtensions" preserve="all" />
+    <type fullname="VContainer.Unity.IFixedTickable" preserve="all" />
+    <type fullname="VContainer.Unity.ILateTickable" preserve="all" />
+    <type fullname="VContainer.Unity.IPostStartable" preserve="all" />
+    <type fullname="VContainer.Unity.IStartable" preserve="all" />
+    <type fullname="VContainer.Unity.ITickable" preserve="all" />
+    <type fullname="VContainer.Unity.LifetimeScope" preserve="all" />
+  </assembly>
+  <assembly fullname="ZLinq">
+    <type fullname="ZLinq.Linq.ArrayWhere`1" preserve="all" />
+    <type fullname="ZLinq.Linq.Distinct`2" preserve="all" />
+    <type fullname="ZLinq.Linq.FromArray`1" preserve="all" />
+    <type fullname="ZLinq.ValueEnumerable" preserve="all" />
+    <type fullname="ZLinq.ValueEnumerableExtensions" preserve="all" />
+    <type fullname="ZLinq.ValueEnumerable`2" preserve="all" />
+    <type fullname="ZLinq.ValueEnumerator`2" preserve="all" />
+  </assembly>
+  <assembly fullname="ZLogger">
+    <type fullname="ZLogger.IKeyNameMutator" preserve="all" />
+    <type fullname="ZLogger.IZLoggerEntry" preserve="all" />
+    <type fullname="ZLogger.IZLoggerEntryCreatable" preserve="all" />
+    <type fullname="ZLogger.IZLoggerFormattable" preserve="all" />
+    <type fullname="ZLogger.Internal.CodeGeneratorUtil" preserve="all" />
+    <type fullname="ZLogger.LogInfo" preserve="all" />
+    <type fullname="ZLogger.ZLoggerEntry`1" preserve="all" />
+    <type fullname="ZLogger.ZLoggerMessageAttribute" preserve="all" />
+  </assembly>
+  <assembly fullname="ZLogger.Unity">
+    <type fullname="ZLogger.Unity.ZLoggerUnityDebugOptions" preserve="all" />
+    <type fullname="ZLogger.Unity.ZLoggerUnityExtensions" preserve="all" />
+  </assembly>
+  <assembly fullname="netstandard">
+    <type fullname="System.Action`1" preserve="all" />
+    <type fullname="System.Activator" preserve="all" />
+    <type fullname="System.ArgumentNullException" preserve="all" />
+    <type fullname="System.Array" preserve="all" />
+    <type fullname="System.Attribute" preserve="all" />
+    <type fullname="System.AttributeTargets" preserve="all" />
+    <type fullname="System.AttributeUsageAttribute" preserve="all" />
+    <type fullname="System.Buffers.BuffersExtensions" preserve="all" />
+    <type fullname="System.Buffers.IBufferWriter`1" preserve="all" />
+    <type fullname="System.Byte" preserve="all" />
+    <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" preserve="all" />
+    <type fullname="System.Collections.Generic.Dictionary`2" preserve="all" />
+    <type fullname="System.Collections.Generic.IEnumerable`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IEnumerator`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IReadOnlyCollection`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IReadOnlyList`1" preserve="all" />
+    <type fullname="System.Collections.Generic.KeyValuePair`2" preserve="all" />
+    <type fullname="System.Collections.Generic.List`1" preserve="all" />
+    <type fullname="System.Collections.Generic.List`1/Enumerator" preserve="all" />
+    <type fullname="System.Collections.IEnumerable" preserve="all" />
+    <type fullname="System.Collections.IEnumerator" preserve="all" />
+    <type fullname="System.Comparison`1" preserve="all" />
+    <type fullname="System.ComponentModel.EditorBrowsableAttribute" preserve="all" />
+    <type fullname="System.ComponentModel.EditorBrowsableState" preserve="all" />
+    <type fullname="System.Diagnostics.ConditionalAttribute" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggableAttribute" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggerHiddenAttribute" preserve="all" />
+    <type fullname="System.Exception" preserve="all" />
+    <type fullname="System.Func`2" preserve="all" />
+    <type fullname="System.Func`3" preserve="all" />
+    <type fullname="System.IDisposable" preserve="all" />
+    <type fullname="System.IFormatProvider" preserve="all" />
+    <type fullname="System.Int32" preserve="all" />
+    <type fullname="System.InvalidOperationException" preserve="all" />
+    <type fullname="System.Nullable`1" preserve="all" />
+    <type fullname="System.Object" preserve="all" />
+    <type fullname="System.ParamArrayAttribute" preserve="all" />
+    <type fullname="System.ReadOnlySpan`1" preserve="all" />
+    <type fullname="System.Reflection.Assembly" preserve="all" />
+    <type fullname="System.Reflection.BindingFlags" preserve="all" />
+    <type fullname="System.Reflection.CustomAttributeExtensions" preserve="all" />
+    <type fullname="System.Reflection.DefaultMemberAttribute" preserve="all" />
+    <type fullname="System.Reflection.MemberInfo" preserve="all" />
+    <type fullname="System.Reflection.MethodBase" preserve="all" />
+    <type fullname="System.Reflection.MethodInfo" preserve="all" />
+    <type fullname="System.Reflection.ReflectionTypeLoadException" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.AsyncStateMachineAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.IsReadOnlyAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.RuntimeCompatibilityAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.RuntimeHelpers" preserve="all" />
+    <type fullname="System.Runtime.InteropServices.InAttribute" preserve="all" />
+    <type fullname="System.RuntimeFieldHandle" preserve="all" />
+    <type fullname="System.RuntimeTypeHandle" preserve="all" />
+    <type fullname="System.String" preserve="all" />
+    <type fullname="System.StringComparison" preserve="all" />
+    <type fullname="System.Type" preserve="all" />
+    <type fullname="System.ValueType" preserve="all" />
+  </assembly>
+</linker>

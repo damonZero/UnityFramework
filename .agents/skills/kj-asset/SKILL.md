@@ -18,7 +18,7 @@ metadata:
 ```
 IAssetSystem (对上层统一 API)
     ↑
-        IAssetRuntime (扩展 bool Initialize/Shutdown/Config/IsReady)
+        IAssetRuntime (BeginInitialize/Shutdown/Config/IsReady)
     ↑
 AssetRuntime (YooAsset 3.0 适配器，唯一引用 YooAsset 的文件)
 
@@ -114,6 +114,7 @@ public class AssetConfig : ScriptableObject
     public enum PlayMode { EditorSimulate, Offline, Host }
     public PlayMode Mode;
     public string PackageName;          // "DefaultPackage"
+    public string EditorSimulatePackageRoot; // YooAsset EditorSimulate 构建输出 root
     public string CdnBaseUrl;           // Host 模式 CDN 地址
     public int DownloadTimeout;         // 下载超时
     public int DownloadMaxConcurrency;  // 下载并发数
@@ -122,17 +123,44 @@ public class AssetConfig : ScriptableObject
 ```
 
 PlayMode 对应 YooAsset 初始化策略：
-- `EditorSimulate` → 编辑器模拟（不打包直接加载）
+- `EditorSimulate` → 编辑器模拟；YooAsset 3.0 需要先构建模拟包，并使用 `EditorSimulatePackageRoot` 初始化
 - `Offline` → 离线模式（从 StreamingAssets 加载）
 - `Host` → 在线模式（从 CDN 下载）
+
+日常 Editor Play Mode 前可运行：
+
+```
+KJ/HybridCLR/Prepare YooAsset Editor Simulate Package
+```
+
+完整 HybridCLR smoke 路径使用：
+
+```
+KJ/HybridCLR/Prepare Runtime Assets And Boot
+```
 
 ## Core 层编排
 
 Core 层的 `AssetSystem` (`[CoreSystem] Priority=100`) 负责：
-1. `Init()` — `Resources.Load<AssetConfig>("AssetConfig")` → `_runtime.Initialize(config)` 成功且 `_runtime.IsReady` → 发布 `AssetSystemReadyEvent`
+1. `Init()` — 复用 Boot 已经异步初始化完成的 `_runtime`，确认 `_runtime.IsReady` 后发布 `AssetSystemReadyEvent`
 2. `Shutdown()` — 释放所有 cached handles、场景 handles、owned handles，调 `_runtime.Shutdown()`
 
-`Initialize` 返回 `false` 时必须保持 runtime 不可用并清理 YooAsset 状态；Core 不发布 ready event。
+YooAsset 3.0 的 package 初始化不支持 `WaitForCompletion()`，启动期必须调用 `IAssetRuntime.BeginInitialize(config)` 并轮询 `AssetInitializeHandle`。`Initialize(config)` 仅保留为同步误用保护；Core 不在同步 `ISystem.Init()` 中初始化 YooAsset。
+
+## 稳定性验证 Gate
+
+继续 UI/Login/Config/Network 等新模块前，资源系统需要先完成验证矩阵：
+
+| 项 | 需要覆盖 |
+| --- | --- |
+| RawFile | `LoadRawBytes()` 读取 DLL/AOT metadata `.dll.bytes`，空路径/缺失资源错误可诊断 |
+| cached 通道 | `LoadAssetAsync<T>()` 多次加载共享句柄，`Release<T>()` 后可重新加载 |
+| owned 通道 | `LoadAssetHandleAsync<T>()` 每次独立句柄，调用方 `Dispose()` 后不泄漏 |
+| 实例化 | `InstantiateAsync()` 创建 GameObject，`AssetInstanceHandle.Dispose()` 同时销毁实例并释放源句柄 |
+| 场景 | `LoadSceneAsync()`、重复切场景、`UnloadAsync()`/`Dispose()` 串行化保护 |
+| 下载器 | `CreateDownloader()` 无下载与有下载路径，进度、失败重试、错误信息 |
+| 回收 | `Release(path)`、`UnloadUnused()`、Shutdown 释放 cached/owned/scene handles |
+| PlayMode | EditorSimulate 已通过；下一步至少验证 Player Offline，Host/CDN 用本地 HTTP 或测试服验证 |
 
 ## 最佳实践
 

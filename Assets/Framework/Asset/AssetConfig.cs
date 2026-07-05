@@ -7,6 +7,7 @@ namespace Framework.Asset
     {
         public PlayMode Mode = PlayMode.EditorSimulate;
         public string PackageName = "DefaultPackage";
+        public string EditorSimulatePackageRoot;
         public string CdnBaseUrl = "http://127.0.0.1:8080/CDN";
         public int DownloadTimeout = 60;
         public int DownloadMaxConcurrency = 10;

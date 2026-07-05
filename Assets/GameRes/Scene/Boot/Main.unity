@@ -166,6 +166,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a64dea5830a9b5343bd4d4ed63a7f834, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startupSettings:
+    enableAssetUpdate: 1
+    enableHotUpdate: 1
+    skipHotUpdateInEditor: 1
+    streamingAssetsRoot: HotUpdate
+    assetDownloadTag: hotupdate
+    startupTypeName: Project.Bootstrap.ProjectStartup, Project
+    startupMethodName: Start
+    aotMetadataAssemblies:
+    - assemblyName: mscorlib
+      fileName: AotMetadata/mscorlib.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/mscorlib.dll.bytes
+    - assemblyName: System
+      fileName: AotMetadata/System.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/System.dll.bytes
+    - assemblyName: System.Core
+      fileName: AotMetadata/System.Core.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/System.Core.dll.bytes
+    hotUpdateAssemblies:
+    - assemblyName: Core
+      fileName: Dlls/Core.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Core.dll.bytes
+    - assemblyName: General
+      fileName: Dlls/General.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/General.dll.bytes
+    - assemblyName: Project
+      fileName: Dlls/Project.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Project.dll.bytes
+  startupView: {fileID: 0}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

@@ -77,11 +77,13 @@
     <Analyzer Include="C:\ZZS\Unity 2022.3.62f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Boot\Bootstrap\IBootstrapStage.cs" />
-    <Compile Include="Assets\Scripts\Boot\Bootstrap\BootstrapContext.cs" />
+    <Compile Include="Assets\Scripts\Boot\BootUpdateRunner.cs" />
     <Compile Include="Assets\Scripts\Boot\Entry.cs" />
-    <Compile Include="Assets\Scripts\Boot\AppLifetimeScope.cs" />
-    <Compile Include="Assets\Scripts\Boot\Bootstrap\BootLifetimeScope.cs" />
+    <Compile Include="Assets\Scripts\Boot\BootAssemblyEntry.cs" />
+    <Compile Include="Assets\Scripts\Boot\BootStartupSettings.cs" />
+    <Compile Include="Assets\Scripts\Boot\BootMetadataEntry.cs" />
+    <Compile Include="Assets\Scripts\Boot\HybridClrReflection.cs" />
+    <Compile Include="Assets\Scripts\Boot\IBootStartupView.cs" />
     <None Include="Assets\Scripts\Boot\KJ.Boot.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -398,6 +400,9 @@
     <Reference Include="System.Collections.Immutable">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Collections.Immutable.8.0.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
+    <Reference Include="dnlib">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.code-philosophy.hybridclr@e4def761d6\Plugins\dnlib.dll</HintPath>
+    </Reference>
     <Reference Include="System.Threading.Channels">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Threading.Channels.8.0.0\lib\netstandard2.1\System.Threading.Channels.dll</HintPath>
     </Reference>
@@ -406,6 +411,9 @@
     </Reference>
     <Reference Include="System.Text.Json">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\lib\netstandard2.0\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="LZ4">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.code-philosophy.hybridclr@e4def761d6\Plugins\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
@@ -800,9 +808,6 @@
     <Reference Include="System.Xml.Serialization">
       <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
     </Reference>
-    <Reference Include="VContainer">
-      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\VContainer.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
     </Reference>
@@ -811,9 +816,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Log.csproj">
-      <Project>{6910460a-9d5b-367f-5986-cd7259138387}</Project>
-      <Name>Log</Name>
+    <ProjectReference Include="Asset.csproj">
+      <Project>{70c30947-18d5-62ad-3828-b771d649d1f7}</Project>
+      <Name>Asset</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,16 +1,16 @@
-using System;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
-
 namespace Framework.Asset
 {
-    public interface IAssetRuntime : IAssetSystem
+    public interface IAssetRuntime
     {
         AssetConfig Config { get; }
         bool IsReady { get; }
+        string LastError { get; }
+        AssetInitializeHandle BeginInitialize(AssetConfig config);
         bool Initialize(AssetConfig config);
+        AssetDownloadHandle CreateDownloader(string tag = null);
+        AssetDownloadHandle CreateDownloader(string[] tags);
+        AssetUpdateManifestHandle UpdateManifest();
+        byte[] LoadRawBytes(string path);
         void Shutdown();
     }
 }

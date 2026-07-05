@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Framework.Asset
 {
-    public sealed class AssetRuntime : IAssetRuntime
+    public sealed class AssetRuntime : IAssetRuntime, IAssetSystem
     {
         private AssetConfig _config;
         private ResourcePackage _defaultPackage;
@@ -25,64 +25,50 @@ namespace Framework.Asset
         private int _lifecycleVersion;
         private int _downloadMaxConcurrency = 10;
         private int _failedRetryCount = 3;
+        private AssetInitializeHandle _initializeHandle;
 
         public AssetConfig Config => _config;
         public bool IsReady { get; private set; }
-        public ResourcePackage DefaultPackage => _defaultPackage;
+        public string LastError { get; private set; } = string.Empty;
+
+        public AssetInitializeHandle BeginInitialize(AssetConfig config)
+        {
+            if (IsReady)
+                return AssetInitializeHandle.Succeeded();
+
+            if (_initializeHandle != null)
+            {
+                if (!_initializeHandle.IsDone)
+                    return _initializeHandle;
+
+                _initializeHandle = null;
+            }
+
+            if (IsReady)
+                return AssetInitializeHandle.Succeeded();
+
+            try
+            {
+                var initOp = StartInitialize(config);
+                _initializeHandle = new AssetInitializeHandle(initOp, CompleteInitialize);
+                return _initializeHandle;
+            }
+            catch (Exception e)
+            {
+                LastError = e.Message;
+                GameLog.Error($"[AssetRuntime] Initialization failed: {e}");
+                CleanupAfterInitializeFailure();
+                return AssetInitializeHandle.Failed(LastError);
+            }
+        }
 
         public bool Initialize(AssetConfig config)
         {
             if (IsReady)
                 return true;
 
-            if (_defaultPackage != null)
-                Shutdown();
-
-            _lifecycleVersion++;
-            var yooAssetsInitialized = false;
-            try
-            {
-                _config = config;
-                _downloadMaxConcurrency = config == null ? 10 : Math.Max(1, config.DownloadMaxConcurrency);
-                _failedRetryCount = config == null ? 3 : Math.Max(0, config.FailedRetryCount);
-
-                YooAssets.Initialize();
-                yooAssetsInitialized = true;
-                var packageName = GetPackageName(config);
-                _defaultPackage = YooAssets.CreatePackage(packageName);
-
-                InitializePackageOptions options = config == null
-                    ? new EditorSimulateModeOptions
-                    {
-                        EditorFileSystemParameters =
-                            FileSystemParameters.CreateDefaultEditorFileSystemParameters(packageName)
-                    }
-                    : BuildOptions(config);
-
-                var initOp = _defaultPackage.InitializePackageAsync(options);
-                initOp.WaitForCompletion();
-
-                if (initOp.Status == EOperationStatus.Succeeded)
-                {
-                    IsReady = true;
-                    return true;
-                }
-
-                GameLog.Error($"[AssetRuntime] Initialization failed: {initOp.Error}");
-            }
-            catch (Exception e)
-            {
-                GameLog.Error($"[AssetRuntime] Initialization failed: {e}");
-            }
-
-            if (_defaultPackage != null || IsReady)
-                Shutdown();
-            else if (yooAssetsInitialized)
-                YooAssets.Destroy();
-
-            _config = null;
-            _defaultPackage = null;
-            IsReady = false;
+            LastError = "Synchronous AssetRuntime.Initialize is not supported by YooAsset package initialization. Use BeginInitialize and poll the returned handle.";
+            GameLog.Error($"[AssetRuntime] {LastError}");
             return false;
         }
 
@@ -92,6 +78,7 @@ namespace Framework.Asset
                 return;
 
             IsReady = false;
+            _initializeHandle = null;
             _config = null;
 
             List<YooAsset.AssetHandle> handlesToRelease = new();
@@ -137,6 +124,75 @@ namespace Framework.Asset
             _ownedSceneHandles.Clear();
             _defaultPackage = null;
             YooAssets.Destroy();
+        }
+
+        private InitializePackageOperation StartInitialize(AssetConfig config)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config), "AssetConfig is missing. Create Assets/Resources/AssetConfig.asset before starting the asset runtime.");
+
+            if (_defaultPackage != null || IsReady)
+                Shutdown();
+            else if (YooAssets.IsInitialized)
+                YooAssets.Destroy();
+
+            LastError = string.Empty;
+            IsReady = false;
+            _config = config;
+            _downloadMaxConcurrency = Math.Max(1, config.DownloadMaxConcurrency);
+            _failedRetryCount = Math.Max(0, config.FailedRetryCount);
+
+            lock (_gate)
+            {
+                _lifecycleVersion++;
+            }
+
+            YooAssets.Initialize();
+            _defaultPackage = YooAssets.CreatePackage(GetPackageName(config));
+            return _defaultPackage.InitializePackageAsync(BuildOptions(config));
+        }
+
+        private void CompleteInitialize(AssetInitializeHandle handle)
+        {
+            _initializeHandle = null;
+
+            if (handle != null && handle.IsSucceeded)
+            {
+                IsReady = true;
+                LastError = string.Empty;
+                return;
+            }
+
+            LastError = string.IsNullOrWhiteSpace(handle?.Error)
+                ? "Unknown YooAsset package initialization error."
+                : handle.Error;
+            GameLog.Error($"[AssetRuntime] Initialization failed: {LastError}");
+            CleanupAfterInitializeFailure();
+        }
+
+        private void CleanupAfterInitializeFailure()
+        {
+            var error = LastError;
+
+            try
+            {
+                if (_defaultPackage != null || IsReady)
+                    Shutdown();
+                else if (YooAssets.IsInitialized)
+                    YooAssets.Destroy();
+            }
+            catch (Exception e)
+            {
+                GameLog.Error($"[AssetRuntime] Cleanup after initialization failure failed: {e}");
+            }
+            finally
+            {
+                _initializeHandle = null;
+                _config = null;
+                _defaultPackage = null;
+                IsReady = false;
+                LastError = error;
+            }
         }
 
         public async UniTask<AssetHandle<T>> LoadAssetHandleAsync<T>(string path) where T : Object
@@ -285,7 +341,7 @@ namespace Framework.Asset
             {
                 GameLog.Error($"[AssetRuntime] Scene load failed: {path} - {handle.Error}");
                 _sceneHandles.Remove(path);
-                handle.UnloadSceneAsync();
+                await handle.UnloadSceneAsync().ToUniTask();
                 return null;
             }
 
@@ -316,10 +372,42 @@ namespace Framework.Asset
             return new AssetDownloadHandle(_defaultPackage.CreateResourceDownloader(options));
         }
 
+        public AssetUpdateManifestHandle UpdateManifest()
+        {
+            EnsureReady();
+            var timeout = _config == null ? 60 : Math.Max(1, _config.DownloadTimeout);
+            var options = new RequestPackageVersionOptions(true, timeout);
+            return new AssetUpdateManifestHandle(_defaultPackage, _defaultPackage.RequestPackageVersionAsync(options), timeout);
+        }
+
+        public byte[] LoadRawBytes(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentNullException(nameof(path));
+            EnsureReady();
+
+            var handle = _defaultPackage.LoadAssetSync<RawFileObject>(path);
+            try
+            {
+                if (handle.Status != EOperationStatus.Succeeded)
+                {
+                    GameLog.Error($"[AssetRuntime] Raw file load failed: {path} - {handle.Error}");
+                    return Array.Empty<byte>();
+                }
+
+                var rawFile = handle.GetAssetObject<RawFileObject>();
+                return rawFile?.GetBytes() ?? Array.Empty<byte>();
+            }
+            finally
+            {
+                handle.Release();
+            }
+        }
+
         public void Release<T>(string path) where T : Object
         {
             var key = AssetCacheKey.Create<T>(path);
-            YooAsset.AssetHandle? handle = null;
+            YooAsset.AssetHandle handle = null;
             lock (_gate)
             {
                 if (_loadingTasks.TryGetValue(key, out var pendingLoad))
@@ -415,7 +503,7 @@ namespace Framework.Asset
                 AssetConfig.PlayMode.EditorSimulate => new EditorSimulateModeOptions
                 {
                     EditorFileSystemParameters =
-                        FileSystemParameters.CreateDefaultEditorFileSystemParameters(packageName)
+                        FileSystemParameters.CreateDefaultEditorFileSystemParameters(GetEditorSimulatePackageRoot(config))
                 },
                 AssetConfig.PlayMode.Offline => new OfflinePlayModeOptions
                 {
@@ -430,6 +518,15 @@ namespace Framework.Asset
                 },
                 _ => throw new ArgumentOutOfRangeException(nameof(config.Mode), config.Mode, null)
             };
+        }
+
+        private static string GetEditorSimulatePackageRoot(AssetConfig config)
+        {
+            if (!string.IsNullOrWhiteSpace(config.EditorSimulatePackageRoot))
+                return config.EditorSimulatePackageRoot;
+
+            throw new InvalidOperationException(
+                "AssetConfig.EditorSimulatePackageRoot is empty. Run KJ/HybridCLR/Prepare YooAsset Editor Simulate Package or KJ/HybridCLR/Prepare Runtime Assets And Boot before entering Play Mode.");
         }
 
         private FileSystemParameters BuildSandboxParameters(AssetConfig config)

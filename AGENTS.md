@@ -7,6 +7,7 @@ YooAsset, HybridCLR, and Luban.
 
 For the complete technical stack, read `.planning/PROJECT.md`.
 For directory structure rules, read `.planning/目录结构规范.md`.
+For AI-readable runtime logs and diagnostic workflow, read `.planning/AI_RUNTIME_LOGGING.md`.
 
 ## Session Startup
 
@@ -54,6 +55,13 @@ Upper layers may depend on lower layers; lower layers must not depend on upper l
 - `Project`: project-specific business logic. It may reference all lower layers.
 
 Compilation boundaries are enforced by `.asmdef` files.
+
+## AI Runtime Diagnostics
+
+- Runtime debugging should use generated log files as the default evidence.
+- Prefer reading `Logs/Runtime/latest.jsonl` and `latest.session.json` when investigating Editor/Player runtime issues, once LOG-AI runtime support exists.
+- Do not ask the user for Unity Console screenshots when AI-readable runtime logs are available.
+- New logging infrastructure must follow `.planning/AI_RUNTIME_LOGGING.md`: JSON Lines logs, session manifest, Boot/Core boundary safety, no sensitive data in logs.
 
 ## Namespaces
 

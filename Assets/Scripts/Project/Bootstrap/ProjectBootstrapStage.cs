@@ -1,18 +1,16 @@
-using Boot;
+using Core.Bootstrap;
 using MessagePipe;
-using UnityEngine.Scripting;
 
 namespace Project.Bootstrap
 {
-    [Preserve]
-    public sealed class ProjectBootstrapStage : IBootstrapStage
+    public static class ProjectBootstrapStage
     {
-        public int Priority => 300;
-        public string StageName => "Project";
-
-        public void Configure(BootstrapContext context)
+        public static void Configure(CoreStartupContext context)
         {
-            var options = context.GetRequired<MessagePipeOptions>();
+            var options = context.MessagePipeOptions;
+            if (options == null)
+                throw new System.InvalidOperationException("MessagePipeOptions is missing. CoreBootstrapStage must run before ProjectBootstrapStage.");
+
             ProjectBootstrapper.Configure(context.Builder, options);
         }
     }

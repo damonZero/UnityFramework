@@ -77,7 +77,9 @@
     <Analyzer Include="C:\ZZS\Unity 2022.3.62f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Project\Bootstrap\ProjectStartup.cs" />
     <Compile Include="Assets\Scripts\Project\Bootstrap\ProjectBootstrapper.cs" />
+    <Compile Include="Assets\Scripts\Project\Bootstrap\ProjectLifetimeScope.cs" />
     <Compile Include="Assets\Scripts\Project\Bootstrap\ProjectBootstrapStage.cs" />
     <None Include="Assets\Scripts\Project\KJ.Project.asmdef" />
     <Reference Include="UnityEngine">
@@ -395,6 +397,9 @@
     <Reference Include="System.Collections.Immutable">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Collections.Immutable.8.0.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
+    <Reference Include="dnlib">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.code-philosophy.hybridclr@e4def761d6\Plugins\dnlib.dll</HintPath>
+    </Reference>
     <Reference Include="System.Threading.Channels">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Threading.Channels.8.0.0\lib\netstandard2.1\System.Threading.Channels.dll</HintPath>
     </Reference>
@@ -403,6 +408,9 @@
     </Reference>
     <Reference Include="System.Text.Json">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\lib\netstandard2.0\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="LZ4">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.code-philosophy.hybridclr@e4def761d6\Plugins\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
@@ -814,9 +822,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Boot.csproj">
-      <Project>{1235a294-2906-ceaf-fb3a-c7ec04de06ec}</Project>
-      <Name>Boot</Name>
+    <ProjectReference Include="Asset.csproj">
+      <Project>{70c30947-18d5-62ad-3828-b771d649d1f7}</Project>
+      <Name>Asset</Name>
+    </ProjectReference>
+    <ProjectReference Include="Core.csproj">
+      <Project>{44d2f2f4-b4fe-7776-2e22-857438dc6fed}</Project>
+      <Name>Core</Name>
     </ProjectReference>
     <ProjectReference Include="General.csproj">
       <Project>{6d5b8d63-3a3b-4a37-bdc5-266b8a1de292}</Project>

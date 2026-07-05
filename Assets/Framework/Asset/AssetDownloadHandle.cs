@@ -1,5 +1,3 @@
-using Cysharp.Threading.Tasks;
-
 namespace Framework.Asset
 {
     public sealed class AssetDownloadHandle
@@ -40,9 +38,5 @@ namespace Framework.Asset
             _operation?.CancelDownload();
         }
 
-        public UniTask WaitAsync()
-        {
-            return _operation == null ? UniTask.CompletedTask : _operation.ToUniTask();
-        }
     }
 }

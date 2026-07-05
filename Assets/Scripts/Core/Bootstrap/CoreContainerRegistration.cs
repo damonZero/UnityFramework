@@ -16,7 +16,7 @@ namespace Core.Bootstrap
     /// </summary>
     public static class CoreContainerRegistration
     {
-        public static MessagePipeOptions RegisterCoreServices(this IContainerBuilder builder)
+        public static MessagePipeOptions RegisterCoreServices(this IContainerBuilder builder, IAssetRuntime assetRuntime = null)
         {
             // ── ZLogger / Microsoft.Extensions.Logging ──
             var loggerFactory = LoggerFactory.Create(logging =>
@@ -42,9 +42,22 @@ namespace Core.Bootstrap
             var options = builder.RegisterMessagePipe();
 
             // ── Framework Asset ──
-            builder.Register<AssetRuntime>(Lifetime.Singleton)
-                .AsSelf()
-                .AsImplementedInterfaces();
+            if (assetRuntime == null)
+            {
+                builder.Register<AssetRuntime>(Lifetime.Singleton)
+                    .AsSelf()
+                    .AsImplementedInterfaces();
+            }
+            else
+            {
+                if (assetRuntime is not IAssetSystem assetSystem)
+                    throw new System.InvalidOperationException("Boot asset runtime must also implement IAssetSystem.");
+
+                builder.RegisterInstance(assetRuntime)
+                    .As<IAssetRuntime>();
+                builder.RegisterInstance(assetSystem)
+                    .As<IAssetSystem>();
+            }
 
             // ── Core Types (scans [CoreSystem] types including GameLogBridge) ──
             builder.RegisterCoreTypes(options, typeof(CoreContainerRegistration).Assembly);

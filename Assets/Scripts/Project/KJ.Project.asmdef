@@ -2,13 +2,15 @@
     "name": "Project",
     "rootNamespace": "Project",
     "references": [
-        "Boot",
+        "Asset",
+        "Core",
         "General",
         "Event",
         "Log",
         "MessagePipe",
         "MessagePipe.VContainer",
-        "VContainer"
+        "VContainer",
+        "VContainer.Unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

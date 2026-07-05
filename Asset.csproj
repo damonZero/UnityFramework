@@ -77,10 +77,13 @@
     <Analyzer Include="C:\ZZS\Unity 2022.3.62f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Framework\Asset\AssetUpdateManifestHandle.cs" />
     <Compile Include="Assets\Framework\Asset\IAssetRuntime.cs" />
     <Compile Include="Assets\Framework\Asset\AssetHandle.cs" />
+    <Compile Include="Assets\Framework\Asset\AssetRuntimeFactory.cs" />
     <Compile Include="Assets\Framework\Asset\AssetSceneHandle.cs" />
     <Compile Include="Assets\Framework\Asset\AssetInstanceHandle.cs" />
+    <Compile Include="Assets\Framework\Asset\AssetInitializeHandle.cs" />
     <Compile Include="Assets\Framework\Asset\AssetDownloadHandle.cs" />
     <Compile Include="Assets\Framework\Asset\AssetConstants.cs" />
     <Compile Include="Assets\Framework\Asset\AssetConfig.cs" />
@@ -402,6 +405,9 @@
     <Reference Include="System.Collections.Immutable">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Collections.Immutable.8.0.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
+    <Reference Include="dnlib">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.code-philosophy.hybridclr@e4def761d6\Plugins\dnlib.dll</HintPath>
+    </Reference>
     <Reference Include="System.Threading.Channels">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Threading.Channels.8.0.0\lib\netstandard2.1\System.Threading.Channels.dll</HintPath>
     </Reference>
@@ -410,6 +416,9 @@
     </Reference>
     <Reference Include="System.Text.Json">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\System.Text.Json.8.0.5\lib\netstandard2.0\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="LZ4">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.code-philosophy.hybridclr@e4def761d6\Plugins\LZ4.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>

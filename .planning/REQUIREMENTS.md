@@ -9,25 +9,27 @@
 - 不堆砌代码，不跳过验证
 - 商业级质量：接口设计合理、边界情况处理、可扩展
 - 依赖方向固定为 `Boot <- Core <- General <- Project`，下层不得依赖上层
-- Boot 层保持最小依赖，只保留稳定启动壳、阶段协议和类型名驱动的 Stage 编排能力
-- 启动采用 Boot 反射创建普通 C# Stage：Core → General → Project，按 Priority 执行
+- Boot 层保持最小依赖，只保留稳定启动壳、Entry 序列化更新配置、资源/代码更新和正式入口反射调用能力
+- 启动采用 Boot 反射调用热更层正式入口；Project 创建 VContainer root，并静态串联 Core → General → Project 注册
 - 依赖注入采用 VContainer，MessagePipe 作为当前类型安全事件后端
 - 稳定底层模块下沉到 `Assets/Framework/`，上层通过统一接口访问，不直接绑定第三方实现
 - Core 使用 System，业务层使用 Model + ViewModel，不引入业务 System
+- 运行期调试必须产生 AI 可分析的文件化日志；Editor Play、Player smoke、资源验证和热更验证优先通过日志文件定位问题，而不是依赖 Console 截图
 
 ## 需求清单
 
-1. 建立基于 VContainer 的分阶段容器注册体系
-2. 建立 Boot 层稳定启动协议：`BootstrapContext` / `IBootstrapStage`
-3. 建立无 prefab 启动链：Boot 通过类型名创建 Stage，按 Priority 执行各层注册
+1. 建立基于 VContainer 的 Core/General/Project 分层容器注册体系
+2. 建立 Boot 层稳定启动协议：Entry 序列化启动配置 + 热更入口反射调用
+3. 建立无 prefab 启动链：ProjectStartup 创建正式 VContainer root，并按 Core → General → Project 注册
 4. 建立 Core Architecture：`ISystem`、`[CoreSystem]`、`SystemManager`
 5. 建立类型安全事件注册：`Framework.Event.GameEventAttribute` + 当前 MessagePipe `IPublisher<T>` / `ISubscriber<T>` 后端
 6. 删除旧式 `EventId + object payload` 事件总线设计
 7. 建立业务 Model 注册：`IModel`、`[Model]`、`ModelLifecycle`
-8. 确保热更新模块可独立替换，不因 Project/General 改动要求重启 App
+8. 确保热更新模块在正式游戏启动前可独立替换，不因 Project/General 改动要求整包更新；已加载程序集的新 DLL 在下一次启动生效
 9. 保持四层 .asmdef 编译隔离和单向依赖约束
 10. 建立对象池/缓存体系：纯 C# 对象池（`Framework/Pool/`）、Unity 资源缓存（`Framework/Cache/`）、集合租借 `using` 统一入口（`Framework/Pool/Collections/`），由 Core 层 `PoolService` 桥接注册到 DI 容器
 11. 建立底层资源统一接口：`Framework/Asset/` 封装资源配置、句柄、下载器和 YooAsset 适配，上层只依赖 `IAssetSystem`
+12. 建立 AI Runtime Logging：基于 `Framework.Log` / ZLogger 的统一入口，把运行日志落盘为 JSON Lines + session 清单，覆盖 Boot、YooAsset、HybridCLR、Core、Asset、Pool 和业务 Model 生命周期，用于 AI 自动分析和验证报告
 
 ## Framework 下沉硬约束
 

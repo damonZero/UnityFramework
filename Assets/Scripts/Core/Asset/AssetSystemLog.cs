@@ -8,7 +8,7 @@ namespace Core.Asset
     internal static partial class AssetSystemLog
     {
         [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information), Conditional(GameLogSymbols.Warning)]
-        [ZLoggerMessage(LogLevel.Warning, "[AssetSystem] AssetConfig.asset not found; using editor-simulate defaults.")]
+        [ZLoggerMessage(LogLevel.Warning, "[AssetSystem] AssetConfig.asset not found.")]
         internal static partial void ConfigNotFound(ILogger logger);
 
         [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information)]

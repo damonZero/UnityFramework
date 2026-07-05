@@ -5,7 +5,7 @@ description: >
   GameLogConfig、GameLogSwitches、IGameLogSink）、Core 到 ZLogger Unity Console provider 的桥接、
   按打包环境编译期裁剪、按模块树运行时过滤、ZLoggerMessage 源生成日志模板规则。
   触发场景：新增日志、替换 Debug.Log、配置 dev/formal 等包环境日志级别、模块日志开关、
-  编写 XxxLog.cs、接入 ZLogger、讨论 GameLogBridge 或日志面板/打包脚本。
+  编写 XxxLog.cs、接入 ZLogger、讨论 GameLogBridge、日志面板/打包脚本、AI 运行日志落盘。
 ---
 
 # KJ 日志系统指南
@@ -16,6 +16,7 @@ description: >
 - `Assets/Scripts/Core/Logging/GameLogBridge.cs` 只负责把 `Framework.Log.IGameLogSink` 接到 Core 的 ZLogger 管线。
 - `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` 注册 `ILoggerFactory`、`ILogger<T>` 和 `AddZLoggerUnityDebug` provider。
 - 业务层和 Framework 层不直接调用 `UnityEngine.Debug.Log*`。
+- AI 运行日志规范见 `.planning/AI_RUNTIME_LOGGING.md`；运行日志落盘和 session 清单属于 Core/Logging 管线，Framework.Log 只放稳定接口和数据结构。
 
 ## 输出管线
 
@@ -32,6 +33,24 @@ logging.AddZLoggerUnityDebug(options =>
 ```
 
 ZLogger 内部会输出到 Unity Console，并保留更好的堆栈/跳转体验。不要因为底层 provider 使用 Unity Console，就在业务层回退到 `Debug.Log`。
+
+## AI 运行日志
+
+运行日志文件是 AI 调试的默认证据。Editor/dev/QA 环境目标输出为 JSON Lines + session 清单：
+
+```text
+Logs/Runtime/latest.jsonl
+Logs/Runtime/latest.session.json
+```
+
+实现规则：
+
+- Console provider 继续服务人类观察；文件日志服务 AI 分析和自动化验证。
+- JSONL 是规范格式，人类可读 `.log` 只能作为辅助。
+- Boot 阶段不能依赖 Core/ZLogger；若要捕获 Boot 日志，优先在 `Framework.Log` 增加有界启动缓冲，由 Core logger 安装后回放。
+- `Assets/Scripts/Core/Logging/` 负责 sessionId、session 清单、文件 writer/provider、flush 和 latest 指针。
+- Player smoke、资源加载矩阵、热更 smoke 的报告应引用日志文件路径和关键错误摘要。
+- 日志不得写 token、密码、实名账号、支付信息等敏感数据。
 
 ## 打包环境与编译期裁剪
 
@@ -96,6 +115,7 @@ internal static partial class AssetSystemLog
 ## 禁止事项
 
 - 不在业务代码直接使用 `Debug.Log/LogWarning/LogError`。
+- 不把 Unity Console 截图作为 AI 调试的默认输入；能读日志文件时优先读 `.jsonl`。
 - 不在业务逻辑文件里散写日志裁剪符号。
 - 不让 Framework.Log 引用 VContainer、Core、ZLogger、Microsoft.Extensions.Logging。
 - `Framework.Log/Log.asmdef` 使用 `noEngineReferences=true`，不引用 UnityEngine API。

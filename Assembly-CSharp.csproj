@@ -72,6 +72,7 @@
     <None Include="Assets\Packages\System.Text.Encodings.Web.8.0.0\lib\netstandard2.0\System.Text.Encodings.Web.xml" />
     <None Include="Assets\Packages\System.Collections.Immutable.8.0.0\lib\netstandard2.0\System.Collections.Immutable.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.0\useSharedDesignerContext.txt" />
+    <None Include="Assets\HybridCLRGenerate\link.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.DependencyInjection.8.0.0\lib\netstandard2.1\Microsoft.Extensions.DependencyInjection.xml" />
     <None Include="Assets\Packages\Microsoft.Extensions.Primitives.8.0.0\useSharedDesignerContext.txt" />
     <None Include="Assets\Packages\System.Diagnostics.DiagnosticSource.8.0.0\lib\netstandard2.0\System.Diagnostics.DiagnosticSource.xml" />
