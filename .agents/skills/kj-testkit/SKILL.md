@@ -1,7 +1,7 @@
 ---
 name: kj-testkit
 description: >
-  KJ Framework 测试工具包指南。涵盖 AssertEx（NUnit 断言扩展：IsDestroyed/IsNotDestroyed/AreApproximatelyEqual）、RecordingAssetSystem（IAssetSystem 内存 fake，记录加载/释放调用）、CallProbe（调用顺序记录+AssertSequence）、RecordingEventSink<TEvent>（类型化事件记录+AssertSingle/AssertEmpty）、ManualClock（手动时间驱动+递归防护）、ManualTickDriver（Tick/LateTick/FixedTick 手动分发）、TestGameObjectRoot（IDisposable 临时 GameObject 根节点）。
+  KJ Framework 测试工具包指南。涵盖 AssertEx（NUnit 断言扩展：IsDestroyed/IsNotDestroyed/AreApproximatelyEqual）、RecordingAssetSystem（IAssetSystem 内存 fake，区分请求/成功加载/释放/UnloadUnused 记录）、CallProbe（调用顺序记录+AssertSequence）、RecordingEventSink<TEvent>（类型化事件记录+AssertSingle/AssertEmpty）、RecordingPublisher<TEvent>（MessagePipe IPublisher<T> 事件发布记录）、ManualClock（手动时间驱动+递归防护）、ManualTickDriver（Tick/LateTick/FixedTick 手动分发）、TestGameObjectRoot（IDisposable 临时 GameObject 根节点）。
   触发场景：写单元测试、Mock IAssetSystem、验证调用顺序、捕获事件、手动驱动时间/Tick、创建测试 GameObject。
   核心规则：TestKit.asmdef autoReferenced=false + optionalUnityReferences:TestAssemblies 隔离测试依赖；所有 async 方法同步完成；RecordingAssetSystem 不支持 handle/scene/downloader 操作。
 metadata:
@@ -21,6 +21,7 @@ Fakes/RecordingAssetSystem.cs    — IAssetSystem 内存 fake
 Fixtures/TestGameObjectRoot.cs   — 临时 GameObject 根节点
 Probes/CallProbe.cs              — 调用顺序记录
 Probes/RecordingEventSink.cs     — 事件记录器
+Probes/RecordingPublisher.cs     — MessagePipe 发布记录器
 Time/ManualClock.cs              — 手动时钟
 Time/ManualTickDriver.cs         — 手动 Tick 驱动
 ```
@@ -55,12 +56,17 @@ assetSystem.RegisterAsset<GameObject>("Assets/Prefabs/Bullet.prefab", myFakePref
 var tex = await assetSystem.LoadAssetAsync<Texture2D>("Assets/Tex/hero.png");
 // tex == myFakeTexture
 
-// 验证加载记录
+// 验证请求和成功加载记录
+Assert.Contains("Assets/Tex/hero.png", assetSystem.RequestedPaths);
 Assert.Contains("Assets/Tex/hero.png", assetSystem.LoadedPaths);
 
 // 释放
 assetSystem.Release<Texture2D>("Assets/Tex/hero.png");
 Assert.Contains("Assets/Tex/hero.png", assetSystem.ReleasedPaths);
+
+// UnloadUnused 记录调用次数
+assetSystem.UnloadUnused();
+Assert.AreEqual(1, assetSystem.UnloadUnusedCount);
 
 // 清理记录（不清理注册的资源）
 assetSystem.ClearRecords();
@@ -72,7 +78,8 @@ assetSystem.ClearRecords();
 **关键行为：**
 - 重复注册同一 `(path, Type)` → `InvalidOperationException`
 - 类型不匹配 → `InvalidCastException`（含完整类型信息）
-- `LoadedPaths` 只在 `FindAsset` 成功后记录，异常不污染
+- `RequestedPaths` 记录所有有效加载请求；`LoadedPaths` 只在找到非空资源后记录，异常和缺失资源不污染成功加载记录
+- `ReleasedPaths` 记录 `Release<T>(path)` 和 `Release(path)`；`UnloadUnusedCount` 记录 `UnloadUnused()` 调用次数
 - 所有 `UniTask` 方法同步完成（无异步等待）
 
 ### CallProbe — 调用顺序记录
@@ -112,6 +119,20 @@ sink.Events   // IReadOnlyList<TEvent> — 所有记录的事件
 sink.Count    // 事件数量
 sink.Clear(); // 清空
 ```
+
+### RecordingPublisher<TEvent> — MessagePipe 发布记录器
+
+```csharp
+var publisher = new RecordingPublisher<PlayerLevelUpEvent>();
+
+publisher.Publish(new PlayerLevelUpEvent { PlayerId = 1, NewLevel = 5 });
+
+var evt = publisher.AssertSingle();
+publisher.AssertEmpty();
+publisher.Clear();
+```
+
+**用途:** 测试依赖 `IPublisher<TEvent>` 的 Core/System/Model 时，避免每个测试文件重复手写 FakePublisher。
 
 ### ManualClock — 手动时间驱动
 
@@ -167,6 +188,15 @@ var child = root.CreateChild("TestChild");
 
 1. **用 RecordingAssetSystem 测试资源加载逻辑** — 不依赖真实资源，快速可靠
 2. **CallProbe + AssertSequence 验证方法调用顺序** — 比 mock 框架轻量
-3. **RecordingEventSink 捕获事件** — 配合 AssertSingle 验证"只发布一次"
-4. **ManualClock/ManualTickDriver 测试时间/Tick 依赖** — 不要用 `Task.Delay` 或真实 `Time.deltaTime`
-5. **TestGameObjectRoot 用 using** — 自动清理，不留脏 GameObject
+3. **RecordingPublisher 捕获 MessagePipe 发布** — 配合 AssertSingle 验证"只发布一次"
+4. **RecordingEventSink 捕获回调事件** — 适合测试 event/action 风格的本地通知
+5. **ManualClock/ManualTickDriver 测试时间/Tick 依赖** — 不要用 `Task.Delay` 或真实 `Time.deltaTime`
+6. **TestGameObjectRoot 用 using** — 自动清理，不留脏 GameObject
+
+## 当前迭代清单
+
+- 已完成: MessagePipe `IPublisher<T>` 发布记录器，替代测试内重复 FakePublisher。
+- 已完成: `RecordingAssetSystem` 区分请求、成功加载、释放、UnloadUnused，避免失败路径污染成功加载断言。
+- 已完成: smoke tests 覆盖资源缺失、释放/清理、事件发布记录。
+- 下一步: 增加最小 VContainer + MessagePipe 测试容器夹具，用于 Bootstrap/DI 装配测试。
+- 下一步: 视 UI/Pool 场景增加 GameObject 实例化 fake，不强行模拟 YooAsset handle 内部类型。

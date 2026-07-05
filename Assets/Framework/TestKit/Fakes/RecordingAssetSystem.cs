@@ -14,11 +14,15 @@ namespace Framework.TestKit.Fakes
     public sealed class RecordingAssetSystem : IAssetSystem
     {
         private readonly Dictionary<(string path, Type type), Object> _assets = new();
+        private readonly List<string> _requestedPaths = new();
         private readonly List<string> _loadedPaths = new();
         private readonly List<string> _releasedPaths = new();
+        private int _unloadUnusedCount;
 
+        public IReadOnlyList<string> RequestedPaths => _requestedPaths;
         public IReadOnlyList<string> LoadedPaths => _loadedPaths;
         public IReadOnlyList<string> ReleasedPaths => _releasedPaths;
+        public int UnloadUnusedCount => _unloadUnusedCount;
 
         public void RegisterAsset<T>(string path, T asset) where T : Object
         {
@@ -34,8 +38,13 @@ namespace Framework.TestKit.Fakes
 
         public UniTask<T> LoadAssetAsync<T>(string path) where T : Object
         {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
+
+            _requestedPaths.Add(path);
             var asset = FindAsset<T>(path);
-            _loadedPaths.Add(path);
+            if (asset != null)
+                _loadedPaths.Add(path);
             return UniTask.FromResult(asset);
         }
 
@@ -66,22 +75,31 @@ namespace Framework.TestKit.Fakes
 
         public void Release<T>(string path) where T : Object
         {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
+
             _releasedPaths.Add(path);
         }
 
         public void Release(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
+
             _releasedPaths.Add(path);
         }
 
         public void UnloadUnused()
         {
+            _unloadUnusedCount++;
         }
 
         public void ClearRecords()
         {
+            _requestedPaths.Clear();
             _loadedPaths.Clear();
             _releasedPaths.Clear();
+            _unloadUnusedCount = 0;
         }
 
         private T FindAsset<T>(string path) where T : Object

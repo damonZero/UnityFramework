@@ -83,6 +83,7 @@
     <Compile Include="Assets\Framework\TestKit\Time\ManualClock.cs" />
     <Compile Include="Assets\Framework\TestKit\Probes\RecordingEventSink.cs" />
     <Compile Include="Assets\Framework\TestKit\Fakes\RecordingAssetSystem.cs" />
+    <Compile Include="Assets\Framework\TestKit\Probes\RecordingPublisher.cs" />
     <Compile Include="Assets\Framework\TestKit\Time\ManualTickDriver.cs" />
     <None Include="Assets\Framework\TestKit\TestKit.asmdef" />
     <Reference Include="UnityEngine">
@@ -708,6 +709,9 @@
     </Reference>
     <Reference Include="System.Xml.Serialization">
       <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="MessagePipe">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\MessagePipe.dll</HintPath>
     </Reference>
     <Reference Include="UniTask">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\UniTask.dll</HintPath>

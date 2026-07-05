@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using Core.Systems;
 using Core.Systems.Events;
 using Framework.TestKit.Probes;
-using MessagePipe;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
@@ -12,15 +10,15 @@ namespace Tests.EditMode
     [TestFixture]
     public sealed class SystemManagerTests
     {
-        private FakePublisher<AppStartedEvent> _startedPublisher;
-        private FakePublisher<AppShuttingDownEvent> _shuttingDownPublisher;
+        private RecordingPublisher<AppStartedEvent> _startedPublisher;
+        private RecordingPublisher<AppShuttingDownEvent> _shuttingDownPublisher;
         private NullLogger<SystemManager> _logger;
         private CallProbe _probe;
         [SetUp]
         public void Setup()
         {
-            _startedPublisher = new FakePublisher<AppStartedEvent>();
-            _shuttingDownPublisher = new FakePublisher<AppShuttingDownEvent>();
+            _startedPublisher = new RecordingPublisher<AppStartedEvent>();
+            _shuttingDownPublisher = new RecordingPublisher<AppShuttingDownEvent>();
             _logger = new NullLogger<SystemManager>();
             _probe = new CallProbe();
         }
@@ -193,12 +191,6 @@ namespace Tests.EditMode
             }
 
             public void Shutdown() { }
-        }
-
-        private sealed class FakePublisher<T> : IPublisher<T>
-        {
-            public readonly List<T> PublishedEvents = new();
-            public void Publish(T message) => PublishedEvents.Add(message);
         }
 
         private sealed class NullLogger<T> : ILogger<T>

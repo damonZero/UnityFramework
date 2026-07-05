@@ -4,6 +4,7 @@
     "references": [
         "Asset",
         "Event",
+        "MessagePipe",
         "UniTask"
     ],
     "includePlatforms": [],

@@ -33,12 +33,59 @@ namespace Tests.EditMode
                 Assert.Throws<InvalidCastException>(() =>
                     system.LoadAssetAsync<OtherAsset>("hero").GetAwaiter().GetResult());
 
+                Assert.That(system.RequestedPaths, Is.EqualTo(new[] { "hero" }));
                 Assert.That(system.LoadedPaths, Is.Empty);
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(asset);
             }
+        }
+
+        [Test]
+        public void RecordingAssetSystemTracksMissingRequestsWithoutSuccessfulLoads()
+        {
+            var system = new RecordingAssetSystem();
+
+            var result = system.LoadAssetAsync<TestAsset>("missing").GetAwaiter().GetResult();
+
+            Assert.IsNull(result);
+            Assert.That(system.RequestedPaths, Is.EqualTo(new[] { "missing" }));
+            Assert.That(system.LoadedPaths, Is.Empty);
+        }
+
+        [Test]
+        public void RecordingAssetSystemTracksReleaseAndUnloadUnused()
+        {
+            var system = new RecordingAssetSystem();
+
+            system.Release<TestAsset>("hero");
+            system.Release("shared");
+            system.UnloadUnused();
+
+            Assert.That(system.ReleasedPaths, Is.EqualTo(new[] { "hero", "shared" }));
+            Assert.AreEqual(1, system.UnloadUnusedCount);
+
+            system.ClearRecords();
+
+            Assert.That(system.ReleasedPaths, Is.Empty);
+            Assert.AreEqual(0, system.UnloadUnusedCount);
+        }
+
+        [Test]
+        public void RecordingPublisherCapturesPublishedEvents()
+        {
+            var publisher = new RecordingPublisher<TestEvent>();
+            var evt = new TestEvent(7);
+
+            publisher.Publish(evt);
+
+            Assert.AreEqual(1, publisher.Count);
+            Assert.AreEqual(evt, publisher.AssertSingle());
+
+            publisher.Clear();
+
+            publisher.AssertEmpty();
         }
 
         [Test]
@@ -61,6 +108,16 @@ namespace Tests.EditMode
 
         private sealed class OtherAsset : ScriptableObject
         {
+        }
+
+        private readonly struct TestEvent
+        {
+            public TestEvent(int value)
+            {
+                Value = value;
+            }
+
+            public int Value { get; }
         }
     }
 }

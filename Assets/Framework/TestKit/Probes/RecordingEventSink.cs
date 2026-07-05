@@ -10,6 +10,15 @@ namespace Framework.TestKit.Probes
         public IReadOnlyList<TEvent> Events => _events;
         public int Count => _events.Count;
 
+        public RecordingEventSink()
+        {
+        }
+
+        internal RecordingEventSink(List<TEvent> events)
+        {
+            _events = events;
+        }
+
         public void Record(TEvent evt)
         {
             _events.Add(evt);
