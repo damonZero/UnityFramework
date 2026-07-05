@@ -830,6 +830,10 @@
       <Project>{0587169f-e39f-b53a-de6f-f72b957cc415}</Project>
       <Name>Event</Name>
     </ProjectReference>
+    <ProjectReference Include="Log.csproj">
+      <Project>{6910460a-9d5b-367f-5986-cd7259138387}</Project>
+      <Name>Log</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

@@ -78,6 +78,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Tests\EditMode\TestKitSmokeTests.cs" />
+    <Compile Include="Assets\Tests\EditMode\CacheThreadSafetyTests.cs" />
+    <Compile Include="Assets\Tests\EditMode\AutoExportTestResults.cs" />
+    <Compile Include="Assets\Tests\EditMode\PoolTests.cs" />
+    <Compile Include="Assets\Tests\EditMode\ModelLifecycleTests.cs" />
+    <Compile Include="Assets\Tests\EditMode\SystemManagerTests.cs" />
     <None Include="Assets\Tests\EditMode\KJ.Tests.EditMode.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -342,6 +347,12 @@
     </Reference>
     <Reference Include="UnityEditor.WindowsStandalone.Extensions">
       <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\PlaybackEngines\WindowsStandaloneSupport\UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.Abstractions.8.0.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Assets\Packages\Microsoft.Extensions.Logging.8.0.0\lib\netstandard2.1\Microsoft.Extensions.Logging.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\PackageCache\com.unity.ext.nunit@1.0.6\net35\unity-custom\nunit.framework.dll</HintPath>
@@ -739,6 +750,12 @@
     <Reference Include="UniTask">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\UniTask.dll</HintPath>
     </Reference>
+    <Reference Include="MessagePipe">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\MessagePipe.dll</HintPath>
+    </Reference>
+    <Reference Include="ZLogger.Unity">
+      <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\ZLogger.Unity.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.TestRunner">
       <HintPath>C:\ZZS\Project\NewProjectK\KJ\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
     </Reference>
@@ -764,6 +781,22 @@
     <ProjectReference Include="Event.csproj">
       <Project>{0587169f-e39f-b53a-de6f-f72b957cc415}</Project>
       <Name>Event</Name>
+    </ProjectReference>
+    <ProjectReference Include="Cache.csproj">
+      <Project>{7e633378-9ebe-fb0c-4b0b-baf70aec5c30}</Project>
+      <Name>Cache</Name>
+    </ProjectReference>
+    <ProjectReference Include="Pool.csproj">
+      <Project>{db87d42d-bea0-93ac-4589-121e4ed0cc2c}</Project>
+      <Name>Pool</Name>
+    </ProjectReference>
+    <ProjectReference Include="Core.csproj">
+      <Project>{44d2f2f4-b4fe-7776-2e22-857438dc6fed}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="General.csproj">
+      <Project>{6d5b8d63-3a3b-4a37-bdc5-266b8a1de292}</Project>
+      <Name>General</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
