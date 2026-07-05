@@ -26,5 +26,5 @@ metadata:
 - 资源按类型+层放 `GameRes/{类型}/{层}/`
 - 场景放 `Assets/GameRes/Scene/{Layer}/`；`Assets/Resources/` 只放最小启动配置（如 `AssetConfig.asset`）
 - `XxxLog.cs` 日志源生成模板跟随 `Xxx.cs` 所属模块目录；`Core/Logging/` 只放日志管线/桥接；日志规则详见 `kj-log`
-- AI 运行日志文件化能力按 `.planning/AI_RUNTIME_LOGGING.md` 放置：稳定接口/配置在 `Assets/Framework/Log/`，运行时文件管线在 `Assets/Scripts/Core/Logging/`，Editor 分析/导出工具在 `Assets/Scripts/Core.Editor/Logging/` 或 `Assets/Framework/Log.Editor/`
+- AI 运行日志文件化能力按 `.planning/AI_RUNTIME_LOGGING.md` 放置：日志门面/缓冲在 `Assets/Framework/Log/`，纯 C# 文件 session writer 在 `Assets/Framework/RuntimeLog/`，Unity/ZLogger 接入在 `Assets/Scripts/Core/Logging/`，Editor 分析/导出工具在 `Assets/Scripts/Core.Editor/Logging/`
 - ⚠️ asmdef 文件名当前仍带 `KJ.` 前缀（如 `KJ.Boot.asmdef`），后续迁移为不带前缀（如 `Boot.asmdef`）。`rootNamespace` 已正确设置为不带前缀的名称。新建 asmdef 时请直接用不带前缀的文件名。

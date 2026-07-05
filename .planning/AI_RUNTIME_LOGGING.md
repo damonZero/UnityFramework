@@ -98,33 +98,60 @@ Player:
 
 Session 清单不能依赖 Core/Project 才能写出。Boot 阶段失败也必须尽量留下清单和错误日志。
 
+## 当前落地结构
+
+第一版已落地为独立 `Framework.RuntimeLog` 包，而不是把文件 writer 塞进 `Framework.Log` 或 Core：
+
+- `Assets/Framework/Log/`：保留稳定日志门面、模块开关、`IGameLogSink` 和启动期有界缓冲。
+- `Assets/Framework/RuntimeLog/`：纯 C# session writer，负责 JSONL、session 清单、`latest.*`、sessionId、文件名、phase 归类和 `RuntimeLogManager`。该包只引用 `Log`，`noEngineReferences=true`。
+- `Assets/Scripts/Boot/`：`BootRuntimeLogBootstrap` 在 `Entry.Awake()` 最早安装 runtime session，Boot 失败时也尽量写入文件并 flush。
+- `Assets/Scripts/Core/Logging/`：`RuntimeLogBootstrap` 补全 Unity/session 信息，`RuntimeLogLoggerProvider` 接入 `ILogger<T>` / `[ZLoggerMessage]`，`GameLogBridge` 同时写 runtime session 和 ZLogger Unity Console。
+- `Assets/Scripts/Core.Editor/Logging/`：提供 `KJ/Runtime Logs/*` 菜单，打开 latest、生成摘要、导出诊断包、清理本地日志。
+- `Assets/Framework/TestKit/Fakes/RecordingRuntimeLogSink.cs`：测试用记录 sink，供启动缓冲和接入顺序测试复用。
+
+这套结构的原则是：文件格式和 session 生命周期作为稳定 Framework 能力可被 Boot/TestKit 复用；Unity 路径、帧号、ZLogger provider 和 Editor 菜单留在 Scripts/Core 侧。
+
 ## 分层职责
 
 ### Framework.Log
 
-`Assets/Framework/Log/` 只定义稳定接口和数据结构：
+`Assets/Framework/Log/` 只定义稳定接口、数据结构和启动期缓冲：
 
 - `GameLog`
 - `GameLogEntry`
 - `IGameLogSink`
 - `GameLogConfig`
-- 未来可增加早期启动 ring buffer、上下文接口、脱敏规则数据
+- 早期启动 ring buffer
+- 未来可增加上下文接口、脱敏规则数据
 
 Framework.Log 不引用 UnityEngine、VContainer、ZLogger、Core 或任何 `Assets/Scripts` 代码。
+
+### Framework.RuntimeLog
+
+`Assets/Framework/RuntimeLog/` 负责 AI runtime logging 的稳定文件产物：
+
+- `RuntimeLogSession`
+- `RuntimeLogSessionInfo`
+- `RuntimeLogEntry`
+- `RuntimeLogManager`
+- `RuntimeLogJson`
+- `RuntimeLogPhaseResolver`
+
+Framework.RuntimeLog 只引用 `Framework.Log`，不引用 UnityEngine、VContainer、ZLogger、Core 或任何 `Assets/Scripts` 代码。
 
 ### Boot
 
 Boot 可以通过 `GameLog` 写启动更新日志，但不能引用 Core/ZLogger。
 
-目标实现里，Boot 阶段日志必须被保留。优先方案是在 `Framework.Log` 增加有界启动缓冲，Core 日志管线安装后回放；如果需要在 Boot 失败时也落盘，则 Boot 只能安装一个极小的 Framework 级文件 sink，不能引入 Core 依赖。
+Boot 阶段日志必须被保留。当前实现是在 `Entry.Awake()` 调用 `BootRuntimeLogBootstrap.EnsureInstalled()`，安装 `Framework.RuntimeLog.RuntimeLogSession` 作为早期 `GameLog.Sink`。当 Core 后续接管时，`GameLogBridge` 会替换 sink，但沿用同一个 session，避免 Boot 日志丢失或 session 断裂。
 
 ### Core.Logging
 
 `Assets/Scripts/Core/Logging/` 负责把日志接入真实运行管线：
 
 - 注册 ZLogger Unity Console provider。
-- 注册运行日志文件 writer/provider。
-- 生成 sessionId、session 清单和 latest 指针。
+- 注册运行日志 provider，复用或创建 `RuntimeLogSession`。
+- 补全 session 清单中的 Unity、资源运行时和启动配置字段。
 - 将 `GameLogBridge`、`ILogger<T>`、ZLoggerMessage 输出统一汇入文件。
 - 在退出或崩溃前尽量 flush。
 

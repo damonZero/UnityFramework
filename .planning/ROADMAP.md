@@ -19,6 +19,8 @@
 | Asset 基础层 | `Framework/Asset/` + `Core/Asset/` | `Framework.Asset` 提供统一资源 API、句柄和 YooAsset 适配；`Core.AssetSystem` 只负责生命周期编排和 ready 事件 |
 | Log 基础层 | `Framework/Log/` + `Core/Logging/` | `GameLog` 稳定门面、环境/模块开关配置、编译期裁剪符号；Core 通过 ZLogger Unity provider 输出到 Console |
 | LOG-AI-00 AI 运行日志规范 | `.planning/AI_RUNTIME_LOGGING.md` | 确立 JSONL + session 清单、Boot/Core 分层职责、AI 分析工作流和验收标准 |
+| LOG-AI-01 运行日志落盘与会话清单 | `Framework/RuntimeLog/` + `Boot/` + `Core/Logging/` | 独立 RuntimeLog session writer；Boot 早期安装；Core 接入 GameLog/ILogger/ZLogger；输出 JSONL、session 清单、latest 指针 |
+| LOG-AI-02 首版日志收集与 AI 分析入口 | `Assets/Scripts/Core.Editor/Logging/` | `KJ/Runtime Logs/*` 菜单：打开 latest、生成摘要、导出诊断包、清理本地日志 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 | HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，正式构建前走完整 `Generate All And Sync` |
 
@@ -48,8 +50,6 @@
 | Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | Framework/Pool + Framework/Cache 代码已完成，`PoolService.cs` 负责 DI 桥接注册 |
 | PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和注册链路去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
 | LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Framework/Log.Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则；跨层入口才放 `Assets/Editor/` |
-| LOG-AI-01 运行日志落盘与会话清单 | Medium | `Assets/Framework/Log/` + `Assets/Scripts/Core/Logging/` | Framework.Log, ZLogger | 生成 AI 可读 JSONL session 日志、session 清单、latest 指针；支持 Boot 早期日志缓冲/回放；Editor/dev Player 默认开启 |
-| LOG-AI-02 日志收集与 AI 分析入口 | Medium | `Assets/Scripts/Core.Editor/Logging/` + `Assets/Framework/Log.Editor/` | LOG-AI-01, LOG-TOOLS | Editor 菜单打开 latest、导出诊断包、清理旧日志、生成错误摘要；Player smoke 报告引用日志产物 |
 
 ### 配置与数据
 
@@ -118,8 +118,8 @@ Core.AssetSystem ← ISystem + Framework.Asset
 Timer ← ISystem
 ObjectPool ← Framework.Asset
 PERF-01 ← Framework.Log + ZLogger + ZLinq + Pool/Cache
-LOG-AI-01 ← Framework.Log + ZLogger + Core.Logging
-LOG-AI-02 ← LOG-AI-01 + LOG-TOOLS
+LOG-AI-01 ← Framework.Log + Framework.RuntimeLog + ZLogger + Boot/Core.Logging
+LOG-AI-02 ← LOG-AI-01 + Core.Editor
 UIManager ← ISystem + Framework.Asset
 UIWindow ← UIManager
 ConfigManager (Luban) ← Framework.Asset

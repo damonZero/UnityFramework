@@ -1,7 +1,7 @@
 # Project State: KJ Unity Framework
 
 **Last Updated:** 2026-07-05
-**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中（HybridCLR 边界、最小加载闭环与编辑器同步工具已落地；Editor Play 启动链已通过；下一步先做 Player 打包 smoke 与资源加载矩阵验证，确认底层框架稳定后再进入 UI/Login 等新模块）
+**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中（HybridCLR 边界、最小加载闭环、编辑器同步工具与 AI_RUNTIME_LOGGING 已落地；Editor Play 启动链已通过；下一步先做 Player 打包 smoke 与资源加载矩阵验证，确认底层框架稳定后再进入 UI/Login 等新模块）
 
 ## 进度
 
@@ -24,6 +24,8 @@
 - [x] MODEL-01: General/Project Model 生命周期接入（`ModelLifecycle` 由 VContainer `IPostStartable` 在 Core 系统 Start 后驱动 `LoadAll()`）
 - [x] LOG-01: `Framework.Log` 稳定日志门面 + 环境/模块开关接口 + Core ZLogger Unity Console provider 桥接（含现有 ZLoggerMessage 调用点裁剪）
 - [x] LOG-AI-00: AI 运行日志规范落地（`.planning/AI_RUNTIME_LOGGING.md`：JSONL + session 清单、Boot/Core 职责、AI 分析流程、验收标准）
+- [x] LOG-AI-01: AI 运行日志落盘与会话清单（`Framework.RuntimeLog` 纯 C# session writer + Boot 早期安装 + Core `GameLog`/`ILogger<T>`/ZLogger 接入）
+- [x] LOG-AI-02: 首版日志收集与 AI 分析入口（`KJ/Runtime Logs/*` Editor 菜单：打开 latest、生成摘要、导出诊断包、清理本地日志）
 - [x] HYB-00: HybridCLR 热更边界固化（托管 DLL 下发 / 需重启生效 / 真正换包规则）
 - [x] HYB-01: HybridCLR 最小加载闭环代码落地（Boot 加载 AOT metadata + Core/General/Project DLL 后反射调用 ProjectStartup；Unity Editor/Player 验证待 HYB-02 工具链）
 - [x] HYB-02A: 热更构建同步工具（`KJ/HybridCLR/*` Editor 菜单：生成/编译 HybridCLR 产物，同步 `.dll.bytes` RawFile，维护 YooAsset collector，回写打开的 Entry 序列化配置；日常 smoke 与完整构建前生成已拆分；工具归属 `Assets/Scripts/Boot.Editor/HybridCLR/`）
@@ -38,6 +40,7 @@ Assets/Scripts/
 │   ├── KJ.Boot.asmdef           ← 仅引用 Framework.Asset，不引用 VContainer/Log/Core/General/Project
 │   ├── Entry.cs                 ← 稳定启动入口 MonoBehaviour；持有序列化启动配置和可选启动 UI
 │   ├── BootStartupSettings.cs   ← Entry 序列化配置：资源更新、热更 DLL/AOT metadata 资源路径、正式启动入口
+│   ├── BootRuntimeLogBootstrap.cs ← Boot 早期 RuntimeLog session 安装；Core/ZLogger 尚未接管前也能落盘
 │   ├── BootUpdateRunner.cs      ← Boot 更新流程：资源版本检查、清单更新、下载、读取 RawFile/本地兜底 bytes、AOT metadata、Assembly.Load、反射启动，并移交 AssetRuntime
 │   ├── BootAssemblyEntry.cs / BootMetadataEntry.cs
 │   ├── HybridClrReflection.cs   ← 反射调用 HybridCLR.RuntimeApi，Boot asmdef 不直接引用 HybridCLR.Runtime
@@ -52,7 +55,9 @@ Assets/Scripts/
 │   ├── KJ.Core.asmdef          ← 引用 Asset + Event + Pool + Cache + Log + VContainer + MessagePipe + UniTask
 │   ├── PoolService.cs          ← [CoreSystem] Framework.Pool DI 桥接 + 集合池快捷入口
 │   ├── Logging/
-│   │   └── GameLogBridge.cs    ← IGameLogSink 到 Core ZLogger 管线的桥接（adapter，不是 CoreSystem）
+│   │   ├── GameLogBridge.cs    ← IGameLogSink 到 RuntimeLog + Core ZLogger 管线的桥接（adapter，不是 CoreSystem）
+│   │   ├── RuntimeLogBootstrap.cs       ← Core 侧 RuntimeLog session 创建/补全：Unity 信息、资源信息、路径、frame provider
+│   │   └── RuntimeLogLoggerProvider.cs  ← Microsoft.Extensions.Logging provider，把 ILogger<T>/ZLoggerMessage 写入同一 JSONL session
 │   ├── Bootstrap/
 │   │   ├── CoreStartupContext.cs
 │   │   ├── CoreTypeRegistration.cs
@@ -72,6 +77,10 @@ Assets/Scripts/
 │       ├── AssetSystem.cs              ← [CoreSystem] Framework.Asset 生命周期编排 + Ready 事件
 │       ├── AssetSystemLog.cs           ← AssetSystem ZLogger 源生成日志
 │       └── AssetSystemReadyEvent.cs    ← [GameEvent] 就绪通知
+├── Core.Editor/
+│   ├── Core.Editor.asmdef       ← Editor-only，引用 Core + Log + RuntimeLog
+│   └── Logging/
+│       └── RuntimeLogEditorTools.cs ← `KJ/Runtime Logs` 菜单：打开 latest、生成摘要、导出诊断包、清理日志
 ├── General/
 │   ├── KJ.General.asmdef       ← 引用 Core + Event + Log
 │   ├── Bootstrap/
@@ -149,10 +158,21 @@ Assets/Framework/
 │   ├── GameLogEnvironment.cs         ← dev/formal/qa 等环境枚举
 │   ├── GameLogModuleRule*.cs         ← 模块规则数据
 │   └── GameLog*Attribute.cs          ← 未来 Editor 面板扫描用声明属性
+├── RuntimeLog/
+│   ├── RuntimeLog.asmdef             ← 只引用 Log，noEngineReferences=true
+│   ├── RuntimeLogSession.cs          ← JSONL writer + session manifest + latest 指针 + flush/dispose
+│   ├── RuntimeLogManager.cs          ← 当前 session 管理；避免覆盖 Core GameLogBridge
+│   ├── RuntimeLogEntry.cs            ← AI 可读运行日志条目
+│   ├── RuntimeLogSessionInfo.cs      ← session 清单数据：Unity/平台/资源包/热更程序集/AOT metadata
+│   ├── RuntimeLogJson.cs             ← 无第三方依赖 JSON serializer
+│   ├── RuntimeLogPhaseResolver.cs    ← Boot/HybridCLR/Core.Asset/Core.Init/ModelLifecycle 等 phase 归类
+│   ├── RuntimeLogFileName.cs
+│   └── RuntimeLogSessionId.cs
 └── TestKit/
     ├── TestKit.asmdef                ← 引用 Unity Test Framework / NUnit，autoReferenced=false
     ├── Assertions/AssertEx.cs        ← NUnit 断言扩展
     ├── Fakes/RecordingAssetSystem.cs ← 可记录资源系统 fake
+    ├── Fakes/RecordingRuntimeLogSink.cs ← 可记录 GameLog sink，测试启动缓冲和 RuntimeLog 接入顺序
     ├── Fixtures/TestGameObjectRoot.cs← 临时 GameObject 根节点
     ├── Probes/CallProbe.cs           ← 调用顺序记录
     ├── Probes/RecordingEventSink.cs  ← 事件记录
@@ -175,11 +195,11 @@ Assets/Framework/
 ## 编码约束补充
 
 - ZLogger / ZString / ZLinq 已纳入技术栈；后续新模块默认考虑这些库，尤其是 Framework/Core 的热路径。
-- 日志接口在 `Framework.Log`；Core 只注册 `ILoggerFactory` / `ILogger<T>` / ZLogger Unity provider，并通过 `GameLogBridge : IGameLogSink` 桥接。
+- 日志接口在 `Framework.Log`；AI runtime logging 文件能力在 `Framework.RuntimeLog`；Core 注册 `ILoggerFactory` / `ILogger<T>` / ZLogger Unity provider，并通过 `GameLogBridge : IGameLogSink` 同时桥接到 RuntimeLog 和 Console。
 - 普通日志使用 `GameLog` 门面，业务层不直接 `Debug.Log`，也不散写 `[Conditional]`。
 - 高频日志优先使用 ZLogger Source Generator：`static partial` 扩展方法 + `[ZLoggerMessage]`，并在 `XxxLog.cs` 日志声明方法上集中加对应 `[Conditional(GameLogSymbols...)]` 以支持 formal 包裁剪。
 - dev/formal/qa 等打包环境通过 `KJ_LOG_*` 编译符号控制调用点保留，符号常量唯一入口是 `Framework.Log.GameLogSymbols`；多个 `[Conditional]` 是 OR 关系，模块开关通过 `GameLogConfig` / `GameLogSwitches` / `GameLogProfile` 控制。
-- AI 运行日志规范见 `.planning/AI_RUNTIME_LOGGING.md`：后续 Editor/dev/QA 运行应生成 JSONL + session 清单；Player smoke、资源矩阵和热更验证优先让 AI 读取日志文件分析，不默认要求用户截图 Console。
+- AI 运行日志规范见 `.planning/AI_RUNTIME_LOGGING.md`：后续 Editor/dev/QA 运行应生成 JSONL + session 清单；AI 调试、Player smoke、资源矩阵和热更验证优先读取日志文件分析，不默认要求用户截图 Console。
 - `Logs/Runtime/` 是本地生成物，已被 `.gitignore` 的 `Logs/` 规则覆盖；日志不得记录 token、密码、实名账号、支付信息等敏感数据。
 - ZString 用于热路径字符串构建；ZLinq 用于可读但低分配的集合查询，优先 `AsValueEnumerable()`，暂不默认开启全局 DropIn Generator。
 - 已建 `Framework.Pool` / `Framework.Cache` 是后续模块的默认性能基础设施：临时集合用 `CollectionPool` / `PooledCollections`，短生命周期对象用 `ObjectPool<T>` / `TypePool`，GameObject 复用走 `GameObjectPool` + `PoolService`，有容量/淘汰需求的数据用 `Cache<TKey,TValue>` + 策略。
@@ -190,7 +210,6 @@ Assets/Framework/
 
 Phase 1 剩余事项：
 - **当前优先级：底层稳定性验证 gate**。暂不继续实现 UI/Login/Config 等新模块；先确认 Boot/HybridCLR/Asset/Core/Pool 在 Editor 与 Player 中稳定可用。
-- LOG-AI-01: 运行日志落盘与会话清单。该项属于调试基础设施，可优先于 UI/Login/Config 等业务模块实现，用于支撑 Player smoke 和资源加载矩阵验证。
 - HYB-02B: 在 Unity 中运行 `KJ/HybridCLR/Prepare Runtime Assets And Boot`，确认只同步 `Core/General/Project.dll.bytes` 与配置的 AOT metadata；正式 Player 打包前跑完整 `Generate All And Sync`。
 - PKG-01: Player 打包 smoke test。构建并运行 Player，确认 Boot -> YooAsset init -> manifest/download -> HybridCLR metadata/DLL load -> ProjectStartup -> Core/SystemManager 全链路成功，关键日志包含 `[AssetSystem] Ready` 与 `[SystemManager] 全部初始化完成`，且无启动期 Error/Exception。
 - RES-VERIFY-01: 资源加载矩阵验证。覆盖 RawFile bytes（DLL/AOT metadata）、`LoadAssetAsync<T>` cached 通道、`LoadAssetHandleAsync<T>` owned 通道 + Dispose、`InstantiateAsync` + Dispose、`LoadSceneAsync`/Unload、`CreateDownloader` 无下载/有下载路径、`Release`/`UnloadUnused` 行为。
@@ -210,6 +229,7 @@ Phase 2 规划：
 
 ## 最新验证记录
 
+- 2026-07-05: LOG-AI-01/02 已落地：新增 `Framework.RuntimeLog`、Boot 早期 session、Core `RuntimeLogLoggerProvider`/`GameLogBridge` 双输出、Core.Editor `KJ/Runtime Logs/*` 菜单，以及 `RuntimeLogTests` 覆盖 JSONL/latest/session、异常字段、最低级别、启动缓冲回放、Core bridge sink 不被覆盖、`ILogger<T>` provider。
 - 2026-07-05: 新增 AI 运行日志规范 `.planning/AI_RUNTIME_LOGGING.md`，明确运行日志应落盘为 JSONL + session 清单，并作为后续 AI 调试、Player smoke、资源矩阵与热更验证的默认分析入口。
 - 2026-07-05: Unity 编译由用户确认无报错。
 - 2026-07-05: `KJHybridClrBuildTools` 已在 HybridCLR full generate 前写入 Boot 场景到 `ProjectSettings/EditorBuildSettings.asset`，修复 `GenerateStripedAOTDlls` 的 `Cannot build untitled scene` 失败。

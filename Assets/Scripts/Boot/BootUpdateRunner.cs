@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Framework.Asset;
+using Framework.Log;
+using Framework.RuntimeLog;
 using UnityEngine;
 
 namespace Boot
@@ -24,6 +27,7 @@ namespace Boot
 
         public IEnumerator Run()
         {
+            GameLog.Info("[Boot] Startup begin", "Boot");
             _view?.SetRepairVisible(false);
             _view?.SetProgress(0f);
 
@@ -31,6 +35,7 @@ namespace Boot
             yield return UpdateAssets();
             LoadHotUpdateCode();
             StartGame();
+            RuntimeLogManager.Flush();
         }
 
         public void Dispose()
@@ -45,6 +50,7 @@ namespace Boot
 
         private IEnumerator InitializeAssets()
         {
+            GameLog.Info("[Boot] Initializing resources", "Boot.Asset");
             _view?.SetStatus("Initializing resources");
             var config = Resources.Load<AssetConfig>("AssetConfig");
             var initHandle = _assetRuntime.BeginInitialize(config);
@@ -66,6 +72,14 @@ namespace Boot
             }
 
             _view?.SetProgress(0.05f);
+            RuntimeLogManager.Current?.UpdateSessionInfo(info =>
+            {
+                if (config == null)
+                    return;
+
+                info.AssetPlayMode = config.Mode.ToString();
+                info.AssetPackageName = config.PackageName;
+            });
         }
 
         private IEnumerator UpdateAssets()
@@ -73,6 +87,7 @@ namespace Boot
             if (!_settings.EnableAssetUpdate)
                 yield break;
 
+            GameLog.Info("[Boot] Checking resources", "Boot.Asset");
             _view?.SetStatus("Checking resources");
             var manifest = _assetRuntime.UpdateManifest();
             while (!manifest.IsVersionDone)
@@ -104,10 +119,12 @@ namespace Boot
 
             if (downloader.TotalDownloadCount <= 0)
             {
+                GameLog.Info("[Boot] Resource update skipped; no downloads", "Boot.Asset");
                 _view?.SetProgress(0.35f);
                 yield break;
             }
 
+            GameLog.Info($"[Boot] Downloading resources: {downloader.TotalDownloadCount}", "Boot.Asset");
             _view?.SetStatus("Updating resources");
             downloader.Start();
             while (!downloader.IsDone)
@@ -130,14 +147,17 @@ namespace Boot
 #if UNITY_EDITOR
             if (_settings.SkipHotUpdateInEditor)
             {
+                GameLog.Info("[Boot] Hot update skipped in Editor", "Boot.HybridCLR");
                 _view?.SetStatus("Using Editor assemblies");
                 return;
             }
 #endif
 
+            GameLog.Info("[Boot] Loading metadata", "Boot.HybridCLR");
             _view?.SetStatus("Loading metadata");
             LoadAotMetadata();
 
+            GameLog.Info("[Boot] Loading code", "Boot.HybridCLR");
             _view?.SetStatus("Loading code");
             LoadHotUpdateAssemblies();
             _view?.SetProgress(0.85f);
@@ -148,6 +168,14 @@ namespace Boot
             var entries = _settings.AotMetadataAssemblies;
             if (entries == null)
                 return;
+
+            RuntimeLogManager.Current?.UpdateSessionInfo(info =>
+            {
+                info.AotMetadataAssemblies.Clear();
+                info.AotMetadataAssemblies.AddRange(entries
+                    .Where(entry => entry != null && !string.IsNullOrWhiteSpace(entry.AssemblyName))
+                    .Select(entry => entry.AssemblyName));
+            });
 
             foreach (var entry in entries)
             {
@@ -174,6 +202,14 @@ namespace Boot
                 return;
             }
 
+            RuntimeLogManager.Current?.UpdateSessionInfo(info =>
+            {
+                info.HotUpdateAssemblies.Clear();
+                info.HotUpdateAssemblies.AddRange(entries
+                    .Where(entry => entry != null && !string.IsNullOrWhiteSpace(entry.AssemblyName))
+                    .Select(entry => entry.AssemblyName));
+            });
+
             foreach (var entry in entries)
             {
                 if (entry == null || string.IsNullOrWhiteSpace(entry.AssemblyName))
@@ -192,6 +228,7 @@ namespace Boot
 
         private void StartGame()
         {
+            GameLog.Info("[Boot] Starting game", "Boot");
             _view?.SetStatus("Starting game");
             _view?.SetProgress(0.95f);
 

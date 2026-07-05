@@ -8,6 +8,8 @@
         "UniTask",
         "Cache",
         "Pool",
+        "Log",
+        "RuntimeLog",
         "Core",
         "General",
         "MessagePipe",

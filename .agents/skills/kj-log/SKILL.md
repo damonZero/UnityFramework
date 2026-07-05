@@ -13,10 +13,11 @@ description: >
 ## 分层职责
 
 - `Assets/Framework/Log/` 是稳定日志接口层，不能依赖 Core、VContainer、ZLogger 或 Microsoft.Extensions.Logging。
+- `Assets/Framework/RuntimeLog/` 是 AI 运行日志文件层，负责 JSONL/session writer，只引用 `Log`，`noEngineReferences=true`。
 - `Assets/Scripts/Core/Logging/GameLogBridge.cs` 只负责把 `Framework.Log.IGameLogSink` 接到 Core 的 ZLogger 管线。
 - `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` 注册 `ILoggerFactory`、`ILogger<T>` 和 `AddZLoggerUnityDebug` provider。
 - 业务层和 Framework 层不直接调用 `UnityEngine.Debug.Log*`。
-- AI 运行日志规范见 `.planning/AI_RUNTIME_LOGGING.md`；运行日志落盘和 session 清单属于 Core/Logging 管线，Framework.Log 只放稳定接口和数据结构。
+- AI 运行日志规范见 `.planning/AI_RUNTIME_LOGGING.md`；运行日志落盘和 session 清单属于 `Framework.RuntimeLog` 稳定包，Unity/ZLogger 接入属于 Core/Logging，Framework.Log 只放稳定接口、数据结构和启动缓冲。
 
 ## 输出管线
 
@@ -47,8 +48,8 @@ Logs/Runtime/latest.session.json
 
 - Console provider 继续服务人类观察；文件日志服务 AI 分析和自动化验证。
 - JSONL 是规范格式，人类可读 `.log` 只能作为辅助。
-- Boot 阶段不能依赖 Core/ZLogger；若要捕获 Boot 日志，优先在 `Framework.Log` 增加有界启动缓冲，由 Core logger 安装后回放。
-- `Assets/Scripts/Core/Logging/` 负责 sessionId、session 清单、文件 writer/provider、flush 和 latest 指针。
+- Boot 阶段不能依赖 Core/ZLogger；当前通过 `BootRuntimeLogBootstrap` 安装 `Framework.RuntimeLog.RuntimeLogSession`，Boot 失败也尽量落盘。
+- `Assets/Scripts/Core/Logging/` 负责 Unity 路径/session 信息、ILogger/ZLogger provider、flush 和 Core 接管；文件 writer 本身在 `Framework.RuntimeLog`。
 - Player smoke、资源加载矩阵、热更 smoke 的报告应引用日志文件路径和关键错误摘要。
 - 日志不得写 token、密码、实名账号、支付信息等敏感数据。
 

@@ -1,4 +1,6 @@
 using System.Collections;
+using Framework.Log;
+using Framework.RuntimeLog;
 using UnityEngine;
 
 namespace Boot
@@ -19,6 +21,7 @@ namespace Boot
 
         private void Awake()
         {
+            BootRuntimeLogBootstrap.EnsureInstalled(startupSettings);
             DontDestroyOnLoad(gameObject);
             StartCoroutine(RunStartup());
         }
@@ -51,7 +54,18 @@ namespace Boot
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError(e);
+                    RuntimeLogManager.Current?.Write(new RuntimeLogEntry
+                    {
+                        Level = GameLogLevel.Error,
+                        Module = "Boot.Entry",
+                        Category = "Boot.Entry",
+                        Phase = "Boot",
+                        Message = "Startup failed",
+                        ExceptionType = e.GetType().FullName,
+                        ExceptionMessage = e.Message,
+                        StackTrace = e.ToString()
+                    });
+                    RuntimeLogManager.Flush();
                     view?.SetStatus("Startup failed");
                     view?.SetRepairVisible(true);
                     _isRunning = false;
@@ -67,6 +81,7 @@ namespace Boot
         private void OnDestroy()
         {
             _runner?.Dispose();
+            RuntimeLogManager.Flush();
         }
     }
 }

@@ -2,7 +2,9 @@
     "name": "Boot",
     "rootNamespace": "Boot",
     "references": [
-        "Asset"
+        "Asset",
+        "Log",
+        "RuntimeLog"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

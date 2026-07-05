@@ -11,6 +11,7 @@
         "MessagePipe.VContainer",
         "UniTask",
         "Log",
+        "RuntimeLog",
         "ZLinq",
         "ZLogger.Unity"
     ],

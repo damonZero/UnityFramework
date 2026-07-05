@@ -81,6 +81,7 @@
     <Compile Include="Assets\Scripts\Boot\Entry.cs" />
     <Compile Include="Assets\Scripts\Boot\BootAssemblyEntry.cs" />
     <Compile Include="Assets\Scripts\Boot\BootStartupSettings.cs" />
+    <Compile Include="Assets\Scripts\Boot\BootRuntimeLogBootstrap.cs" />
     <Compile Include="Assets\Scripts\Boot\BootMetadataEntry.cs" />
     <Compile Include="Assets\Scripts\Boot\HybridClrReflection.cs" />
     <Compile Include="Assets\Scripts\Boot\IBootStartupView.cs" />
@@ -819,6 +820,14 @@
     <ProjectReference Include="Asset.csproj">
       <Project>{70c30947-18d5-62ad-3828-b771d649d1f7}</Project>
       <Name>Asset</Name>
+    </ProjectReference>
+    <ProjectReference Include="Log.csproj">
+      <Project>{6910460a-9d5b-367f-5986-cd7259138387}</Project>
+      <Name>Log</Name>
+    </ProjectReference>
+    <ProjectReference Include="RuntimeLog.csproj">
+      <Project>{4d7e91fd-6230-bd9d-8049-e5352347b522}</Project>
+      <Name>RuntimeLog</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -4,6 +4,8 @@
     "references": [
         "Asset",
         "Event",
+        "Log",
+        "RuntimeLog",
         "MessagePipe",
         "UniTask"
     ],

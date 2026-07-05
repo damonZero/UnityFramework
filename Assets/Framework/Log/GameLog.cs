@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -39,19 +40,75 @@ namespace Framework.Log
         public const string SymbolCritical = GameLogSymbols.Critical;
         public const string CSharpRootPath = "Assets";
         public const string CSharpFilePattern = @"\w+.cs$";
+        public const int DefaultStartupBufferCapacity = 256;
 
         [GameLogTree(CSharpRootPath, CSharpFilePattern)]
         public const string CSharpModuleTree = "KJ C# Logs";
 
+        private static readonly object Gate = new();
+        private static readonly Queue<GameLogEntry> StartupBuffer = new();
         private static GameLogProfile _profile = CreateDefaultProfile();
+        private static IGameLogSink _sink;
+        private static int _startupBufferCapacity = DefaultStartupBufferCapacity;
 
         /// <summary>
         /// Wired by Core during startup. Keep the implementation outside Framework
         /// so Framework stays independent from DI and ZLogger.
         /// </summary>
-        public static IGameLogSink Sink { get; set; }
+        public static IGameLogSink Sink
+        {
+            get
+            {
+                lock (Gate)
+                    return _sink;
+            }
+            set
+            {
+                GameLogEntry[] buffered = null;
+                lock (Gate)
+                {
+                    _sink = value;
+                    if (_sink != null && StartupBuffer.Count > 0)
+                    {
+                        buffered = StartupBuffer.ToArray();
+                        StartupBuffer.Clear();
+                    }
+                }
+
+                if (value == null || buffered == null)
+                    return;
+
+                foreach (var entry in buffered)
+                {
+                    TryWrite(value, entry);
+                }
+            }
+        }
 
         public static GameLogProfile Profile => _profile;
+        public static int BufferedEntryCount
+        {
+            get
+            {
+                lock (Gate)
+                    return StartupBuffer.Count;
+            }
+        }
+
+        public static void SetStartupBufferCapacity(int capacity)
+        {
+            lock (Gate)
+            {
+                _startupBufferCapacity = Math.Max(0, capacity);
+                TrimStartupBufferLocked();
+            }
+        }
+
+        public static void ClearStartupBuffer()
+        {
+            lock (Gate)
+                StartupBuffer.Clear();
+        }
 
         public static void ApplyProfile(GameLogProfile profile)
         {
@@ -167,7 +224,19 @@ namespace Framework.Log
             if (!_profile.IsEnabled(module, level))
                 return;
 
-            Sink?.Write(new GameLogEntry(level, module, message, exception));
+            var entry = new GameLogEntry(level, module, message, exception);
+            IGameLogSink sink;
+            lock (Gate)
+            {
+                sink = _sink;
+                if (sink == null)
+                {
+                    EnqueueStartupBufferLocked(entry);
+                    return;
+                }
+            }
+
+            TryWrite(sink, entry);
         }
 
         private static string NormalizeModule(string module, string filePath)
@@ -181,6 +250,35 @@ namespace Framework.Log
             var normalized = filePath.Replace('\\', '/');
             var index = normalized.IndexOf("/Assets/", StringComparison.Ordinal);
             return index >= 0 ? normalized[(index + 8)..] : DefaultModule;
+        }
+
+        private static void EnqueueStartupBufferLocked(GameLogEntry entry)
+        {
+            if (_startupBufferCapacity <= 0)
+                return;
+
+            StartupBuffer.Enqueue(entry);
+            TrimStartupBufferLocked();
+        }
+
+        private static void TrimStartupBufferLocked()
+        {
+            while (StartupBuffer.Count > _startupBufferCapacity)
+            {
+                StartupBuffer.Dequeue();
+            }
+        }
+
+        private static void TryWrite(IGameLogSink sink, in GameLogEntry entry)
+        {
+            try
+            {
+                sink.Write(entry);
+            }
+            catch
+            {
+                // Logging must never crash gameplay or startup.
+            }
         }
 
         private static GameLogProfile CreateDefaultProfile()

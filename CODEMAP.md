@@ -34,8 +34,8 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 | Layer | Can reference |
 |-------|--------------|
-| Boot | Asset |
-| Core | Asset, Event, Log, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask |
+| Boot | Asset, Log, RuntimeLog |
+| Core | Asset, Event, Log, RuntimeLog, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask |
 | General | Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer |
 | Project | Asset, Core, General, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer |
 | Framework.Pool | UniTask, Cache |
@@ -63,11 +63,12 @@ Cache          N      N       N         N        N      -         N             
 ### Layer: Boot (Assembly: `Boot`, Namespace: `Boot`)
 
 Asmdef: `Assets/Scripts/Boot/KJ.Boot.asmdef`
-References: Asset
+References: Asset, Log, RuntimeLog
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
 | `Entry.cs` | `Assets/Scripts/Boot/Entry.cs` | `Entry : MonoBehaviour` | Game entry point. Holds serialized startup settings and optional startup view, runs update flow, exposes `Repair()` for retry. | `UnityEngine` |
+| `BootRuntimeLogBootstrap.cs` | `Assets/Scripts/Boot/BootRuntimeLogBootstrap.cs` | `static BootRuntimeLogBootstrap` | Installs an early `Framework.RuntimeLog.RuntimeLogSession` before Core/ZLogger exists so Boot logs and startup failures are written to JSONL/session files. | `Framework.Log`, `Framework.RuntimeLog`, `Framework.Asset`, `UnityEngine` |
 | `BootStartupSettings.cs` | `Assets/Scripts/Boot/BootStartupSettings.cs` | `BootStartupSettings` | Serializable Entry settings: update toggles, local StreamingAssets fallback root, asset tag, startup type/method, AOT metadata entries, hot-update DLL entries. DLL/AOT entries prefer YooAsset raw asset paths and can fall back to StreamingAssets/Resources. | none |
 | `BootUpdateRunner.cs` | `Assets/Scripts/Boot/BootUpdateRunner.cs` | `BootUpdateRunner : IDisposable` | Initializes `AssetRuntime` asynchronously, requests resource version, updates manifest, downloads resources, loads AOT metadata and hot-update DLLs, then reflects into the formal game startup entry and transfers the asset runtime. | `Framework.Asset` |
 | `BootAssemblyEntry.cs` | `Assets/Scripts/Boot/BootAssemblyEntry.cs` | `BootAssemblyEntry` | Serializable hot-update DLL entry: assembly name plus asset path / local file / Resources fallback. | none |
@@ -78,13 +79,15 @@ References: Asset
 ### Layer: Core (Assembly: `Core`, Namespace: `Core`, `Core.Bootstrap`, `Core.Systems`, `Core.Asset`)
 
 Asmdef: `Assets/Scripts/Core/KJ.Core.asmdef`
-References: Asset, Event, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, Log
+References: Asset, Event, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, Log, RuntimeLog
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
 | `ISystem.cs` | `Assets/Scripts/Core/Systems/ISystem.cs` | `ISystem` (interface), `ITickableSystem : ISystem` (interface) | `ISystem`: `int Priority`, `void Init()`, `void Shutdown()`. `ITickableSystem`: adds `Update(float)`, `LateUpdate(float)`, `FixedUpdate(float)`. | none |
 | `SystemManager.cs` | `Assets/Scripts/Core/Systems/SystemManager.cs` | `SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable, ICoreStartupStatus` | Manages all `ISystem` instances. Injected via constructor `IEnumerable<ISystem>`. `InitAll()` sorts by Priority, calls Init, records failures, and publishes `AppStartedEvent` only when all Core systems initialize successfully. VContainer drives `Start()` -> `InitAll()`, `Tick()` -> `Update()`, `LateTick()` -> `LateUpdate()`, `FixedTick()` -> `FixedUpdate()`. `ShutdownAll()` only shuts down systems whose `Init()` succeeded. | `MessagePipe`, `VContainer.Unity` |
-| `GameLogBridge.cs` | `Assets/Scripts/Core/Logging/GameLogBridge.cs` | `GameLogBridge : ISystem` `[CoreSystem]` | Bridges `Framework.Log.GameLog` static delegates into the DI-managed `ILogger<T>`/ZLogger pipeline. Priority=`int.MinValue` so it initializes before other logging systems. | `Framework.Log`, `Microsoft.Extensions.Logging` |
+| `GameLogBridge.cs` | `Assets/Scripts/Core/Logging/GameLogBridge.cs` | `GameLogBridge : IGameLogSink` | Adapter installed by Core registration. Writes `Framework.Log.GameLog` entries to the current RuntimeLog session, then forwards them into the DI-managed `ILogger<T>`/ZLogger Unity Console pipeline. It is not a `[CoreSystem]`. | `Framework.Log`, `Framework.RuntimeLog`, `Microsoft.Extensions.Logging` |
+| `RuntimeLogBootstrap.cs` | `Assets/Scripts/Core/Logging/RuntimeLogBootstrap.cs` | `static RuntimeLogBootstrap` | Creates or reuses the RuntimeLog session, chooses Editor/Player log directory, fills Unity/session metadata, and updates Boot assembly/AOT metadata lists. | `Framework.RuntimeLog`, `Framework.Asset`, `UnityEngine` |
+| `RuntimeLogLoggerProvider.cs` | `Assets/Scripts/Core/Logging/RuntimeLogLoggerProvider.cs` | `RuntimeLogLoggerProvider : ILoggerProvider` | Microsoft.Extensions.Logging provider that writes `ILogger<T>` and `[ZLoggerMessage]` output into the same RuntimeLog JSONL session while avoiding duplicate `GameLogBridge` entries. | `Framework.RuntimeLog`, `Microsoft.Extensions.Logging` |
 | `StartupProbeSystem.cs` | `Assets/Scripts/Core/Systems/StartupProbeSystem.cs` | `StartupProbeSystem : ISystem` `[CoreSystem]` | Minimal verification system. Logs Init/Shutdown. Priority=0. | none |
 | `ICoreStartupStatus.cs` | `Assets/Scripts/Core/Systems/ICoreStartupStatus.cs` | `ICoreStartupStatus` | Exposes Core startup result (`IsStarted`, `HasInitFailures`, `FailedSystemNames`) so upper layers can avoid business loading after Core init failures. | none |
 | `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework/Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath` using `IAssetSystem`. Creates `GameObjectPool`. Exposes static shortcuts for `CollectionPool.RentList<>()` etc. Priority=110 (SystemPriority+10). | `IAssetSystem`, `Framework.Pool` |
@@ -233,6 +236,15 @@ References: (none -- zero external dependencies)
 - YooAsset 3.0 `EditorSimulate` initialization needs the generated package root directory, not just the package name. The prepare menu writes this root into `AssetConfig.EditorSimulatePackageRoot`.
 - Player build validation covers Unity-native package paths; YooAsset collection validation covers AssetBundle/raw-file collection.
 
+### AI Runtime Logging
+
+- `Assets/Framework/Log/GameLog.cs` owns the stable logging facade and a bounded startup buffer.
+- `Assets/Framework/RuntimeLog/RuntimeLogSession.cs` writes AI-readable JSON Lines plus `.session.json`; Editor/dev local runs also maintain `Logs/Runtime/latest.jsonl` and `latest.session.json`.
+- `BootRuntimeLogBootstrap` installs the RuntimeLog session in `Entry.Awake()` so Boot, YooAsset, HybridCLR and early startup failures are captured before Core/ZLogger exists.
+- `RuntimeLogLoggerProvider` writes `ILogger<T>` / `[ZLoggerMessage]` entries into the same session; `GameLogBridge` writes `GameLog` entries into RuntimeLog and then forwards them to ZLogger Unity Console.
+- `Assets/Scripts/Core.Editor/Logging/RuntimeLogEditorTools.cs` exposes `KJ/Runtime Logs/*` commands to open latest logs, generate a Markdown summary, export a diagnostic package and clear local logs.
+- Concrete tests live in `Assets/Tests/EditMode/RuntimeLogTests.cs`; TestKit provides `RecordingRuntimeLogSink`.
+
 ### `IPool<T>` (Framework.Pool)
 - `T Rent()`
 - `void Return(T item)`
@@ -333,6 +345,9 @@ No subscribers are currently registered -- these events are published for future
 
 ```
 Entry.Awake()
+  |-- BootRuntimeLogBootstrap.EnsureInstalled(startupSettings)
+  |     |-- Creates/reuses Framework.RuntimeLog session
+  |     |-- Maintains Logs/Runtime/latest.jsonl + latest.session.json in Editor/dev
   |
   v
 [Boot Entry stays DontDestroyOnLoad]
@@ -353,7 +368,8 @@ ProjectStartup.Start()
   |-- VContainer ProjectLifetimeScope.Configure(builder)
        |-- CoreBootstrapStage.Configure(context)
        |     |-- builder.RegisterCoreServices(bootAssetRuntime)
-       |     |-- Register ZLogger + ILogger<T>
+       |     |-- Reuse RuntimeLog session, register RuntimeLog provider + ZLogger + ILogger<T>
+       |     |-- Install GameLogBridge(runtimeLogSession, logger)
        |     |-- builder.RegisterMessagePipe()
        |     |-- builder.RegisterCoreTypes(options, CoreAssembly)
        |     |-- builder.RegisterEntryPoint<SystemManager>()
@@ -371,10 +387,9 @@ VContainer calls IStartable.Start() on registered entry points
 SystemManager.Start() -> InitAll()
   |-- Sorts systems by Priority
   |-- Calls Init() on each system in order:
-  |     1. GameLogBridge (Priority=int.MinValue) -- routes Framework.GameLog into ZLogger
-  |     2. StartupProbeSystem (Priority=0) -- logs probe
-  |     3. AssetSystem (Priority=100) -- verifies Boot AssetRuntime is ready, publishes AssetSystemReadyEvent
-  |     4. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
+  |     1. StartupProbeSystem (Priority=0) -- logs probe
+  |     2. AssetSystem (Priority=100) -- verifies Boot AssetRuntime is ready, publishes AssetSystemReadyEvent
+  |     3. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
   |-- Publishes AppStartedEvent only if all Core systems initialized successfully
   |
   v
@@ -401,10 +416,10 @@ VContainer disposes LifetimeScope
 SystemManager.Dispose() -> ShutdownAll()
   |-- Publishes AppShuttingDownEvent only if Core startup succeeded
   |-- Calls Shutdown() in reverse priority order for systems whose Init() succeeded
-  |     4. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
-  |     3. AssetSystem (Priority=100) -- releases all handles and scene handles
-  |     2. StartupProbeSystem (Priority=0) -- logs shutdown
-  |     1. GameLogBridge (Priority=int.MinValue) -- clears Framework.GameLog delegate
+  |     3. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
+  |     2. AssetSystem (Priority=100) -- releases all handles and scene handles
+  |     1. StartupProbeSystem (Priority=0) -- logs shutdown
+  |-- Core dispose callback uninstalls GameLogBridge, disposes logger factory and flushes RuntimeLog
 ```
 
 ---

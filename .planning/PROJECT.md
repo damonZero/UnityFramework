@@ -10,7 +10,7 @@
 - 网络通信: Google.Protobuf 3.35.1
 - 异步: UniTask v2.5.11
 - 事件: MessagePipe
-- 日志: Framework.Log 稳定门面 + ZLogger 2.5.10 Unity Console provider；AI 运行日志落盘规范见 `.planning/AI_RUNTIME_LOGGING.md`
+- 日志: Framework.Log 稳定门面 + Framework.RuntimeLog 文件 session + ZLogger 2.5.10 Unity Console provider；AI 运行日志落盘规范见 `.planning/AI_RUNTIME_LOGGING.md`
 - 性能工具: ZString 2.6.0, ZLinq 1.5.6
 - UI: UGUI (内置)
 
@@ -63,6 +63,7 @@ Entry
 - `Framework/Event/`：统一事件标记和事件类型扫描。上层事件只使用同一个 `[GameEvent]` 标记；MessagePipe 只是当前注册后端。
 - `Framework/Pool/` / `Framework/Cache/`：对象池和缓存基础设施。
 - `Framework/TestKit/`：基于 Unity Test Framework / NUnit 的通用测试基础设施、Fake、Probe、Fixture 和断言扩展；不放具体测试用例。
+- `Framework/RuntimeLog/`：AI runtime logging 的纯 C# 文件 session writer，输出 JSONL、session 清单和 latest 指针；只引用 `Framework.Log`，由 Boot/Core 接入 Unity/ZLogger。
 
 Framework 模块不能引用 `Assets/Scripts/` 下任何汇编；也不放 `Assets/Framework/Package/` 子目录。Core 负责把 Framework 的稳定能力接入 VContainer、MessagePipe、SystemManager 等项目编排层。
 
@@ -73,10 +74,11 @@ Framework 模块不能引用 `Assets/Scripts/` 下任何汇编；也不放 `Asse
 项目已引入 ZLogger / ZString / ZLinq。后续搭建 Framework、Core、General、Project 模块时，应主动利用这些库降低 GC 和运行时反射/格式化开销。
 
 - **Framework.Log**：日志稳定接口位于 `Assets/Framework/Log/`，包含 `GameLog`、`GameLogProfile`、`GameLogConfig`、`GameLogSwitches`、`IGameLogSink` 等。Framework.Log 不引用 Core、VContainer、ZLogger、Microsoft.Extensions.Logging 或 UnityEngine（`Log.asmdef noEngineReferences=true`）。
+- **Framework.RuntimeLog**：运行日志文件能力位于 `Assets/Framework/RuntimeLog/`，包含 `RuntimeLogSession`、`RuntimeLogManager`、`RuntimeLogEntry`、`RuntimeLogSessionInfo` 等。该包只引用 `Framework.Log`，不引用 Unity/Core/ZLogger；Boot 可在 Core 启动前安装 session，Core 复用同一 session 接入正式日志管线。
 - **ZLogger**：日志后端采用 `Microsoft.Extensions.Logging` + ZLogger Unity provider。Core 注册 `AddZLoggerUnityDebug(options => options.PrettyStacktrace = true)`，日志输出到 Unity Console 并保留良好的堆栈/跳转体验。业务代码不直接使用 `Debug.Log/LogWarning/LogError`。
-- **AI Runtime Logging**：运行日志必须可以落盘为 AI 可读取的 session 产物。规范格式是 JSON Lines + session 清单；Editor/dev/QA 环境默认保留文件日志，Player smoke、资源矩阵和热更 smoke 的验证报告应引用日志文件，而不是依赖用户截图 Console。实现边界见 `.planning/AI_RUNTIME_LOGGING.md`。
+- **AI Runtime Logging**：运行日志必须可以落盘为 AI 可读取的 session 产物。规范格式是 JSON Lines + session 清单；Editor/dev/QA 环境默认保留文件日志，Player smoke、资源矩阵和热更 smoke 的验证报告应引用日志文件，而不是依赖用户截图 Console。Editor 分析入口在 `KJ/Runtime Logs/*` 菜单。实现边界见 `.planning/AI_RUNTIME_LOGGING.md`。
 - **环境与模块开关**：打包脚本通过 `KJ_LOG_TRACE` / `KJ_LOG_DEBUG` / `KJ_LOG_INFORMATION` / `KJ_LOG_WARNING` / `KJ_LOG_ERROR` / `KJ_LOG_CRITICAL` 控制编译期裁剪，符号常量统一从 `Framework.Log.GameLogSymbols` 引用；多个 `[Conditional]` 是 OR 关系，运行时再由 `GameLogProfile` 做模块/级别过滤。Editor 面板或打包脚本通过 `GameLogSwitches.Configure(GameLogConfig)`、`GameLog.ApplyEnvironment(...)`、`GameLog.SetModuleMinimumLevel(...)`、`GameLog.SetModuleEnabled(...)` 控制模块过滤。
-- **VContainer 集成**：日志工厂、`ILogger<T>` 注册、日志等级和输出 provider 由 Core 层接入 VContainer。`Core.Logging.GameLogBridge` 只实现 `IGameLogSink`，把 Framework.Log 日志条目桥接到 ZLogger；它不是 `[CoreSystem]`。
+- **VContainer 集成**：日志工厂、`ILogger<T>` 注册、日志等级和输出 provider 由 Core 层接入 VContainer。`Core.Logging.GameLogBridge` 只实现 `IGameLogSink`，把 Framework.Log 日志条目写入 RuntimeLog session，并桥接到 ZLogger；它不是 `[CoreSystem]`。
 - **Source Generator 前提**：当前 Unity 2022.3.62f2 高于 2022.3.12f1，可使用 Incremental Source Generator；需要使用 ZLoggerMessage / ZLinq DropIn Generator 等预览语法时，确保项目编译参数启用 `-langVersion:preview`。
 - **ZString**：热路径字符串拼接、格式化、日志 message 构建、资源路径组合优先使用 ZString 或 Utf8StringInterpolation，避免 `string.Format`、频繁插值和临时 `StringBuilder` 分配。
 - **ZLinq**：集合查询优先使用 `AsValueEnumerable()` 和 ZLinq 操作符；在系统初始化、资源扫描、事件类型扫描、UI 列表构建等路径避免普通 LINQ 产生枚举器/闭包分配。暂不默认启用全局 DropIn Generator，除非单独评估 asmdef 范围和兼容性。

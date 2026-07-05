@@ -2,6 +2,7 @@ using Core.Logging;
 using Core.Systems;
 using Framework.Asset;
 using Framework.Log;
+using Framework.RuntimeLog;
 using MessagePipe;
 using Microsoft.Extensions.Logging;
 using VContainer;
@@ -19,22 +20,25 @@ namespace Core.Bootstrap
         public static MessagePipeOptions RegisterCoreServices(this IContainerBuilder builder, IAssetRuntime assetRuntime = null)
         {
             // ── ZLogger / Microsoft.Extensions.Logging ──
+            var runtimeLogSession = RuntimeLogBootstrap.EnsureInstalled(assetRuntime);
             var loggerFactory = LoggerFactory.Create(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Trace);
                 logging.AddFilter((category, level) =>
                     GameLog.Profile.IsEnabled(category ?? GameLog.DefaultModule, ToGameLogLevel(level)));
+                logging.AddProvider(new RuntimeLogLoggerProvider(runtimeLogSession));
                 logging.AddZLoggerUnityDebug(options =>
                 {
                     options.PrettyStacktrace = true;
                 });
             });
             builder.RegisterInstance(loggerFactory).As<ILoggerFactory>();
-            GameLogBridge.Install(loggerFactory.CreateLogger<GameLogBridge>());
+            GameLogBridge.Install(runtimeLogSession, loggerFactory.CreateLogger<GameLogBridge>());
             builder.RegisterDisposeCallback(_ =>
             {
                 GameLogBridge.Uninstall();
                 loggerFactory.Dispose();
+                RuntimeLogManager.DisposeCurrent(runtimeLogSession);
             });
             builder.Register(typeof(Logger<>), Lifetime.Singleton).As(typeof(ILogger<>));
 
