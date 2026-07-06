@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using Cysharp.Threading.Tasks;
 using Framework.Log;
 using Framework.RuntimeLog;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace Boot
         {
             BootRuntimeLogBootstrap.EnsureInstalled(startupSettings);
             DontDestroyOnLoad(gameObject);
-            StartCoroutine(RunStartup());
+            RunStartupAsync().Forget();
         }
 
         public void Repair()
@@ -31,51 +32,41 @@ namespace Boot
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunStartup());
+            RunStartupAsync().Forget();
         }
 
-        private IEnumerator RunStartup()
+        private async UniTaskVoid RunStartupAsync()
         {
             _isRunning = true;
             var view = startupView as IBootStartupView;
             _runner?.Dispose();
             _runner = new BootUpdateRunner(startupSettings, view);
 
-            var routine = _runner.Run();
-            while (true)
+            try
             {
-                object current;
-                try
-                {
-                    if (!routine.MoveNext())
-                        break;
-
-                    current = routine.Current;
-                }
-                catch (System.Exception e)
-                {
-                    RuntimeLogManager.Current?.Write(new RuntimeLogEntry
-                    {
-                        Level = GameLogLevel.Error,
-                        Module = "Boot.Entry",
-                        Category = "Boot.Entry",
-                        Phase = "Boot",
-                        Message = "Startup failed",
-                        ExceptionType = e.GetType().FullName,
-                        ExceptionMessage = e.Message,
-                        StackTrace = e.ToString()
-                    });
-                    RuntimeLogManager.Flush();
-                    view?.SetStatus("Startup failed");
-                    view?.SetRepairVisible(true);
-                    _isRunning = false;
-                    yield break;
-                }
-
-                yield return current;
+                await _runner.RunAsync();
             }
-
-            _isRunning = false;
+            catch (Exception e)
+            {
+                RuntimeLogManager.Current?.Write(new RuntimeLogEntry
+                {
+                    Level = GameLogLevel.Error,
+                    Module = "Boot.Entry",
+                    Category = "Boot.Entry",
+                    Phase = "Boot",
+                    Message = "Startup failed",
+                    ExceptionType = e.GetType().FullName,
+                    ExceptionMessage = e.Message,
+                    StackTrace = e.ToString()
+                });
+                RuntimeLogManager.Flush();
+                view?.SetStatus("Startup failed");
+                view?.SetRepairVisible(true);
+            }
+            finally
+            {
+                _isRunning = false;
+            }
         }
 
         private void OnDestroy()

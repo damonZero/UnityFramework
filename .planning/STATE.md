@@ -1,3 +1,11 @@
+---
+gsd_state_version: 1.0
+milestone: v4.10.1
+milestone_name: milestone
+status: unknown
+last_updated: "2026-07-06T13:11:01.296Z"
+---
+
 # Project State: KJ Unity Framework
 
 **Last Updated:** 2026-07-05
@@ -209,6 +217,7 @@ Assets/Framework/
 ## 下一步
 
 Phase 1 剩余事项：
+
 - **当前优先级：底层稳定性验证 gate**。暂不继续实现 UI/Login/Config 等新模块；先确认 Boot/HybridCLR/Asset/Core/Pool 在 Editor 与 Player 中稳定可用。
 - HYB-02B: 在 Unity 中运行 `KJ/HybridCLR/Prepare Runtime Assets And Boot`，确认只同步 `Core/General/Project.dll.bytes` 与配置的 AOT metadata；正式 Player 打包前跑完整 `Generate All And Sync`。
 - PKG-01: Player 打包 smoke test。构建并运行 Player，确认 Boot -> YooAsset init -> manifest/download -> HybridCLR metadata/DLL load -> ProjectStartup -> Core/SystemManager 全链路成功，关键日志包含 `[AssetSystem] Ready` 与 `[SystemManager] 全部初始化完成`，且无启动期 Error/Exception。
@@ -223,6 +232,7 @@ Phase 1 剩余事项：
 - UI-02: UIWindow 基类
 
 Phase 2 规划：
+
 - NET-01~05: 网络层
 - UI-03~04: 窗口模式 + 窗口栈
 - CFG-01~02: Luban 配置表集成

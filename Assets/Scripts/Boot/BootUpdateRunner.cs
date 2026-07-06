@@ -1,12 +1,14 @@
 using System;
-using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Cysharp.Threading.Tasks;
 using Framework.Asset;
 using Framework.Log;
 using Framework.RuntimeLog;
+using HybridCLR;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Boot
 {
@@ -25,15 +27,15 @@ namespace Boot
             _assetRuntime = AssetRuntimeFactory.Create();
         }
 
-        public IEnumerator Run()
+        public async UniTask RunAsync()
         {
             GameLog.Info("[Boot] Startup begin", "Boot");
             _view?.SetRepairVisible(false);
             _view?.SetProgress(0f);
 
-            yield return InitializeAssets();
-            yield return UpdateAssets();
-            LoadHotUpdateCode();
+            await InitializeAssetsAsync();
+            await UpdateAssetsAsync();
+            await LoadHotUpdateCodeAsync();
             StartGame();
             RuntimeLogManager.Flush();
         }
@@ -48,7 +50,7 @@ namespace Boot
                 _assetRuntime.Shutdown();
         }
 
-        private IEnumerator InitializeAssets()
+        private async UniTask InitializeAssetsAsync()
         {
             GameLog.Info("[Boot] Initializing resources", "Boot.Asset");
             _view?.SetStatus("Initializing resources");
@@ -57,7 +59,7 @@ namespace Boot
             while (!initHandle.IsDone)
             {
                 _view?.SetProgress(Mathf.Lerp(0f, 0.05f, initHandle.Progress));
-                yield return null;
+                await UniTask.Yield();
             }
 
             if (!initHandle.IsSucceeded)
@@ -82,10 +84,10 @@ namespace Boot
             });
         }
 
-        private IEnumerator UpdateAssets()
+        private async UniTask UpdateAssetsAsync()
         {
             if (!_settings.EnableAssetUpdate)
-                yield break;
+                return;
 
             GameLog.Info("[Boot] Checking resources", "Boot.Asset");
             _view?.SetStatus("Checking resources");
@@ -93,21 +95,19 @@ namespace Boot
             while (!manifest.IsVersionDone)
             {
                 _view?.SetProgress(Mathf.Lerp(0.05f, 0.2f, manifest.Progress * 2f));
-                yield return null;
+                await UniTask.Yield();
             }
 
             if (!manifest.IsVersionSucceeded)
                 throw new InvalidOperationException($"[Boot] Resource version request failed: {manifest.Error}");
 
             if (!manifest.IsManifestDone)
-            {
                 manifest.StartManifest();
-            }
 
             while (!manifest.IsDone)
             {
                 _view?.SetProgress(Mathf.Lerp(0.2f, 0.35f, Mathf.Clamp01((manifest.Progress - 0.5f) * 2f)));
-                yield return null;
+                await UniTask.Yield();
             }
 
             if (!manifest.IsSucceeded)
@@ -121,7 +121,7 @@ namespace Boot
             {
                 GameLog.Info("[Boot] Resource update skipped; no downloads", "Boot.Asset");
                 _view?.SetProgress(0.35f);
-                yield break;
+                return;
             }
 
             GameLog.Info($"[Boot] Downloading resources: {downloader.TotalDownloadCount}", "Boot.Asset");
@@ -130,7 +130,7 @@ namespace Boot
             while (!downloader.IsDone)
             {
                 _view?.SetProgress(Mathf.Lerp(0.35f, 0.65f, downloader.Progress));
-                yield return null;
+                await UniTask.Yield();
             }
 
             if (!downloader.IsSucceeded)
@@ -139,7 +139,7 @@ namespace Boot
             _view?.SetProgress(0.65f);
         }
 
-        private void LoadHotUpdateCode()
+        private async UniTask LoadHotUpdateCodeAsync()
         {
             if (!_settings.EnableHotUpdate)
                 return;
@@ -155,15 +155,15 @@ namespace Boot
 
             GameLog.Info("[Boot] Loading metadata", "Boot.HybridCLR");
             _view?.SetStatus("Loading metadata");
-            LoadAotMetadata();
+            await LoadAotMetadataAsync();
 
             GameLog.Info("[Boot] Loading code", "Boot.HybridCLR");
             _view?.SetStatus("Loading code");
-            LoadHotUpdateAssemblies();
+            await LoadHotUpdateAssembliesAsync();
             _view?.SetProgress(0.85f);
         }
 
-        private void LoadAotMetadata()
+        private async UniTask LoadAotMetadataAsync()
         {
             var entries = _settings.AotMetadataAssemblies;
             if (entries == null)
@@ -182,17 +182,18 @@ namespace Boot
                 if (entry == null || string.IsNullOrWhiteSpace(entry.AssemblyName))
                     continue;
 
-                var bytes = LoadBytes(entry.AssetPath, entry.FileName, entry.ResourcesPath);
+                var bytes = await LoadBytesAsync(entry.AssetPath, entry.FileName, entry.ResourcesPath);
                 if (bytes == null || bytes.Length == 0)
                     continue;
 
-                var result = HybridClrReflection.LoadMetadataForAotAssembly(bytes);
-                if (!result.IsOk)
-                    throw new InvalidOperationException($"[Boot] Load AOT metadata failed: {entry.AssemblyName}, result={result.ResultName}");
+                var loadResult = RuntimeApi.LoadMetadataForAOTAssembly(bytes, HomologousImageMode.SuperSet);
+                if (loadResult != LoadImageErrorCode.OK)
+                    throw new InvalidOperationException(
+                        $"[Boot] Load AOT metadata failed: {entry.AssemblyName}, result={loadResult}");
             }
         }
 
-        private void LoadHotUpdateAssemblies()
+        private async UniTask LoadHotUpdateAssembliesAsync()
         {
             var entries = _settings.HotUpdateAssemblies;
             if (entries == null || entries.Length == 0)
@@ -218,7 +219,7 @@ namespace Boot
                 if (IsAssemblyLoaded(entry.AssemblyName))
                     continue;
 
-                var bytes = LoadBytes(entry.AssetPath, entry.FileName, entry.ResourcesPath);
+                var bytes = await LoadBytesAsync(entry.AssetPath, entry.FileName, entry.ResourcesPath);
                 if (bytes == null || bytes.Length == 0)
                     throw new FileNotFoundException($"[Boot] Hot-update DLL not found: {entry.AssemblyName}");
 
@@ -260,8 +261,16 @@ namespace Boot
             _view?.SetProgress(1f);
         }
 
-        private byte[] LoadBytes(string assetPath, string fileName, string resourcesPath)
+        /// <summary>
+        /// Loads bytes from a DLL/metadata entry using the following priority:
+        /// 1. YooAsset raw asset path (always works on all platforms).
+        /// 2. StreamingAssets file name — uses <see cref="UnityWebRequest"/> on Android
+        ///    because <see cref="File.Exists"/> cannot read APK-embedded files.
+        /// 3. Resources TextAsset path as final fallback.
+        /// </summary>
+        private async UniTask<byte[]> LoadBytesAsync(string assetPath, string fileName, string resourcesPath)
         {
+            // Priority 1: YooAsset
             if (!string.IsNullOrWhiteSpace(assetPath))
             {
                 var bytes = _assetRuntime.LoadRawBytes(assetPath);
@@ -269,13 +278,26 @@ namespace Boot
                     return bytes;
             }
 
+            // Priority 2: StreamingAssets (Android-safe via UnityWebRequest)
+            // Note: non-Android path is synchronous; the async wrapper here is intentional for
+            // API uniformity so callers don't need platform-specific call sites.
             if (!string.IsNullOrWhiteSpace(fileName))
             {
                 var path = BuildStreamingAssetsPath(fileName);
+#if UNITY_ANDROID && !UNITY_EDITOR
+                using var request = UnityWebRequest.Get(path);
+                request.SendWebRequest();
+                while (!request.isDone)
+                    await UniTask.Yield();
+                if (request.result == UnityWebRequest.Result.Success && request.downloadHandler.data.Length > 0)
+                    return request.downloadHandler.data;
+#else
                 if (File.Exists(path))
                     return File.ReadAllBytes(path);
+#endif
             }
 
+            // Priority 3: Resources fallback
             if (!string.IsNullOrWhiteSpace(resourcesPath))
             {
                 var asset = Resources.Load<TextAsset>(resourcesPath);

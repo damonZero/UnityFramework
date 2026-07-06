@@ -203,6 +203,17 @@ namespace Framework.Asset
 
             var handle = _defaultPackage.LoadAssetAsync<T>(path);
             await handle.ToUniTask();
+
+            // Guard against Shutdown() arriving while the load was in-flight.
+            // If IsReady is false, _ownedAssetHandles has already been cleared,
+            // so adding the handle here would create a permanent leak.
+            if (!IsReady)
+            {
+                GameLog.Warn($"[AssetRuntime] LoadAssetHandleAsync: runtime shut down during load of '{path}'. Releasing handle.");
+                handle.Release();
+                return null;
+            }
+
             if (handle.Status != EOperationStatus.Succeeded)
             {
                 GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}");

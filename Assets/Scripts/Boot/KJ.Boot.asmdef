@@ -4,7 +4,9 @@
     "references": [
         "Asset",
         "Log",
-        "RuntimeLog"
+        "RuntimeLog",
+        "UniTask",
+        "HybridCLR.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

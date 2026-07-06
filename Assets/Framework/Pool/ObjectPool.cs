@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Framework.Pool
 {
@@ -93,7 +94,7 @@ namespace Framework.Pool
         private T Create()
         {
             var item = _factory();
-            _createdCount++;
+            Interlocked.Increment(ref _createdCount);
             return item;
         }
     }

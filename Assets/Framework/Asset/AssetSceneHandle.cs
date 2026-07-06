@@ -48,6 +48,10 @@ namespace Framework.Asset
             _onDispose?.Invoke(_handle);
         }
 
+        /// <summary>
+        /// Begins an asynchronous scene unload. The unload is fire-and-forget;
+        /// use <see cref="UnloadAsync"/> when you need to await completion.
+        /// </summary>
         public void Dispose()
         {
             if (_disposed)
@@ -57,7 +61,7 @@ namespace Framework.Asset
             if (_onUnloadStarted != null)
                 _onUnloadStarted(_handle).Forget();
             else
-                _handle.UnloadSceneAsync();
+                _handle.UnloadSceneAsync().ToUniTask().Forget();
 
             _onDispose?.Invoke(_handle);
         }
