@@ -13,7 +13,11 @@
         "Core",
         "General",
         "MessagePipe",
-        "ZLogger.Unity"
+        "ZLogger.Unity",
+        "Launcher",
+        "AssetShared",
+        "YooAsset",
+        "Boot"
     ],
     "includePlatforms": [
         "Editor"

@@ -56,6 +56,39 @@ Upper layers may depend on lower layers; lower layers must not depend on upper l
 
 Compilation boundaries are enforced by `.asmdef` files.
 
+## HybridCLR Hot-Update Boundary (HYB-03 implemented)
+
+The boot chain is split into an AOT `Launcher` shell and a hot-update `Boot`
+update flow.
+
+- **AOT shell `Launcher` (`KJ.Launcher.asmdef`)**: only locates and loads hot-update
+  code. References are limited to `UniTask`, `YooAsset`, `HybridCLR.Runtime`,
+  `AssetShared`. Hard rule: it must not reference any `Framework.*` package or
+  hot-update assembly (enforced by asmdef). It calls the hot-update entry via the
+  reflection string `"Boot.BootUpdateRunner, Boot"`, never by a compile-time
+  dependency on Boot.
+- **Hot-update `Boot` (`KJ.Boot.asmdef`)**: startup update orchestration (version
+  check, download, retry, update UI). References `Asset`, `Log`, `RuntimeLog`,
+  `UniTask`, `AssetShared`, `YooAsset`, `Launcher`. No longer references
+  `HybridCLR.Runtime` (the AOT shell loads it on Boot's behalf).
+- **10 hot-update assemblies**: `Boot, Core, General, Project, Pool, Cache, Event,
+  Asset, Log, RuntimeLog` (single source of truth is
+  `ProjectSettings/HybridCLRSettings.asset` `hotUpdateAssemblies`).
+- **`Framework.AssetShared` (AOT-shared)**: holds `AssetConfig` / `AssetConstants`
+  (namespace stays `Framework.Asset`) so both the AOT shell and hot-update layer
+  can reference them across the boundary.
+- **AOT-stage logging**: `BootStartupLog` (plain text + in-memory), independent of
+  `Framework.Log` / `RuntimeLog`; replayed into the RuntimeLog session by
+  `BootUpdateRunner.ReplayEarlyLogs()` after the hot-update layer initializes.
+- **Reflection entry contract**: `BootLoader` resolves the entry using the literal
+  string `"Boot.BootUpdateRunner, Boot"`. The assembly name is part of the boot
+  contract; renaming requires updating both `BootLoader` and `HybridCLRSettings`.
+
+When changing the hot-update boundary: edit `HybridCLRSettings.asset` first, then
+confirm `KJHybridClrBuildTools.ValidateRuntimePreloadAssemblyName` blocklist
+(currently `{Launcher, TestKit}`). Never add a Framework or hot-update reference to
+`Launcher`.
+
 ## AI Runtime Diagnostics
 
 - Runtime debugging should use generated log files as the default evidence.

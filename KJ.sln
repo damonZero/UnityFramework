@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Boot.Editor", "Boot.Editor.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asset", "Asset.csproj", "{70c30947-18d5-62ad-3828-b771d649d1f7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher", "Launcher.csproj", "{228f2b30-f067-8443-fe86-7ba441403f5c}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Log", "Log.csproj", "{6910460a-9d5b-367f-5986-cd7259138387}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "General", "General.csproj", "{6d5b8d63-3a3b-4a37-bdc5-266b8a1de292}"
@@ -31,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Event", "Event.csproj", "{0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Editor", "Core.Editor.csproj", "{3fb01bb9-866c-fe2f-dba1-3df0a9515638}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetShared", "AssetShared.csproj", "{641335a5-755c-e01c-ad93-76d0b7a26dd5}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{00e9b468-0367-f4eb-fee7-bbb93c8efaee}"
 EndProject
 Global
@@ -48,6 +52,8 @@ Global
 		{c19af925-54dc-01cd-d4cd-169712f57425}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70c30947-18d5-62ad-3828-b771d649d1f7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{70c30947-18d5-62ad-3828-b771d649d1f7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{228f2b30-f067-8443-fe86-7ba441403f5c}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{228f2b30-f067-8443-fe86-7ba441403f5c}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6910460a-9d5b-367f-5986-cd7259138387}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6910460a-9d5b-367f-5986-cd7259138387}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6d5b8d63-3a3b-4a37-bdc5-266b8a1de292}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -68,6 +74,8 @@ Global
 		{0587169f-e39f-b53a-de6f-f72b957cc415}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3fb01bb9-866c-fe2f-dba1-3df0a9515638}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3fb01bb9-866c-fe2f-dba1-3df0a9515638}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{641335a5-755c-e01c-ad93-76d0b7a26dd5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{641335a5-755c-e01c-ad93-76d0b7a26dd5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00e9b468-0367-f4eb-fee7-bbb93c8efaee}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{00e9b468-0367-f4eb-fee7-bbb93c8efaee}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection

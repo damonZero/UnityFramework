@@ -126,6 +126,29 @@ namespace Framework.Asset
             YooAssets.Destroy();
         }
 
+        public void WrapFromExistingPackage(AssetConfig config, ResourcePackage existingPackage)
+        {
+            if (existingPackage == null)
+                throw new ArgumentNullException(nameof(existingPackage));
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+            if (IsReady)
+                throw new InvalidOperationException("AssetRuntime is already initialized.");
+
+            LastError = string.Empty;
+            _config = config;
+            _defaultPackage = existingPackage;
+            _downloadMaxConcurrency = Math.Max(1, config.DownloadMaxConcurrency);
+            _failedRetryCount = Math.Max(0, config.FailedRetryCount);
+
+            lock (_gate)
+            {
+                _lifecycleVersion++;
+            }
+
+            IsReady = true;
+        }
+
         private InitializePackageOperation StartInitialize(AssetConfig config)
         {
             if (config == null)

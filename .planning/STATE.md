@@ -9,7 +9,7 @@ last_updated: "2026-07-06T13:11:01.296Z"
 # Project State: KJ Unity Framework
 
 **Last Updated:** 2026-07-05
-**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中（HybridCLR 边界、最小加载闭环、编辑器同步工具与 AI_RUNTIME_LOGGING 已落地；Editor Play 启动链已通过；下一步先做 Player 打包 smoke 与资源加载矩阵验证，确认底层框架稳定后再进入 UI/Login 等新模块）
+**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中（HybridCLR 边界【含 HYB-03 裂变】、最小加载闭环、编辑器同步工具与 AI_RUNTIME_LOGGING 已落地；Editor Play 启动链已通过；HYB-03 EditMode 测试 45/45 全绿；下一步先做 Player 打包 smoke 与资源加载矩阵验证，确认底层框架稳定后再进入 UI/Login 等新模块）
 
 ## 进度
 
@@ -37,6 +37,7 @@ last_updated: "2026-07-06T13:11:01.296Z"
 - [x] HYB-00: HybridCLR 热更边界固化（托管 DLL 下发 / 需重启生效 / 真正换包规则）
 - [x] HYB-01: HybridCLR 最小加载闭环代码落地（Boot 加载 AOT metadata + Core/General/Project DLL 后反射调用 ProjectStartup；Unity Editor/Player 验证待 HYB-02 工具链）
 - [x] HYB-02A: 热更构建同步工具（`KJ/HybridCLR/*` Editor 菜单：生成/编译 HybridCLR 产物，同步 `.dll.bytes` RawFile，维护 YooAsset collector，回写打开的 Entry 序列化配置；日常 smoke 与完整构建前生成已拆分；工具归属 `Assets/Scripts/Boot.Editor/HybridCLR/`）
+- [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -45,13 +46,16 @@ last_updated: "2026-07-06T13:11:01.296Z"
 ```
 Assets/Scripts/
 ├── Boot/
-│   ├── KJ.Boot.asmdef           ← 仅引用 Framework.Asset，不引用 VContainer/Log/Core/General/Project
+│   ├── KJ.Boot.asmdef           ← 热更程序集（HYB-03 裂变后）。引用 Asset/Log/RuntimeLog/UniTask/AssetShared/YooAsset/Launcher；不引用 Core/General/Pool/Cache/Event/MessagePipe/HybridCLR.Runtime
 │   ├── Entry.cs                 ← 稳定启动入口 MonoBehaviour；持有序列化启动配置和可选启动 UI
 │   ├── BootStartupSettings.cs   ← Entry 序列化配置：资源更新、热更 DLL/AOT metadata 资源路径、正式启动入口
 │   ├── BootRuntimeLogBootstrap.cs ← Boot 早期 RuntimeLog session 安装；Core/ZLogger 尚未接管前也能落盘
 │   ├── BootUpdateRunner.cs      ← Boot 更新流程：资源版本检查、清单更新、下载、读取 RawFile/本地兜底 bytes、AOT metadata、Assembly.Load、反射启动，并移交 AssetRuntime
 │   ├── BootAssemblyEntry.cs / BootMetadataEntry.cs
 │   ├── HybridClrReflection.cs   ← 反射调用 HybridCLR.RuntimeApi，Boot asmdef 不直接引用 HybridCLR.Runtime
+│   ├── Launcher/                      → KJ.Launcher.asmdef (AOT Shell，HYB-03 裂变新增)
+│   │   ├── KJ.Launcher.asmdef         ← 仅引用 UniTask/YooAsset/HybridCLR.Runtime/AssetShared；硬约束：不引用任何 Framework/热更程序集
+│   │   ├── Entry.cs / BootLoader.cs / BootBridge.cs / BootStartupLog.cs / IsExternalInit.cs / YooAssetStrategy/BootRemoteService.cs
 │   └── IBootStartupView.cs      ← 启动更新 UI 最小接口（状态/进度/修复可见）
 ├── Boot.Editor/
 │   ├── Boot.Editor.asmdef       ← Editor-only，引用 Boot + Framework.Asset.Editor + HybridCLR.Editor + YooAsset.Editor
@@ -224,7 +228,7 @@ Phase 1 剩余事项：
 - RES-VERIFY-01: 资源加载矩阵验证。覆盖 RawFile bytes（DLL/AOT metadata）、`LoadAssetAsync<T>` cached 通道、`LoadAssetHandleAsync<T>` owned 通道 + Dispose、`InstantiateAsync` + Dispose、`LoadSceneAsync`/Unload、`CreateDownloader` 无下载/有下载路径、`Release`/`UnloadUnused` 行为。
 - RES-VERIFY-02: PlayMode 覆盖。至少验证 EditorSimulate 与 Player Offline；Host/CDN 模式可用本地 HTTP 或后续测试服验证下载、重试、超时和缓存。
 - HYB-VERIFY-01: 热更新行为 smoke。修改 Project 层代码/资源后重新同步，验证无需整包即可下发；已加载 DLL 替换需重启/下次启动生效；记录哪些场景需要 APP 重启、哪些只需游戏内流程刷新。
-- HYB-03: 未来拆分 `Boot.Update`：当前工具默认只发布 `Core` / `General` / `Project` 运行时预加载 DLL；目标是极薄 BootLoader + 启动更新流程可热更，但更新后需重启 APP/下次启动生效
+- ~~HYB-03~~: ✅ 已完成（见进度与验证记录）。`Boot.Update` 拆分落地为 AOT `Launcher` + 热更 `Boot`；启动更新流程可热更，已加载 DLL 替换需重启/下次启动生效（符合 HOT_UPDATE_BOUNDARY 重启分类）。剩余仅 HYB-VERIFY-01 运行时行为 smoke。
 - LOGIN-01: General/Login 业务模型与登录流程骨架（Boot 更新完成后进入；不放 Core）
 - MODEL-01 后续: 创建示例 Model 验证真实业务 Load/Unload 行为（生命周期驱动已接入）
 - PERF-01: 已实现模块性能治理（ZLogger + VContainer 日志接入、启动期反射扫描去 LINQ、Bootstrap stage 收集优化、Unity 编译验证）
@@ -250,6 +254,7 @@ Phase 2 规划：
 - 2026-07-05: YooAsset 3.0 `EditorSimulate` 初始化需要模拟构建输出 root，不是 `PackageName`；新增 `AssetConfig.EditorSimulatePackageRoot`、`IAssetRuntime.LastError`，并让 `KJ/HybridCLR/Prepare Runtime Assets And Boot` / `Prepare YooAsset Editor Simulate Package` 生成虚拟 RawFile 包后写回配置。Boot/Core 初始化失败会透出 YooAsset 原始错误。
 - 2026-07-05: YooAsset 3.0 `InitializePackageOperation` 不支持 `WaitForCompletion()`；`AssetRuntime` 新增 `BeginInitialize()` / `AssetInitializeHandle`，Boot 在协程里轮询初始化，Core 只验证 Boot 传入的 runtime 已 ready。
 - 2026-07-05: 用户确认 Unity 编译与 Editor Play 无报错；`Editor.log` 显示 `[AssetSystem] Ready`、`[SystemManager] Init [1/3] StartupProbeSystem`、`[2/3] AssetSystem`、`[3/3] PoolService`、`[SystemManager] 全部初始化完成`。下一步不新增业务模块，先执行 Player 打包 smoke 与各类资源加载验证。
+- 2026-07-07: HYB-03 热更边界裂变已实现并验证。AOT `Launcher`(`KJ.Launcher.asmdef`，仅引用 UniTask/YooAsset/HybridCLR.Runtime/AssetShared) + 热更 `Boot`(`KJ.Boot.asmdef`，引用 Asset/Log/RuntimeLog/UniTask/AssetShared/YooAsset/Launcher)；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 阶段日志改走 `BootStartupLog`；`BootLoader` 用字面串 `"Boot.BootUpdateRunner, Boot"` 反射启动热更入口；新增 `IsExternalInit` polyfill（Unity .NET Standard 2.1 缺类型）。EditMode 全工程 **45/45 全绿**，其中 15 例覆盖 HYB-03 边界（含 3 例核心边界锁死：`Launcher_DoesNotReferenceHotUpdateAssemblies` / `BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName` / `AllTenHotUpdateAssembliesAreLoaded`），另含 `AutoExportTestResults.cs` 自动导出 `TestResults.xml`。
 
 ---
 *Phase 0 Architecture 完成: 2026-06-29 | Phase 1 资源系统 Framework 化: 2026-07-02 | 启动链去 prefab 化落地: 2026-07-04*

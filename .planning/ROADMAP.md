@@ -23,6 +23,7 @@
 | LOG-AI-02 首版日志收集与 AI 分析入口 | `Assets/Scripts/Core.Editor/Logging/` | `KJ/Runtime Logs/*` 菜单：打开 latest、生成摘要、导出诊断包、清理本地日志 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 | HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，正式构建前走完整 `Generate All And Sync` |
+| HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
 
 ---
 
@@ -92,7 +93,7 @@
 | HYB-00 热更边界固化 | Medium | `.planning/` + asmdef 策略 | Boot, Framework | 明确托管 DLL 下发、重启生效、真正换包三类边界，作为 UI/Config/Net 前置约束 |
 | HYB-01 HybridCLR 最小加载闭环 | High | `Boot/` | 稳定 Framework 资源接口 | Boot 侧热更配置、AOT 元数据补充、Core/General/Project DLL 加载、再反射创建热更 Stage |
 | HYB-02B 热更 smoke test | Medium | Unity Editor + Player | HYB-02A, YooAsset | 先完成当前验证 gate：Player 打包 smoke、资源加载矩阵、PlayMode 覆盖、“改 Project 代码后无整包更新”验证；正式包前再跑完整 `Generate All And Sync` |
-| HYB-03 Boot.Update 拆分 | High | `Scripts/Boot/` + `Scripts/Boot.Update/` | HYB-01, HYB-02 | 将当前 Boot 拆为极薄 BootLoader 与可热更启动更新流程；Boot.Update 变更可下载但需重启/下次启动生效 |
+| ~~HYB-03 Boot.Update 拆分~~ | ✅ 已完成（见上方"已完成"） | `Scripts/Boot/Launcher/` + `Framework/AssetShared/` | HYB-01, HYB-02 | 落地为 AOT `Launcher` + 热更 `Boot`；Boot 变更可下载但已加载 DLL 替换需重启/下次启动生效 |
 
 ---
 

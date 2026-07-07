@@ -5,6 +5,7 @@
 > 前置分析：`ProgressDoc/Discuss/HybridCLR热更程序集范围分析.md`
 > 关联规范：`.planning/HOT_UPDATE_BOUNDARY.md`、`.planning/ROADMAP.md` HYB-03
 > 命名约定：本 agent 产物统一以 `Hy3_` 前缀命名；本文档为**唯一权威版本**，取代 `DS_*` 原稿与本 agent 首稿。
+> **实现状态（2026-07-07）：✅ 已实现并验证。** 设计已落地，关键偏差见文末「附录 E：实际实现偏差」。EditMode 测试全工程 **45/45 全绿**，其中 15 例覆盖 HYB-03 边界（含 3 例核心边界锁死测试）。AOT 壳 `Launcher` 与热更 `Boot` 的 asmdef 引用以工程内 `.asmdef` 为准。
 
 ---
 
@@ -609,3 +610,19 @@ Phase E — 配置 + 验证
 | `Assets/Framework/Asset/{AssetConfig,AssetConstants,AssetRuntime}.cs` | 共享配置与 YooAsset 服务（核实） |
 | `Assets/Scripts/Boot/{Entry,BootUpdateRunner,BootStartupSettings,BootAssemblyEntry,BootMetadataEntry}.cs` | 启动链与配置（核实） |
 | `CODE_MAP.md` | 37 项目 Boot 层教训 |
+
+### 附录 E：实际实现偏差（2026-07-07）
+
+本文档为设计/方案基线，落地时与计划有一处关键引用集合不同，其余均按文档执行：
+
+- **`KJ.Boot.asmdef` 实际引用**：`Asset / Log / RuntimeLog / UniTask / AssetShared / YooAsset / Launcher`。
+  文档 §5.3 计划写的是 `[Asset, Log, RuntimeLog, Pool, Cache, Event, Core, General, UniTask, MessagePipe]`——
+  实际实现**未**引用 `Pool/Cache/Event/Core/General/MessagePipe`（Boot 更新流程通过反射进入 `ProjectStartup`，
+  不直接依赖这些层）；`YooAsset` 与 `Launcher`/`AssetShared` 为实际新增引用。以工程内 `.asmdef` 为准。
+- **`KJ.Launcher.asmdef` 实际引用**：`UniTask / YooAsset / HybridCLR.Runtime / AssetShared`（与文档 §5.3 一致）。
+- **`IsExternalInit` polyfill**：Unity .NET Standard 2.1 不自带 `System.Runtime.CompilerServices.IsExternalInit`，
+  新增 `Assets/Scripts/Boot/Launcher/IsExternalInit.cs` 使 `BootStartupLogEntry` 的 `init` 访问器可编译（文档未列此项）。
+- **测试**：`Assets/Tests/EditMode/HybridCLRBootTests.cs` 在文档写就后增补 3 例核心边界测试
+  （`Launcher_DoesNotReferenceHotUpdateAssemblies` / `BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName` /
+  `AllTenHotUpdateAssembliesAreLoaded`），使 HYB-03 相关用例达 15 例；配套 `AutoExportTestResults.cs` 将结果导出到 `TestResults.xml`。
+- **验证结果**：EditMode 全工程 **45/45 通过，0 失败**（2026-07-07，Unity 2022.3.62f2）。

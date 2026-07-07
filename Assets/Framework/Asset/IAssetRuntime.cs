@@ -1,3 +1,5 @@
+using YooAsset;
+
 namespace Framework.Asset
 {
     public interface IAssetRuntime
@@ -11,6 +13,7 @@ namespace Framework.Asset
         AssetDownloadHandle CreateDownloader(string[] tags);
         AssetUpdateManifestHandle UpdateManifest();
         byte[] LoadRawBytes(string path);
+        void WrapFromExistingPackage(AssetConfig config, ResourcePackage existingPackage);
         void Shutdown();
     }
 }

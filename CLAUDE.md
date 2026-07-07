@@ -34,6 +34,19 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 编译边界由 `.asmdef` 强制检查。
 
+## HybridCLR 热更边界（HYB-03 已落地）
+
+启动链已裂变：AOT `Launcher` 壳 + 热更 `Boot` 更新流程。
+
+- **AOT 壳 `Launcher`（`KJ.Launcher.asmdef`）**：只做"找到并加载热更代码"。引用仅 `UniTask / YooAsset / HybridCLR.Runtime / AssetShared`。**硬约束：不得引用任何 `Framework.*` 包或热更程序集**（靠 asmdef 强制）。通过反射字符串 `"Boot.BootUpdateRunner, Boot"` 调用热更入口，不编译期依赖 Boot。
+- **热更 `Boot`（`KJ.Boot.asmdef`）**：启动更新编排（资源版本检查/下载/重试/更新 UI）。引用 `Asset / Log / RuntimeLog / UniTask / AssetShared / YooAsset / Launcher`。不再引用 `HybridCLR.Runtime`（AOT 壳代为加载）。
+- **10 个热更程序集**：`Boot, Core, General, Project, Pool, Cache, Event, Asset, Log, RuntimeLog`（事实源 `ProjectSettings/HybridCLRSettings.asset` 的 `hotUpdateAssemblies`）。
+- **`Framework.AssetShared`（AOT 共享）**：承载 `AssetConfig` / `AssetConstants`（namespace 保留 `Framework.Asset`），供 AOT 壳与热更层双向引用，解决 AssetConfig 跨边界共享。
+- **AOT 阶段日志**：`BootStartupLog`（纯文本 + 内存），不依赖 `Framework.Log`/`RuntimeLog`；热更层初始化后由 `BootUpdateRunner.ReplayEarlyLogs()` 回放至 RuntimeLog session。
+- **反射入口契约**：`BootLoader` 用字面串 `"Boot.BootUpdateRunner, Boot"` 反射解析；程序集名是启动契约的一部分，改名需同步 `BootLoader` 与 `HybridCLRSettings`。
+
+改动热更边界时：先改 `HybridCLRSettings.asset`，再确认 `KJHybridClrBuildTools.ValidateRuntimePreloadAssemblyName` 拦截名单（当前 `{Launcher, TestKit}`）；`Launcher` 不得新增任何 Framework/热更引用。
+
 ## 命名空间
 
 **命名空间 = 目录路径，不带项目名前缀。**

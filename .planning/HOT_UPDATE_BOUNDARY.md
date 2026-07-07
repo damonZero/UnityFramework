@@ -85,11 +85,12 @@ The old project follows this model: `Boot.Entry` is the tiny package-resident
 entry, while `Boot.Update` is loaded through the boot C# asset list. Its restart
 policy separates no restart, in-game restart, and outside-app restart.
 
-Current KJ has not yet split `Boot.Update`. The current editor/runtime tooling
-publishes the formal runtime preload list (`Core`, `General`, `Project` by
-default) and does not yet publish a separate startup-update manifest. That is a
-current loader/tooling scope decision, not a statement that Boot C# changes
-always require an app package update.
+Current KJ has split `Boot.Update` into AOT `Launcher` + hot-update `Boot` (HYB-03,
+2026-07-07). The editor/runtime tooling now publishes the formal runtime preload
+list (`Boot, Core, General, Project, Pool, Cache, Event, Asset, Log, RuntimeLog`)
+and the `Boot` hot-update assembly is the startup-update flow. That is a loader/
+tooling scope decision, not a statement that Boot C# changes always require an app
+package update.
 
 ## Assembly Groups
 
@@ -100,7 +101,8 @@ normal hot-update runtime is available:
 
 | Assembly | Role |
 | --- | --- |
-| `Boot` | Current minimal loader plus update runner. It should shrink toward a tiny loader and move update behavior into `Boot.Update`. |
+| `Launcher` (AOT) | Tiny loader that finds manifests, initializes the minimal resource path, loads startup code, and calls the hot-update entry via reflection. Extremely stable; old packages depend on it. (HYB-03 implemented.) |
+| `Boot` (HotUpdate) | Update runner: version check, repair button, update UI, managed DLL/resource download, restart classification. Hot-update managed code after the split; replacement of an already-loaded DLL needs restart/next launch. (HYB-03 implemented; formerly the "Boot.Update" concept.) |
 | `Framework.Asset` / `Asset` | Minimal resource API and YooAsset adapter needed by Boot/Core handoff. |
 | `Framework.Event` / `Event` | Stable event marker and scanner. |
 | `Framework.Log` / `Log` | Stable logging facade available during early boot. |
@@ -125,7 +127,7 @@ These assemblies are loaded by HybridCLR before their runtime entry is invoked:
 | `Core` | Engine infrastructure: DI registration, SystemManager, asset/pool bridge, UI manager, network core. |
 | `General` | Reusable business modules: config, audio, red dot, guide, localization, login. |
 | `Project` | Project-specific gameplay, windows, flows, and content-facing logic. |
-| `Boot.Update` | Future split: startup update flow and repair/update UI. |
+| `Boot` | Hot-update startup update flow and repair/update UI (the former `Boot.Update` concept, now the hot-update `Boot` assembly after HYB-03). |
 
 Rules:
 
@@ -166,11 +168,11 @@ Entry
 Target sequence after a future Boot split:
 
 ```text
-BootLoader / Entry
+BootLoader (AOT Launcher) / Entry
   -> load startup manifest
-  -> load Boot.Update DLL/AOT metadata if present
-  -> reflect Boot.Update startup entry
-  -> Boot.Update checks/downloads resources and remaining DLLs
+  -> load Boot (hot-update) DLL/AOT metadata if present
+  -> reflect Boot.BootUpdateRunner.Start(BootBridge)
+  -> Boot checks/downloads resources and remaining DLLs
   -> classify restart requirement
   -> load Core/General/Project
   -> reflect Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
@@ -183,8 +185,8 @@ before the configured hot-update assemblies are loaded.
 
 | Layer | Current policy | Target / notes |
 | --- | --- | --- |
-| `Boot` | Minimal loader assembly in the current package and current startup path. | Shrink toward BootLoader. C# changes are restart-classified when a loader path can deliver them. |
-| `Boot.Update` | Not implemented. | Hot-update startup flow; restart/next launch after update. |
+| `Boot` (HotUpdate) | Hot-update update-runner assembly. | C# changes are restart-classified when an already-loaded DLL is replaced; delivered as hot-update managed code. (HYB-03 implemented.) |
+| `Launcher` (AOT) | Tiny AOT loader in the current package and startup path. | Keep extremely stable; old packages depend on it. Must not reference Framework/hot-update assemblies. |
 | `Framework` | Stable contracts and low-level adapters. | Keep loader-facing APIs stable; C# implementation changes are not native package changes by definition. |
 | `Core` | Runtime hot update. | Engine infrastructure can iterate through hot update. |
 | `General` | Runtime hot update. | Reusable business logic, including login. |
@@ -250,12 +252,18 @@ HYB-02:
 - Use `KJ/HybridCLR/Apply To Open Entry` to write HybridCLRSettings assembly
   lists into the open Boot `Entry` serialized settings.
 
-HYB-03 (future):
+HYB-03 (done, 2026-07-07):
 
-- Split the current `Boot` assembly into a tiny loader and a `Boot.Update`
-  startup-update assembly.
-- Add restart classification equivalent to: no restart, in-game restart, and
-  outside-app restart.
-- Add a dedicated startup-update manifest so Boot/Framework-facing C# update
-  rules are explicit instead of being mixed into the `Core/General/Project`
-  runtime preload list.
+- Implemented as AOT `Launcher` (tiny loader) + hot-update `Boot` (update runner),
+  not a separate `Boot.Update` assembly. The `Launcher` asmdef references only
+  `UniTask / YooAsset / HybridCLR.Runtime / AssetShared` and never Framework or
+  hot-update assemblies; it calls the hot-update entry via reflection:
+  `Boot.BootUpdateRunner.Start(BootBridge)`.
+- Restart classification (no restart / in-game restart / outside-app restart)
+  already documented above and applies: a replaced already-loaded managed DLL
+  takes effect after restart/next launch.
+- A dedicated startup-update manifest is still the `Boot` hot-update assembly
+  itself, loaded via the configured hot-update list; `AssetConfig`/`AssetConstants`
+  live in AOT-shared `Framework.AssetShared` so the loader can read them.
+- 10 hot-update assemblies: `Boot, Core, General, Project, Pool, Cache, Event,
+  Asset, Log, RuntimeLog`.

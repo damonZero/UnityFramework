@@ -1,28 +1,29 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Framework.Log;
-using Framework.RuntimeLog;
 using UnityEngine;
 
 namespace Boot
 {
     /// <summary>
-    /// 游戏启动入口。只负责启动期资源/代码更新，再把正式游戏流程交给热更层入口。
+    /// AOT game entry point (lives in the Launcher assembly). It must NOT reference
+    /// any hot-update type directly. It constructs the AOT <see cref="BootLoader"/>
+    /// which initializes YooAsset, loads the hot-update assemblies, and reflects
+    /// <c>Boot.BootUpdateRunner.Start</c> to hand control to the hot-update layer.
+    /// Early/startup errors are recorded via <see cref="BootStartupLog"/> (AOT).
     /// </summary>
     public class Entry : MonoBehaviour
     {
         [SerializeField]
-        private BootStartupSettings startupSettings = new();
+        private BootStartupSettings startupSettings = new BootStartupSettings();
 
         [SerializeField]
         private MonoBehaviour startupView;
 
-        private BootUpdateRunner _runner;
+        private BootLoader _loader;
         private bool _isRunning;
 
         private void Awake()
         {
-            BootRuntimeLogBootstrap.EnsureInstalled(startupSettings);
             DontDestroyOnLoad(gameObject);
             RunStartupAsync().Forget();
         }
@@ -39,27 +40,16 @@ namespace Boot
         {
             _isRunning = true;
             var view = startupView as IBootStartupView;
-            _runner?.Dispose();
-            _runner = new BootUpdateRunner(startupSettings, view);
+            _loader?.Dispose();
+            _loader = new BootLoader(startupSettings, view);
 
             try
             {
-                await _runner.RunAsync();
+                await _loader.RunAsync();
             }
             catch (Exception e)
             {
-                RuntimeLogManager.Current?.Write(new RuntimeLogEntry
-                {
-                    Level = GameLogLevel.Error,
-                    Module = "Boot.Entry",
-                    Category = "Boot.Entry",
-                    Phase = "Boot",
-                    Message = "Startup failed",
-                    ExceptionType = e.GetType().FullName,
-                    ExceptionMessage = e.Message,
-                    StackTrace = e.ToString()
-                });
-                RuntimeLogManager.Flush();
+                BootStartupLog.Error($"[Entry] Startup failed: {e}");
                 view?.SetStatus("Startup failed");
                 view?.SetRepairVisible(true);
             }
@@ -71,8 +61,7 @@ namespace Boot
 
         private void OnDestroy()
         {
-            _runner?.Dispose();
-            RuntimeLogManager.Flush();
+            _loader?.Dispose();
         }
     }
 }

@@ -287,13 +287,8 @@ namespace Boot.Editor.HybridCLR
         {
             switch (assemblyName)
             {
-                case "Boot":
-                case "Asset":
-                case "Event":
-                case "Log":
-                case "Pool":
-                case "Cache":
-                case "TestKit":
+                case "Launcher": // AOT shell - must never be published as a hot-update assembly
+                case "TestKit":  // test-only assembly, not product code
                     throw new InvalidOperationException(
                         $"Assembly '{assemblyName}' is not supported by the current runtime preload publication path. This menu writes the Entry hot-update list used after Boot has already started, so startup/stable-contract assemblies need a dedicated startup-update manifest, load order, and restart policy before they are added. This is not an app-package requirement by itself.");
             }

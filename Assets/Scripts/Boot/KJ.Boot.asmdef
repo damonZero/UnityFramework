@@ -6,7 +6,9 @@
         "Log",
         "RuntimeLog",
         "UniTask",
-        "HybridCLR.Runtime"
+        "AssetShared",
+        "YooAsset",
+        "Launcher"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

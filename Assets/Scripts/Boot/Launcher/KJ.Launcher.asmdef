@@ -1,0 +1,19 @@
+{
+    "name": "Launcher",
+    "rootNamespace": "Boot",
+    "references": [
+        "UniTask",
+        "YooAsset",
+        "HybridCLR.Runtime",
+        "AssetShared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -13,7 +13,8 @@
         "Log",
         "RuntimeLog",
         "ZLinq",
-        "ZLogger.Unity"
+        "ZLogger.Unity",
+        "AssetShared"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
