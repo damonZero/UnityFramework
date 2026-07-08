@@ -27,7 +27,7 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 - **Packages**：UPM 管理的第三方库（VContainer、UniTask、MessagePipe、YooAsset 等）。可以互相引用。
 - **Framework**：KJ 自有的独立包（`Asset/`、`Event/`、`Pool/`、`Cache/`）。**最多只能依赖 Packages**，不能引用 Scripts 下任何代码。稳定底层模块直接放在 `Assets/Framework/`，不使用 `Assets/Framework/Package/`。如果需要项目能力，通过接口、适配器或静态委托注入，由 Core 层桥接。
-- **Boot**：启动壳，最小依赖（仅 VContainer）。不引用 Core/General/Project，也不直接引用 Framework。
+- **Boot**：启动更新壳（热更 `KJ.Boot.asmdef`），只做资源/代码更新与反射启动。引用 `Asset / Log / RuntimeLog / UniTask / AssetShared / YooAsset / Launcher`；不引用 VContainer、HybridCLR.Runtime、Core/General/Project。AOT 壳 `Launcher`（`KJ.Launcher.asmdef`，位于 `Boot/Launcher/`）只引用 `UniTask / YooAsset / HybridCLR.Runtime / AssetShared`。
 - **Core**：引擎基础设施。可以引用 Boot、Framework、Packages。不引用 General/Project。
 - **General**：通用业务。可以引用 Core、Packages。不引用 Project。
 - **Project**：项目专属业务。可以引用所有下层。

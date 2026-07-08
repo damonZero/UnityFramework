@@ -46,17 +46,24 @@ last_updated: "2026-07-06T13:11:01.296Z"
 ```
 Assets/Scripts/
 ├── Boot/
-│   ├── KJ.Boot.asmdef           ← 热更程序集（HYB-03 裂变后）。引用 Asset/Log/RuntimeLog/UniTask/AssetShared/YooAsset/Launcher；不引用 Core/General/Pool/Cache/Event/MessagePipe/HybridCLR.Runtime
-│   ├── Entry.cs                 ← 稳定启动入口 MonoBehaviour；持有序列化启动配置和可选启动 UI
-│   ├── BootStartupSettings.cs   ← Entry 序列化配置：资源更新、热更 DLL/AOT metadata 资源路径、正式启动入口
-│   ├── BootRuntimeLogBootstrap.cs ← Boot 早期 RuntimeLog session 安装；Core/ZLogger 尚未接管前也能落盘
-│   ├── BootUpdateRunner.cs      ← Boot 更新流程：资源版本检查、清单更新、下载、读取 RawFile/本地兜底 bytes、AOT metadata、Assembly.Load、反射启动，并移交 AssetRuntime
-│   ├── BootAssemblyEntry.cs / BootMetadataEntry.cs
-│   ├── HybridClrReflection.cs   ← 反射调用 HybridCLR.RuntimeApi，Boot asmdef 不直接引用 HybridCLR.Runtime
-│   ├── Launcher/                      → KJ.Launcher.asmdef (AOT Shell，HYB-03 裂变新增)
-│   │   ├── KJ.Launcher.asmdef         ← 仅引用 UniTask/YooAsset/HybridCLR.Runtime/AssetShared；硬约束：不引用任何 Framework/热更程序集
-│   │   ├── Entry.cs / BootLoader.cs / BootBridge.cs / BootStartupLog.cs / IsExternalInit.cs / YooAssetStrategy/BootRemoteService.cs
-│   └── IBootStartupView.cs      ← 启动更新 UI 最小接口（状态/进度/修复可见）
+│   ├── KJ.Boot.asmdef           ← 热更程序集（HYB-03 裂变后）。引用 Asset/Log/RuntimeLog/UniTask/AssetShared/YooAsset/Launcher；不引用 VContainer/HybridCLR.Runtime/Core/General/Pool/Cache/Event/MessagePipe
+│   ├── BootUpdateRunner.cs      ← 热更入口：被 Launcher 反射启动；资源版本检查/清单更新/下载/AOT metadata/Assembly.Load，反射 Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)，并回放早期日志
+│   ├── BootRuntimeLogBootstrap.cs ← 热更层早期 RuntimeLog session 安装；Core/ZLogger 尚未接管前也能落盘
+│   └── Launcher/                      → KJ.Launcher.asmdef (AOT Shell，HYB-03 裂变新增)
+│       ├── KJ.Launcher.asmdef         ← 仅引用 UniTask/YooAsset/HybridCLR.Runtime/AssetShared；硬约束：不引用任何 Framework/热更程序集
+│       ├── Entry.cs              ← AOT 入口 MonoBehaviour：Awake → DontDestroyOnLoad → new BootLoader().RunAsync()
+│       ├── BootLoader.cs         ← AOT 壳：初始化 YooAsset、加载全部热更 DLL、构造 BootBridge、反射 BootUpdateRunner
+│       ├── BootBridge.cs         ← 跨 AOT→热更边界的状态载体（Package/Settings/View/Config/EarlyLogs）
+│       ├── BootStartupLog.cs     ← AOT 阶段日志（纯文本 + 内存快照，不依赖 Framework.Log/RuntimeLog）
+│       ├── IsExternalInit.cs
+│       ├── Data/
+│       │   ├── BootStartupSettings.cs ← Entry 序列化配置：资源更新、热更 DLL/AOT metadata、正式入口
+│       │   ├── BootAssemblyEntry.cs   ← 热更 DLL 条目
+│       │   ├── BootMetadataEntry.cs   ← AOT metadata 条目
+│       │   └── IBootStartupView.cs    ← 启动更新 UI 最小接口（状态/进度/修复可见）
+│       └── YooAssetStrategy/
+│           └── BootRemoteService.cs   ← AOT 侧 IRemoteService（死锁修复点）
+
 ├── Boot.Editor/
 │   ├── Boot.Editor.asmdef       ← Editor-only，引用 Boot + Framework.Asset.Editor + HybridCLR.Editor + YooAsset.Editor
 │   ├── Build/
@@ -64,7 +71,7 @@ Assets/Scripts/
 │   └── HybridCLR/
 │       └── KJHybridClrBuildTools.cs ← `KJ/HybridCLR` 菜单：Prepare Runtime Assets And Boot / Generate Runtime Assets And Sync / Generate All And Sync / Compile Dlls And Sync / Apply To Open Entry / Validate Outputs
 ├── Core/
-│   ├── KJ.Core.asmdef          ← 引用 Asset + Event + Pool + Cache + Log + VContainer + MessagePipe + UniTask
+│   ├── KJ.Core.asmdef          ← 引用 Asset+Event+Pool+Cache+Log+RuntimeLog+VContainer+MessagePipe(.VContainer)+UniTask+ZLinq+ZLogger.Unity+AssetShared；不引用 General/Project
 │   ├── PoolService.cs          ← [CoreSystem] Framework.Pool DI 桥接 + 集合池快捷入口
 │   ├── Logging/
 │   │   ├── GameLogBridge.cs    ← IGameLogSink 到 RuntimeLog + Core ZLogger 管线的桥接（adapter，不是 CoreSystem）
@@ -94,7 +101,7 @@ Assets/Scripts/
 │   └── Logging/
 │       └── RuntimeLogEditorTools.cs ← `KJ/Runtime Logs` 菜单：打开 latest、生成摘要、导出诊断包、清理日志
 ├── General/
-│   ├── KJ.General.asmdef       ← 引用 Core + Event + Log
+│   ├── KJ.General.asmdef       ← 引用 Core+Event+Log+MessagePipe(.VContainer)+VContainer(.Unity)+ZLinq；不引用 Project
 │   ├── Bootstrap/
 │   │   ├── GeneralContainerRegistration.cs
 │   │   └── GeneralBootstrapStage.cs
@@ -104,7 +111,7 @@ Assets/Scripts/
 │       ├── ModelLifecycleLog.cs
 │       └── ModelLifecycle.cs
 └── Project/
-    ├── KJ.Project.asmdef       ← 引用 Core + General
+    ├── KJ.Project.asmdef       ← 引用 Asset+Core+General+Event+Log+MessagePipe(.VContainer)+VContainer(.Unity)；可引用所有下层
     └── Bootstrap/
         ├── ProjectStartup.cs        ← Boot 反射调用的正式热更入口，接收 IAssetRuntime
         ├── ProjectLifetimeScope.cs  ← VContainer root，串联 Core→General→Project 注册，并复用 Boot AssetRuntime

@@ -1,91 +1,93 @@
 ---
 name: kj-boot
 description: >
-  KJ Framework Boot 层指南。涵盖 Entry（游戏入口+MonoBehaviour+DontDestroyOnLoad）、AppLifetimeScope（VContainer LifetimeScope 抽象基类）、IBootstrapStage（普通 C# 启动阶段协议：Priority+StageName+Configure）、BootstrapContext（启动上下文：IContainerBuilder+类型化值存储+ConfigureStages）、BootLifetimeScope（通过序列化类型名反射创建启动阶段）。触发场景：理解启动流程、添加新启动阶段、调试 Boot/Core/General/Project 注册顺序、配置 BootstrapStage 优先级、保持 Boot 最小依赖。核心规则：Boot 层只引用 VContainer 和稳定 Framework 基础包；不引用 Core/General/Project；Stage 实现为普通 C# 类，不继承 MonoBehaviour；Boot 通过 assembly-qualified type name 反射创建 Stage；启动资源 prefab 不再作为阶段载体。
+  KJ Framework Boot 层指南（HYB-03 裂变后）。涵盖 AOT 壳 Launcher（Entry / BootLoader / BootBridge / BootStartupLog）与热更 Boot（BootUpdateRunner / BootRuntimeLogBootstrap）的启动链；HybridCLR 热更加载；启动配置 BootStartupSettings / IBootStartupView；AOT 阶段日志 BootStartupLog。触发场景：理解启动流程、配置热更 DLL/AOT metadata、调试 Boot 到 ProjectStartup 的反射入口、保持 Launcher(Boot) 最小依赖与边界、讨论 Boot.Update 拆分和重启策略。核心规则：Launcher(AOT) 只引用 UniTask/YooAsset/HybridCLR.Runtime/AssetShared，绝不引用任何 Framework.* 或热更程序集；Boot(热更) 引用 Asset/Log/RuntimeLog/UniTask/AssetShared/YooAsset/Launcher，不引用 VContainer/Core/General/Project/HybridCLR.Runtime；正式 VContainer root 由 ProjectStartup/ProjectLifetimeScope 创建。
 metadata:
-  doc: CODEMAP.md
+  doc: .planning/HOT_UPDATE_BOUNDARY.md
   layer: Boot
 ---
 
-# KJ Boot 层 — 应用启动
+# KJ Boot 层 — 启动更新壳（HYB-03 裂变）
 
-源码在 `Assets/Scripts/Boot/`，完整文档见 `CODEMAP.md` Layer: Boot 章节。
+源码在 `Assets/Scripts/Boot/`，完整边界设计见 `.planning/HOT_UPDATE_BOUNDARY.md`。
 
 ## 架构速查
 
 ```
-Entry.cs                 — Awake() → DontDestroyOnLoad(gameObject)
-AppLifetimeScope.cs      — abstract LifetimeScope 基类
-Bootstrap/
-├── IBootstrapStage.cs   — 普通 C# 阶段协议
-├── BootstrapContext.cs  — IContainerBuilder + 类型化值存储 + ConfigureStages
-└── BootLifetimeScope.cs — 从序列化类型名反射创建 Stage 并执行
+Assets/Scripts/Boot/
+├── Launcher/                      → KJ.Launcher.asmdef (AOT 壳，HYB-03 裂变)
+│   ├── Entry.cs                   — MonoBehaviour 入口：Awake → DontDestroyOnLoad → new BootLoader().RunAsync()
+│   ├── BootLoader.cs              — AOT 启动壳：初始化 YooAsset、加载全部热更 DLL、反射 BootUpdateRunner
+│   ├── BootBridge.cs              — 跨 AOT→热更边界的状态载体（Package/Settings/View/Config/EarlyLogs）
+│   ├── BootStartupLog.cs          — AOT 阶段日志（纯文本 + 内存快照，不依赖 Framework.Log/RuntimeLog）
+│   ├── IsExternalInit.cs
+│   ├── Data/
+│   │   ├── BootStartupSettings.cs — Entry 序列化启动配置（资源更新 / 热更 DLL / AOT metadata / 正式入口）
+│   │   ├── BootAssemblyEntry.cs   — 热更 DLL 条目
+│   │   ├── BootMetadataEntry.cs   — AOT metadata 条目
+│   │   └── IBootStartupView.cs    — 启动 UI 最小接口（状态 / 进度 / 修复可见）
+│   └── YooAssetStrategy/
+│       └── BootRemoteService.cs   — AOT 侧 IRemoteService（死锁修复点）
+├── BootUpdateRunner.cs            → KJ.Boot.asmdef（热更，由 Launcher 反射启动）
+└── BootRuntimeLogBootstrap.cs    → 热更层早期安装 RuntimeLog session
 ```
 
-## 启动流程
+## 当前启动流程
 
 ```
-Entry.Awake()
+Entry.Awake()  (Launcher / AOT)
+  ↓ DontDestroyOnLoad
+  new BootLoader(startupSettings, view).RunAsync()
   ↓
-BootLifetimeScope.Configure(IContainerBuilder)
-  ├─ 根据 bootstrapStageTypeNames 反射创建 IBootstrapStage 实例
-  ├─ BootstrapContext.ConfigureStages(stages)
-  │   ├─ 去重 stage 类型
-  │   ├─ 按 Priority 升序排序
-  │   └─ 逐个 stage.Configure(context)
-  ↓
-CoreBootstrapStage (Priority=100)
-  ├─ builder.RegisterCoreServices()
-  └─ context.Set<MessagePipeOptions>(options)
-  ↓
-GeneralBootstrapStage (Priority=200)
-  ├─ context.GetRequired<MessagePipeOptions>()
-  └─ builder.RegisterBusinessLayer(options, GeneralAssembly)
-  ↓
-ProjectBootstrapStage (Priority=300)
-  ├─ context.GetRequired<MessagePipeOptions>()
-  └─ ProjectBootstrapper.Configure(builder, options)
+BootLoader.RunAsync()  (AOT)
+  ├─ 加载 AssetConfig（来自 AOT 共享程序集 AssetShared）
+  ├─ 初始化 YooAsset 并创建默认 ResourcePackage
+  ├─ 下载 + 加载全部热更 DLL（含 Boot 自身）via YooAsset RawFile API
+  │     （绝不走热更 IAssetRuntime，否则形成 AOT→热更反向引用）
+  ├─ 加载 AOT 补充 metadata（直接引用 HybridCLR.Runtime，AOT 侧）
+  ├─ 构造 BootBridge（携带 Package / Settings / View / Config / EarlyLogs）
+  └─ 反射 Boot.BootUpdateRunner.Start(bridge)   ← 移交热更层
+        ↓
+        BootUpdateRunner.RunAsync()  (热更 / Boot)
+        ├─ AssetRuntime.WrapFromExistingPackage(bridge.Config, bridge.Package)
+        ├─ 资源版本检查 / 清单更新 / 下载 / AOT metadata / Assembly.Load
+        ├─ ReplayEarlyLogs()（把 AOT BootStartupLog 回放到 RuntimeLog）
+        └─ 反射 Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
+              ↓
+              ProjectStartup 创建 ProjectLifetimeScope (DontDestroyOnLoad)
+              ↓
+              ProjectLifetimeScope.Configure → CoreStartupContext
+                → CoreBootstrapStage.Configure(context)
+                → GeneralBootstrapStage.Configure(context)
+                → ProjectBootstrapStage.Configure(context)   （正式 VContainer root）
 ```
 
 ## 核心约束
 
-- Boot asmdef 只引用 VContainer 和稳定 Framework 基础包（如 `Framework.Log`），不直接引用 Core/General/Project。
-- `IBootstrapStage` 保留在 Boot；实现类放在所属层的 `Bootstrap/` 目录。
-- Stage 是普通 C# 类：不要继承 `MonoBehaviour`，不要依赖 prefab/Inspector 字段传递下一阶段。
-- Boot 通过 assembly-qualified type name 创建 stage，例如 `Core.Bootstrap.CoreBootstrapStage, Core`；序列化列表为空时使用默认 Core/General/Project。
-- 被类型名反射创建的 Stage 必须加 `UnityEngine.Scripting.Preserve`，避免 IL2CPP managed stripping 裁掉。
-- 阶段顺序由 `Priority` 控制，不由配置数组顺序或 Unity 对象层级控制。
-- 阶段间共享值使用 `BootstrapContext.Set<T>()` / `GetRequired<T>()`，不要用静态变量接力。
+- **Launcher (AOT)**：`KJ.Launcher.asmdef` 只引用 `UniTask / YooAsset / HybridCLR.Runtime / AssetShared`。硬约束：不得引用任何 `Framework.*` 包或热更程序集（由 asmdef 强制）。它只定位并加载热更代码，通过反射字符串 `"Boot.BootUpdateRunner, Boot"` 调用热更入口，不编译期依赖 Boot。
+- **Boot (热更)**：`KJ.Boot.asmdef` 引用 `Asset / Log / RuntimeLog / UniTask / AssetShared / YooAsset / Launcher`。**不引用 VContainer、HybridCLR.Runtime、Core / General / Project**。AOT metadata/DLL 加载由 Launcher 代为完成，Boot 自身不再直接引用 `HybridCLR.Runtime`。
+- Boot 只做启动期资源/代码更新、修复入口、最小进度 UI 和反射启动正式游戏环境；不创建正式业务容器。
+- 正式 VContainer root 由 `Project.Bootstrap.ProjectStartup` / `ProjectLifetimeScope` 创建，并复用 Boot 已初始化的 `IAssetRuntime`（通过 `BootBridge` → `WrapFromExistingPackage`）。
+- 启动 UI 只承载更新/修复功能；登录、公告、服务器列表等属于 General/Project 业务。
+- **反射入口契约**：`BootLoader` 用字面串 `"Boot.BootUpdateRunner, Boot"` 反射解析；程序集名是启动契约的一部分，改名需同步 `BootLoader` 与 `HybridCLRSettings`。同样 `BootStartupSettings.startupTypeName` 默认 `"Project.Bootstrap.ProjectStartup, Project"` 决定正式入口。
+- 改热更边界时：先改 `HybridCLRSettings.asset`，再确认 `KJHybridClrBuildTools.ValidateRuntimePreloadAssemblyName` 拦截名单（当前 `{Launcher, TestKit}`）；`Launcher` 不得新增任何 Framework/热更引用。
+- C# 层改动不等同于必须换包；若旧 DLL 已加载，新 DLL 通常需重启/下次启动生效。
 
-## 新增 Stage
+## 启动配置（BootStartupSettings）
 
-```csharp
-using Boot;
-using UnityEngine.Scripting;
+序列化于 Entry prefab / scene，字段包括：
 
-namespace Core.Foo
-{
-    [Preserve]
-    public sealed class FooBootstrapStage : IBootstrapStage
-    {
-        public int Priority => 150;
-        public string StageName => "Foo";
-
-        public void Configure(BootstrapContext context)
-        {
-            // 注册本层服务
-        }
-    }
-}
-```
-
-然后把类型名加入 `BootLifetimeScope.bootstrapStageTypeNames`。
+- `enableAssetUpdate` / `enableHotUpdate`：是否走资源/代码更新
+- `skipHotUpdateInEditor`：Editor 下跳过 Assembly.Load（仍反射 `BootUpdateRunner.Start`）
+- `streamingAssetsRoot`：本地兜底资源根目录（如 `HotUpdate`）
+- `assetDownloadTag`：YooAsset 下载标签
+- `startupTypeName` / `startupMethodName`：正式入口（默认 `Project.Bootstrap.ProjectStartup` / `Start`）
+- `aotMetadataAssemblies` / `hotUpdateAssemblies`：AOT metadata 与热更 DLL 清单（**不要硬编码在 Boot 代码里**）
 
 ## 最佳实践
 
-1. Entry 永远保持最小：只做 `DontDestroyOnLoad` 和启动日志。
-2. 启动阶段只负责 DI/MessagePipe/上下文注册，不做运行时业务初始化。
-3. Core 注册 `MessagePipeOptions` 后用 `context.Set(options)` 传给 General/Project。
-4. General/Project 业务用 `[Model]+IModel`，不要在 Boot 阶段里手动 new 业务对象。
-5. 如果一个阶段依赖另一个阶段的上下文值，给被依赖阶段更小的 Priority。
-6. `Resources/` 只放最小启动配置（如 `AssetConfig.asset`），不要放 stage prefab 或场景。
+1. Entry 永远保持最小：只做 DontDestroyOnLoad 与启动 BootLoader；错误处理走 `BootStartupLog.Error` + `Debug.LogError`（不引用 Framework.Log）。
+2. 所有热更 DLL / AOT metadata 清单来源于 `BootStartupSettings`，不在 Boot 代码里硬编码。
+3. 新增 AOT 侧能力只能放在 `Launcher` 且只能引用 `UniTask / YooAsset / HybridCLR.Runtime / AssetShared`；其余逻辑放热更层。
+4. 启动期日志：AOT 阶段用 `BootStartupLog`，热更层初始化后由 `BootUpdateRunner.ReplayEarlyLogs()` 回放至 RuntimeLog。
+5. 资源运行时只初始化一次（Launcher 创建，Boot 通过 `WrapFromExistingPackage` 接管），不要创建第二套 YooAsset runtime。

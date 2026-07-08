@@ -46,8 +46,12 @@ Upper layers may depend on lower layers; lower layers must not depend on upper l
   Framework code may depend on Packages only. It must not reference code under
   `Assets/Scripts`. If project capability is needed, expose static delegates and
   bridge them from Core.
-- `Boot`: startup shell with minimal dependencies, typically VContainer only.
-  It must not reference Core, General, or Project.
+- `Boot`: startup update shell (hot-update, `KJ.Boot.asmdef`) that only updates
+  resources/code and reflects the hot-update entry. References `Asset, Log, RuntimeLog,
+  UniTask, AssetShared, YooAsset, Launcher`; it must not reference VContainer,
+  HybridCLR.Runtime, Core, General, or Project. The AOT `Launcher` shell
+  (`KJ.Launcher.asmdef`) lives under `Boot/Launcher/` and references only
+  `UniTask, YooAsset, HybridCLR.Runtime, AssetShared`.
 - `Core`: engine infrastructure. It may reference Boot, Framework, and Packages.
   It must not reference General or Project.
 - `General`: reusable business logic. It may reference Core and Packages.
