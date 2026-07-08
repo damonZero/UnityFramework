@@ -1,3 +1,6 @@
+> **⚠️ 状态对齐（2026-07-08 补）**：本文 `Cache` 模块清单（如第 624 行）仍列旧名 `Cache<TKey,TValue>` / `LruCachePolicy<TKey>`。重构后 KJ 缓存容器为 `BoundedStore<TKey,TValue>`（旧 `Cache<TKey,TValue>` 仅留 `[Obsolete]` 壳），淘汰策略接口为 `IStoreEvictionPolicy`（含 `LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`）。该清单请按新名理解。
+>
+
 # HybridCLR 热更程序集范围分析
 
 > 讨论时间：2026-07-06

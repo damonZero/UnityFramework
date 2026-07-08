@@ -1,5 +1,7 @@
 # 对象池方案对比总结 — 37 vs ETPro
 
+> **⚠️ 状态对齐（2026-07-08 补）**：本文为外部方案（37 / ETPro）的对比分析，**不是** KJ 当前实现的选型记录。KJ 最终采用独立设计的 Pool/Cache 体系，综合借鉴了两者优点但类型命名和层次设计均有差异。KJ 权威类型：`BoundedStore<TKey,TValue>` + `IStoreEvictionPolicy`（Cache 侧）、`GameObjectPool` + `IInstanceRecyclePolicy`（Pool 侧）。详见 `CODEMAP.md` 的 **Framework: Cache** 与 **Framework: Pool** 章节。
+>
 > 日期: 2026-07-01
 > 详细拆解: 参见 `37项目-ObjectPool-Cache体系深度分析.md` 和 `ETPro-GameObjectPool体系深度分析.md`
 

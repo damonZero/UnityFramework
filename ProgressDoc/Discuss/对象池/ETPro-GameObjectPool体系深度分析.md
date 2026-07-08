@@ -1,5 +1,7 @@
 # ETPro GameObjectPool 体系深度分析
 
+> **⚠️ 状态对齐（2026-07-08 补）**：本文为外部参考系统（ETPro）的逆向分析，**不是** KJ 当前实现的说明。ETPro 采用 Entity-Component 模式挂在单个 Entity 上，无策略层/容器层抽象。KJ 的 GameObjectPool 采用更模块化的设计：`GameObjectPool` + `IInstanceRecyclePolicy`（`CapacityInstancePolicy` / `PersistentInstancePolicy`）+ 内部 `PrefabPoolState`。当前权威实现以 `CODEMAP.md` 的 **Framework: Pool** 章节为准。
+>
 > 来源: [GitHub: 526077247/ETPro](https://github.com/526077247/ETPro)
 > 分析文件: `GameObjectPoolComponent.cs` (Model) + `GameObjectPoolComponentSystem.cs` (Hotfix) + `LruCache.cs`
 > 分析日期: 2026-07-01

@@ -1,5 +1,7 @@
 # YooAsset 通用接入模式分析（适用于KJ框架）
 
+> **⚠️ 状态对齐（2026-07-08 补）**：本文为 YooAsset 接入前的调研分析。KJ 已通过 `Framework.Asset` + `Core.AssetSystem` 完成 YooAsset 3.0 集成（PlayMode: HostPlayMode），初始化流程与本文分析的 6 步模式一致。当前权威实现说明以 `CODEMAP.md` 的 **Framework: Asset** 章节为准，关键类型：`IAssetSystem` / `AssetRuntime` / `AssetSystem`（生命周期编排）。
+>
 > 基于 GitHub 上 4 个 ET+YooAsset 项目的逆向分析，抽取框架无关的通用模式。
 > KJ 技术栈：VContainer + UniTask + MessagePipe + HybridCLR + Luban
 > 不含 ET 特有概念（ETTask、Entity、CoroutineLock、PackageType 等）

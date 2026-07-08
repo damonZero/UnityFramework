@@ -5,7 +5,8 @@
 > 前置分析：`ProgressDoc/Discuss/HybridCLR热更程序集范围分析.md`
 > 关联规范：`.planning/HOT_UPDATE_BOUNDARY.md`、`.planning/ROADMAP.md` HYB-03
 > 命名约定：本 agent 产物统一以 `Hy3_` 前缀命名；本文档为**唯一权威版本**，取代 `DS_*` 原稿与本 agent 首稿。
-> **实现状态（2026-07-07）：✅ 已实现并验证。** 设计已落地，关键偏差见文末「附录 E：实际实现偏差」。EditMode 测试全工程 **45/45 全绿**，其中 15 例覆盖 HYB-03 边界（含 3 例核心边界锁死测试）。AOT 壳 `Launcher` 与热更 `Boot` 的 asmdef 引用以工程内 `.asmdef` 为准。
+>
+> **⚠️ 状态对齐（2026-07-08 补）**：✅ 本文设计已全部落地并验证。HYB-03 已实现：AOT 壳 `Launcher` + 热更 `Boot`，共 10 个热更程序集。EditMode 测试全工程 **45/45 全绿**，其中 15 例覆盖 HYB-03 边界（含 3 例核心边界锁死测试）。关键偏差见文末「附录 E：实际实现偏差」。AOT 壳 `Launcher` 与热更 `Boot` 的 asmdef 引用以工程内 `.asmdef` 为准。当前权威实现说明以 `CODEMAP.md` 的 **Framework: Launcher + Boot** 章节为准。
 
 ---
 

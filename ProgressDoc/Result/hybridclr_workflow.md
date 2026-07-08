@@ -72,3 +72,36 @@ HybridCLR 编译后产生的临时文件默认位于项目根目录：
 * **补充元数据 资源**：`Assets/GameRes/HotUpdate/AotMetadata/`
 
 打包时，YooAsset 就会将这部分资源作为初始资源或热更新资源打入包内。运行游戏时，`BootLoader` 直接从这里拉取二进制数据进行加载。
+
+---
+
+## 4. 构建打包管线（新增 — 2026-07-08）
+
+以上 `KJ/HybridCLR/*` 菜单为**开发内循环**（Editor Play），不产出可运行的 Player 包。真正的"构建→打包→冒烟"走以下菜单：
+
+### 4.1 菜单入口
+
+| 菜单 | 用途 |
+|------|------|
+| `KJ → Build → Full Player Build & Validate` | 全量构建（清除所有标记，跑全部 Stage） |
+| `KJ → Build → Incremental Player Build` | 增量构建（差量检测，仅重跑变更的 Stage） |
+| `KJ → Build → Build Stage Manager...` | 可视化管理面板（自动检测+手动勾选） |
+| `KJ → Build → Clear All Stage Markers` | 手动清除续跑标记 |
+
+### 4.2 构建产物
+
+- **Player**：`Build/Android/KJ.apk/launcher/build/outputs/apk/debug/launcher-debug.apk`
+- **YooAsset 真包**：`Assets/StreamingAssets/DefaultPackage/`（Offline 模式）
+- **报告**：`Build/Android/build_report.json` + `build_report.md`
+
+### 4.3 ADB 测试流程
+
+```bash
+adb connect 127.0.0.1:7555                          # 连接 MuMu
+adb install -r launcher-debug.apk                    # 安装
+adb logcat -s Unity:V YooAsset:V Framework:V Boot:V  # 监听日志
+```
+
+### 4.4 相关文档
+
+详见 `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md`（设计文档 + 实施记录）。

@@ -1,5 +1,7 @@
 # 37项目 ObjectPool / Cache 体系深度分析
 
+> **⚠️ 状态对齐（2026-07-08 补）**：本文为外部参考系统（37 项目）的逆向分析，**不是** KJ 当前实现的说明。KJ 已独立实现自有 Pool/Cache 体系，与本文分析的 37 方案存在类型名差异：KJ 使用 `BoundedStore<TKey,TValue>`（非 37 的 `Cache<TKey,TValue>`）、`IStoreEvictionPolicy`（非 37 的 `ICacheEvictionPolicy`）、`GameObjectPool` + `IInstanceRecyclePolicy`。当前权威实现以 `CODEMAP.md` 的 **Framework: Cache** 与 **Framework: Pool** 章节为准。
+>
 > 来源: `F:\int_37_pack\client\Assets\Framework\Package\ObjectPool\` + `Cache\`
 > 关联桥接: `Core/CacheSystem/CacheSystem.cs`
 > 分析日期: 2026-07-01
