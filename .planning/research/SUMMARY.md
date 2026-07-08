@@ -1,6 +1,6 @@
 # Research Summary: KJ Unity Framework
 
-**Date:** 2026-06-28
+**Date:** 2026-07-08 (原研究日期 2026-06-28，本文为 2026-07-08 对齐更新)
 **Sources:** STACK.md, FEATURES.md, ARCHITECTURE.md, PITFALLS.md, DI_EVENT_KNOWLEDGE_GRAPH.md
 
 ---
@@ -16,7 +16,7 @@
 | Component | Technology | Version | Confidence |
 |-----------|-----------|---------|------------|
 | Engine | Unity | 2022.3.62f2 LTS | HIGH |
-| Hot Update | HybridCLR | main branch (no tags) | MEDIUM — planned, not yet installed |
+| Hot Update | HybridCLR | main branch (no tags) | HIGH — installed and integrated；HYB-02A/03 已完成 |
 | Config Tables | Luban | v4.10.1 | MEDIUM — planned, not yet installed |
 | Network Serialization | Google.Protobuf | 3.35.1 (netstandard2.0) | MEDIUM — planned, not yet installed |
 | Async/Await | UniTask | v2.5.11 | HIGH |
@@ -30,8 +30,8 @@
 | Allocation Tools | ZString / ZLinq | ZString 2.6.0, ZLinq 1.5.6 | HIGH |
 
 **Installation channels:**
-- UPM (manifest.json): UniTask, VContainer, MessagePipe, MessagePipe.VContainer, YooAsset, ZLogger.Unity, ZLinq.Unity, ZString
-- UPM (planned, not yet installed): HybridCLR
+- UPM (manifest.json): UniTask, VContainer, MessagePipe, MessagePipe.VContainer, YooAsset, ZLogger.Unity, ZLinq.Unity, ZString, HybridCLR
+- UPM (planned, not yet installed): DOTween
 - NuGet (NuGetForUnity): MessagePipe.Analyzer, VContainerSourceGenerator, ZLogger, ZLinq, ZLogger required Microsoft.Extensions/System.* dependencies
 - NuGet/Plugins (planned): Google.Protobuf.dll
 - Asset Store (planned): DOTween
@@ -52,12 +52,13 @@
 | Config Table System | Medium | PLANNED — Luban integration, auto-generated classes, fast ID lookup. |
 | Audio Manager | Low-Medium | PLANNED — BGM/SFX/Voice channels, volume control, source pooling. |
 | Singleton/ISystem Infrastructure | Low | DONE — VContainer + ISystem + [CoreSystem] + AsImplementedInterfaces() |
+| Build Pipeline (构建打包管线) | High | DONE — S0-S9 十阶段全量构建管线；`KJBuildPipeline` 编排器 + 续跑标记 + 差量检测 + CI 无头入口；`StageDependencyTracker` + `BuildStagePanel` 可视化管理；经 F1-F6 Review 修正 + 4 轮运行修复 |
 
 ### Common Modules (expected in mature framework)
 
 | Feature | Complexity | Notes |
 |---------|---------|-------|
-| Object Pool | Low-Medium | Framework/Pool + Framework/Cache 代码已完成，缺 Core/Pool/PoolService.cs DI 桥接。 |
+| Object Pool | Low-Medium | ✅ DONE — Framework/Pool + Framework/Cache 已重构（BoundedStore + IStoreEvictionPolicy 策略体系）；GameObjectPool 五字典合并 PrefabPoolState + 实例库存策略化；PoolService.cs DI 桥接；82/84 单测通过。 |
 | Red Dot System | Medium | Tree-structured nodes, event-driven propagation, dirty-flag optimization. |
 | Guide/Tutorial System | Medium-High | Step-based state machine, config-driven, event-triggered transitions. |
 | Timer System | Low-Medium | One-shot + looping, pause/resume, tick-based (not coroutine). |

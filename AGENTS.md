@@ -8,6 +8,7 @@ YooAsset, HybridCLR, and Luban.
 For the complete technical stack, read `.planning/PROJECT.md`.
 For directory structure rules, read `.planning/目录结构规范.md`.
 For AI-readable runtime logs and diagnostic workflow, read `.planning/AI_RUNTIME_LOGGING.md`.
+For build/packaging pipeline, read `ProgressDoc/Result/hybridclr_workflow.md` §4 and `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md`.
 
 ## Session Startup
 
@@ -60,7 +61,57 @@ Upper layers may depend on lower layers; lower layers must not depend on upper l
 
 Compilation boundaries are enforced by `.asmdef` files.
 
-## HybridCLR Hot-Update Boundary (HYB-03 implemented)
+## KJ Build Pipeline
+
+The build pipeline (`Assets/Scripts/Boot.Editor/Build/`) packages and validates
+the full Unity Player + YooAsset resource bundle + HybridCLR hot-update assets.
+
+### Entry Points
+
+| Menu | What it does |
+|------|-------------|
+| `KJ → Build → Full Player Build & Validate` | Clear all markers, run all stages |
+| `KJ → Build → Incremental Player Build` | Change detection, only re-run changed stages |
+| `KJ → Build → Build Stage Manager...` | Visual panel: auto-detect changes + manual checkboxes |
+| `KJ → Build → Clear All Stage Markers` | Manually clear stage markers |
+
+### Build Stages (S0–S9)
+
+| Stage | Name | What it does |
+|-------|------|-------------|
+| S0 | Environment Check | Validate BuildConfig, JDK, NDK, Android SDK |
+| S1 | Compile HotUpdate DLLs | HybridCLR `CompileDllCommand` + method bridge gen |
+| S2 | Generate AOT Metadata | `StripAOTDllCommand` + `MethodBridgeGenericCacheCommand` |
+| S3 | Sync to HotUpdate Path | Copy DLLs + metadata as `.bytes` to `Assets/GameRes/HotUpdate/` |
+| S4 | Build YooAsset Package | Production build → `StreamingAssets/DefaultPackage/` |
+| S5 | Apply Config | Set `AssetConfig.Mode = Offline` (YAML direct write) |
+| S6 | Build Unity Player | `BuildPipeline.BuildPlayer` with IL2CPP + Android |
+| S7 | Validate Artifacts | Check APK exists, StreamingAssets contains bundles |
+| S8 | Smoke Test | Install to device, capture `latest.jsonl`, verify boot chain |
+| S9 | Post-Build | Rollback `AssetConfig.Mode`, generate build report |
+
+### Build Pipeline Files
+
+| File | Purpose |
+|------|---------|
+| `KJBuildPipeline.cs` | Stage orchestrator, `Build()` / `BuildWithMask()` / `IncrementalBuild()` |
+| `StageDependencyTracker.cs` | Change detection (S1→S2→S3→S4→S6 chain, S5→S6 independent) |
+| `BuildStagePanel.cs` | EditorWindow with auto-detection + manual stage checkboxes |
+| `StageBuildYooAsset.cs` | Production YooAsset build via `ScriptableBuildPipeline` |
+| `StageApplyConfig.cs` | Direct YAML write `AssetConfig.Mode = Offline` with rollback |
+| `StageBuildPlayer.cs` | `BuildPlayer` IL2CPP Android |
+| `StageSmokeRun.cs` | ADB install + logcat capture + `latest.jsonl` verification |
+| `StageValidateArtifacts.cs` | APK existence + StreamingAssets content validation |
+| `BuildConfig.cs` | Serializable build configuration (Platform, BuildType, etc.) |
+
+### Change Detection Rules
+
+- **Cascade trigger**: S1→S2→S3→S4→S6 (any upstream change triggers downstream)
+- **Independent**: S5→S6 (AssetConfig change triggers all stages)
+- **Monitored paths**: S1/S2 watch `Assets/Scripts/**/*.cs`; S4 watches `Assets/GameRes/HotUpdate/**`; S5 watches `Assets/Resources/AssetConfig.asset`
+
+When modifying build pipeline code, update `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md`
+and `ProgressDoc/Result/hybridclr_workflow.md` §4 to prevent documentation drift.
 
 The boot chain is split into an AOT `Launcher` shell and a hot-update `Boot`
 update flow.

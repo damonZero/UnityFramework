@@ -3,7 +3,7 @@
 > **用途：** 记录框架需要哪些模块、每个模块当前处于什么状态、它依赖什么。
 > **不做：** 固定执行顺序、工时估计、强制时间表。什么时候做什么模块取决于当时的需求和优先级判断。
 
-**Last Updated:** 2026-07-05
+**Last Updated:** 2026-07-08
 
 ---
 
@@ -24,6 +24,8 @@
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 | HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，正式构建前走完整 `Generate All And Sync` |
 | HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
+| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `.planning/` | S0-S9 十阶段全量构建管线（PreFlight→GenerateAll→Compile→Sync→YooAsset→ApplyConfig→BuildPlayer→Validate→SmokeRun→Report）；`BuildConfig` ScriptableObject 配置；`KJBuildPipeline` 编排器支持续跑标记/差量检测/CI 无头 `BuildFromCommandLine()`；`StageDependencyTracker` 文件时间戳差量引擎（级联 S1→S6，S5→S6）；`BuildStagePanel` EditorWindow 可视化管理面板；设计文档与实现经 F1-F6 Review 修正+4 轮运行修复 |
+| Object Pool & Cache 重构 | `Framework/Pool/` + `Framework/Cache/` | `BoundedStore<TKey,TValue>` 替代旧 `Cache`（Put 覆盖两步 Remove+Add、GetOrAdd single-flight）；`IStoreEvictionPolicy`+`LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`；`GameObjectPool` 五字典合并 `PrefabPoolState`+实例库存策略 `IInstanceRecyclePolicy`+反向索引污染检测+[MainThread] 断言；`PoolService.cs` DI 桥接；82/84 单测通过 |
 
 ---
 
@@ -48,9 +50,10 @@
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
 | Timer | Low | `Core/Timer/` | ISystem | Tick-based（非协程），一次性 + 循环，暂停/恢复，最小 GC |
-| Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | Framework/Pool + Framework/Cache 代码已完成，`PoolService.cs` 负责 DI 桥接注册 |
+| Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | ✅ 代码已重构完成（见上方"已完成"）；`PoolService.cs` DI 桥接；`BoundedStore` 替代旧 `Cache`；82/84 单测通过 |
 | PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和注册链路去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
 | LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Framework/Log.Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则；跨层入口才放 `Assets/Editor/` |
+| CI 打包脚本与产物管理 | Low-Medium | 待定（可能 `ci/` 或 `Assets/Editor/`） | Build Pipeline | 代码已有 `BuildFromCommandLine()`（Boot.Editor.Build.KJBuildPipeline），待规划：① 封装为 `ci/build.ps1` 一键脚本（自动定位 Unity 路径、传参、捕获退出码）；② 产物输出路径规范（APK/IPA/Standalone 放到哪里）；③ 版本号/环境自动注入策略；④ 与外部 CI（Jenkins/蓝盾）对接方式 |
 
 ### 配置与数据
 
@@ -138,4 +141,4 @@ ConfigManager (Luban) ← HybridCLR boundary + Framework.Asset
 
 ---
 
-*Boards updated: 2026-07-05*
+*Boards updated: 2026-07-08*

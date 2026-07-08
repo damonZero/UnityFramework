@@ -52,7 +52,7 @@ Entry
 - 临时 `List<T>` / `Dictionary<TKey,TValue>` / `HashSet<T>` / `Queue<T>` / `Stack<T>` 使用 `CollectionPool` 或 `PooledCollections`，禁止在热路径反复 `new` 临时集合。
 - 高频创建销毁的纯 C# 对象使用 `ObjectPool<T>` / `TypePool`；实现可重置对象时优先实现 `IPoolable`。
 - GameObject / prefab 实例复用走 `GameObjectPool`，由 Core 的 `PoolService` 桥接资源加载和释放，不在业务层手写 instantiate/destroy 循环。
-- 有生命周期和容量限制的数据缓存使用 `Framework.Cache.Cache<TKey,TValue>` + LRU/FIFO 策略；资源类缓存优先使用 `ResourceCache` 或 AssetRuntime 已有缓存通道。
+- 有生命周期和容量限制的数据缓存使用 `Framework.Cache.BoundedStore<TKey,TValue>`（实现 `ICache<TKey,TValue>`）+ 可插拔 `IStoreEvictionPolicy`（内置 `LruPolicy` / `TtlPolicy` / `CapacityPolicy` / `CompositePolicy`）；旧 `Cache<TKey,TValue>` 已是 `[Obsolete]` 转发壳，新代码直接用 `BoundedStore`。资源类缓存优先使用 `ResourceCache` 或 AssetRuntime 已有缓存通道。
 - Framework 内部保持独立实现；Core/General/Project 通过已暴露的接口、门面或 VContainer 注册入口使用，不重复实现私有对象池/缓存容器。
 
 ## 底层模块下沉原则

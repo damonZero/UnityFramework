@@ -1,0 +1,29 @@
+{
+    "name": "Boot.Build.Editor",
+    "rootNamespace": "Boot.Editor.Build",
+    "references": [
+        "Boot",
+        "Boot.Editor",
+        "Asset",
+        "AssetShared",
+        "Log",
+        "RuntimeLog",
+        "Framework.Asset.Editor",
+        "HybridCLR.Editor",
+        "YooAsset",
+        "YooAsset.Editor",
+        "Launcher",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

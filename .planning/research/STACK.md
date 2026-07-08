@@ -1,7 +1,7 @@
 # Technology Stack
 
 **Project:** Unity Framework
-**Researched:** 2026-06-26 / Updated: 2026-06-30
+**Researched:** 2026-06-26 / Updated: 2026-07-08
 
 ## Recommended Stack
 
@@ -58,14 +58,14 @@ https://github.com/tuyoogame/YooAsset.git?path=Assets/YooAsset
 |------------|---------|---------|-----|
 | HybridCLR | Latest (main branch) | C# hot update | Industry standard for Unity C# hot update, supports all IL2CPP platforms including iOS |
 
-**Status:** Planned, **not yet installed** in manifest.json. Listed here for architecture awareness.
+**Status:** Installed and fully integrated via `manifest.json` (UPM git URL). HYB-02A 热更同步工具 + HYB-03 AOT `Launcher`/热更 `Boot` 边界裂变已完成；10 热更程序集；EditMode 测试 45/45 全绿；Player 打包 smoke 已通过。
 
 **Installation:** Via Unity Package Manager (UPM) from GitHub
 ```
 https://github.com/focus-creative-games/hybridclr.git
 ```
 
-**Confidence:** MEDIUM — not yet integrated
+**Confidence:** HIGH — Installed and verified in Editor + Player
 
 ### Configuration Tables
 
@@ -213,7 +213,7 @@ https://github.com/Cysharp/UniTask.git
 }
 ```
 
-**Note:** HybridCLR (`com.focus-creative-games.hybridclr`) is planned but not yet added to manifest.json.
+**Note:** DOTween is planned but not yet added to manifest.json.
 
 ### NuGet/Manual DLLs (Assets/Plugins/)
 
@@ -275,5 +275,5 @@ Assets/
 | ZLinq 1.5.6 | UPM + NuGetForUnity | 2026-07-03 | HIGH |
 | ZString 2.6.0 | UPM | 2026-07-03 | HIGH |
 | Luban v4.10.1 | GitHub | 2026-06-26 | HIGH |
-| HybridCLR (no version tags) | GitHub | 2026-06-26 | HIGH (use main branch) |
+| HybridCLR (no version tags) | GitHub | 2026-06-26 → 2026-07-08 verified | HIGH (use main branch, installed + integrated) |
 | DOTween | Asset Store | N/A | MEDIUM (version not verified) |

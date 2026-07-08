@@ -188,6 +188,10 @@ MonoBehaviour:
       resourcesPath: 
       assetPath: Assets/GameRes/HotUpdate/AotMetadata/System.Core.dll.bytes
     hotUpdateAssemblies:
+    - assemblyName: Boot
+      fileName: Dlls/Boot.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Boot.dll.bytes
     - assemblyName: Core
       fileName: Dlls/Core.dll.bytes
       resourcesPath: 
@@ -200,6 +204,30 @@ MonoBehaviour:
       fileName: Dlls/Project.dll.bytes
       resourcesPath: 
       assetPath: Assets/GameRes/HotUpdate/Dlls/Project.dll.bytes
+    - assemblyName: Pool
+      fileName: Dlls/Pool.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Pool.dll.bytes
+    - assemblyName: Cache
+      fileName: Dlls/Cache.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Cache.dll.bytes
+    - assemblyName: Event
+      fileName: Dlls/Event.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Event.dll.bytes
+    - assemblyName: Asset
+      fileName: Dlls/Asset.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Asset.dll.bytes
+    - assemblyName: Log
+      fileName: Dlls/Log.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Log.dll.bytes
+    - assemblyName: RuntimeLog
+      fileName: Dlls/RuntimeLog.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/RuntimeLog.dll.bytes
   startupView: {fileID: 0}
 --- !u!1 &705507993
 GameObject:

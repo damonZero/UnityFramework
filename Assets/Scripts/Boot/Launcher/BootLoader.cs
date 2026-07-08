@@ -108,13 +108,13 @@ namespace Boot
                     return new OfflinePlayModeOptions
                     {
                         BuiltinFileSystemParameters =
-                            FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(packageName)
+                            FileSystemParameters.CreateDefaultBuiltinFileSystemParameters()
                     };
                 case AssetConfig.PlayMode.Host:
                     return new HostPlayModeOptions
                     {
                         BuiltinFileSystemParameters =
-                            FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(packageName),
+                            FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(),
                         CacheFileSystemParameters = BuildSandboxParameters(config, packageName)
                     };
                 default:
