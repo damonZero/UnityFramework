@@ -18,12 +18,12 @@ namespace Tests.EditMode
             // If the callback is executed INSIDE the lock, the Task will block trying to acquire the lock,
             // resulting in a deadlock or timeout.
             // If the callback is executed OUTSIDE the lock, the Task will succeed immediately.
-            Cache<string, string> cache = null;
+            BoundedStore<string, string> cache = null;
             var evictionCalled = false;
             var otherThreadAccessSucceeded = false;
             Exception otherThreadException = null;
 
-            cache = new Cache<string, string>(1, new LruCachePolicy<string>(), (key, val) =>
+            cache = new BoundedStore<string, string>(1, new LruPolicy<string>(), (key, val) =>
             {
                 evictionCalled = true;
 
@@ -64,11 +64,11 @@ namespace Tests.EditMode
         [Test]
         public void GetOrAddFactoryRunsOutsideLock()
         {
-            Cache<string, string> cache = null;
+            BoundedStore<string, string> cache = null;
             var factoryCalled = false;
             var concurrentAccessSucceeded = false;
 
-            cache = new Cache<string, string>(5, new LruCachePolicy<string>());
+            cache = new BoundedStore<string, string>(5, new LruPolicy<string>());
 
             // Act
             cache.GetOrAdd("key1", key =>
@@ -94,11 +94,11 @@ namespace Tests.EditMode
         [Test]
         public void GetOrAddEvictsOutsideLock()
         {
-            Cache<string, string> cache = null;
+            BoundedStore<string, string> cache = null;
             var evictionCalled = false;
             var otherThreadAccessSucceeded = false;
 
-            cache = new Cache<string, string>(1, new LruCachePolicy<string>(), (key, val) =>
+            cache = new BoundedStore<string, string>(1, new LruPolicy<string>(), (key, val) =>
             {
                 evictionCalled = true;
                 var task = Task.Run(() => cache.TryGet("key2", out _));
@@ -118,12 +118,12 @@ namespace Tests.EditMode
         [Test]
         public void GetOrAddDiscardsDuplicateOutsideLock()
         {
-            Cache<string, string> cache = null;
+            BoundedStore<string, string> cache = null;
             var evictionCalledOnDiscard = false;
             string evictedKey = null;
             string evictedValue = null;
 
-            cache = new Cache<string, string>(5, new LruCachePolicy<string>(), (key, val) =>
+            cache = new BoundedStore<string, string>(5, new LruPolicy<string>(), (key, val) =>
             {
                 evictionCalledOnDiscard = true;
                 evictedKey = key;

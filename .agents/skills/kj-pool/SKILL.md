@@ -1,9 +1,9 @@
 ---
 name: kj-pool
 description: >
-  KJ Framework 对象池系统完整指南。涵盖 ObjectPool<T>（泛型对象池，lock 并发安全）、CollectionPool（List/HashSet/Queue/Stack/Dictionary 集合池）、PooledCollections（RAII struct 自动归还）、TypePool（类型池注册表）、GameObjectPool（Unity GameObject 池，LIFO+LRU 双层缓存，污染检测）、PoolLease<T>（using 模式）、PoolDependencies（静态委托注入桥接资源加载）。
-  触发场景：创建/使用对象池、性能优化减少 GC 分配、管理 GameObject 频繁创建销毁、使用 using 模式自动归还、配置池容量和预热。
-  核心规则：Framework.Pool 不引用 Scripts；通过 PoolDependencies 静态委托桥接外部依赖；集合池通过 CollectionPool.Rent*() + using 使用；GameObject 池依赖 PoolInstanceTag 做污染检测。
+  KJ Framework 对象池系统完整指南。涵盖 ObjectPool<T>（泛型对象池，lock 并发安全）、CollectionPool（List/HashSet/Queue/Stack/Dictionary 集合池）、PooledCollections（RAII struct 自动归还，[NonCopyable] 标记）、TypePool（类型池注册表）、GameObjectPool（Unity GameObject 池，PrefabPoolState 内聚状态，BoundedStore+LruPolicy Prefab 缓存，IInstanceRecyclePolicy 实例库策略，反向索引污染检测，主线程断言）、PoolLease<T>（using 模式）、PoolDependencies（静态委托注入桥接资源加载）、InstanceRecyclePolicy（CapacityInstancePolicy/PersistentInstancePolicy）。
+  触发场景：创建/使用对象池、性能优化减少 GC 分配、管理 GameObject 频繁创建销毁、使用 using 模式自动归还、配置池容量和预热、常驻路径保护、实例回收策略定制。
+  核心规则：Framework.Pool 不引用 Scripts；通过 PoolDependencies 静态委托桥接外部依赖；集合池通过 CollectionPool.Rent*() + using 使用；GameObject 池依赖 PoolInstanceTag 做污染检测 + _instanceToPath 反向索引；GameObjectPool 仅主线程调用；PooledX struct 禁止值拷贝。
 metadata:
   doc: CODEMAP.md
   layer: Framework
@@ -18,13 +18,15 @@ metadata:
 ```
 IPool<T>  ←──  ObjectPool<T>  ←──  PoolLease<T> (struct, IDisposable)
                                                 ↑
-CollectionPool ──→ PooledList<T> / PooledHashSet<T> / ...  (RAII struct wrappers)
+CollectionPool ──→ PooledList<T> / PooledHashSet<T> / ...  (RAII struct wrappers, [NonCopyable])
 
 TypePool  ←──  ConcurrentDictionary<Type, object>  (类型→池注册表)
 
-GameObjectPool  ──→ PoolInstanceTag  (MonoBehaviour, 污染检测)
-                  ──→ Cache<string, GameObject>  (Prefab 缓存, LruCachePolicy)
-                  ──→ PoolDependencies.LoadAssetAsync / ReleaseAssetByPath (静态委托)
+GameObjectPool  ──→ PrefabPoolState (Idle/Instances/ActiveCount/IdleCount/IsPersistent/IsPrefabCached)
+                 ├── BoundedStore<string, GameObject> + LruPolicy  (Prefab 引用缓存)
+                 ├── IInstanceRecyclePolicy (CapacityInstancePolicy / PersistentInstancePolicy)
+                 ├── _instanceToPath (反向索引: O(1) 污染检测 + 防双回收)
+                 └── AssertMainThread() (运行时主线程断言)
 ```
 
 ## 各组件使用指南
@@ -65,7 +67,7 @@ var stats = pool.GetStatistics();  // IdleCount / CreatedCount / RentCount / Ret
 ### CollectionPool — 集合池
 
 ```csharp
-// 推荐用法：using 模式，自动归还
+// 推荐用法：using 模式，自动归还（返回的是 PooledX struct，禁止值拷贝）
 using var list = CollectionPool.RentList<int>();
 list.Value.Add(42);
 
@@ -73,12 +75,13 @@ using var dict = CollectionPool.RentDictionary<string, int>();
 dict.Value["key"] = 100;
 
 // 可用类型：List<T> / HashSet<T> / Queue<T> / Stack<T> / Dictionary<TKey, TValue>
+// ⚠️ PooledX 是 mutable struct，禁止 `var b = a;` 值拷贝——会导致同一集合双归还损坏共享池
 ```
 
 **性能要点：**
 - 每种集合类型 5 个内部 static `ObjectPool`，capacity=32
 - reset 动作为 `collection.Clear()`，不释放内部 capacity（避免下次重新分配）
-- `CollectionPool` 和 `PooledCollections` 都是 struct wrapper，零 GC 分配
+- `PooledCollections` 是 struct wrapper，零 GC 分配
 
 ### TypePool — 类型池注册表
 
@@ -97,19 +100,26 @@ var pool = TypePool.GetOrCreate<MyClass>(maxIdle: 16);
 ### GameObjectPool — Unity 对象池
 
 ```csharp
-// 由 PoolService 注入依赖后创建（不能手动 new，需要先配置 PoolDependencies）
-// PoolService.Init() 中：
-var pool = new GameObjectPool(root: poolRoot, prefabCapacity: 64,
-    mode: PoolContainerMode.ChangeParent);  // 或 MovePos
+// 由 PoolService 注入依赖后创建
+var pool = new GameObjectPool(
+    root: poolRoot,
+    prefabCapacity: 64,           // Prefab 引用 LRU 缓存容量
+    mode: PoolContainerMode.ChangeParent,
+    maxIdlePerPrefab: 64,         // 每个 prefab 的最大 idle 实例数
+    recyclePolicy: null           // 默认 CapacityInstancePolicy(maxIdlePerPrefab)
+);
 
-// 异步获取（自动加载 Prefab + SemaphoreSlim 并发保护）
+// 异步获取（自动加载 Prefab + SemaphoreSlim 并发保护 + 二次 TryGet）
 var instance = await pool.GetAsync("Assets/Prefabs/Bullet.prefab", parent);
 
-// 回收
+// 回收（超 maxIdle 时 Destroy 而非入栈）
 pool.Recycle(instance);
 
-// 预热
+// 预热（fire-and-forget）
 pool.Warmup("Assets/Prefabs/Bullet.prefab", count: 10);
+
+// 常驻保护 — 标记某 prefab 为常驻，容量淘汰永不回收其实例
+pool.MarkPersistent("Assets/Prefabs/Player.prefab");
 
 // 诊断
 int idle = pool.GetIdleCount(prefabPath);
@@ -119,17 +129,34 @@ int active = pool.GetActiveCount(prefabPath);
 pool.Clear();
 ```
 
-**污染检测：** 回收的实例必须有 `PoolInstanceTag` 组件（自动添加），`IsRecycled` 标志防止重复回收，`PrefabPath` 校验防止跨路径混淆。
+**核心设计要点：**
+- **五字典合并**：`PrefabPoolState` 内聚 per-prefab 的 Idle/Instances/ActiveCount/IdleCount/IsPersistent/IsPrefabCached
+- **反向索引**：`_instanceToPath`（Dictionary<GameObject, string>）提供 O(1) 污染检测 + 防双回收，借鉴 ETPro instPathCache 精神
+- **实例库策略化**：`IInstanceRecyclePolicy` 决定 Recycle 时保留还是 Destroy；默认 `CapacityInstancePolicy(maxIdlePerPrefab)`，可注入 `PersistentInstancePolicy` 保护常驻路径
+- **Prefab 缓存**：`BoundedStore<string, GameObject>` + `LruPolicy`，替换旧 `Cache` 硬编码 LRU
+- **主线程断言**：`GameObjectPool` 构造时记录 `_mainThreadId`，所有公开方法入口 `AssertMainThread()` 抛 `InvalidOperationException`
+- **污染检测**：回收的实例必须有 `PoolInstanceTag` 组件（自动添加），`IsRecycled` 防重复回收，反向索引校验 `PrefabPath` 防跨路径混淆
 
 **容器模式：**
 - `ChangeParent` — 回收时移回 root（层级整洁，但有 Transform 变更开销）
 - `MovePos` — 回收时移到远处（无层级变更，但不整洁）
 
-**生命周期范围 (Lifecycle Scope)：**
-- **全局对象池**：生命期等同于游戏进程（如由 `PoolService` 单例托管的池），其挂载的 `root` 节点通常设置为 `DontDestroyOnLoad`。
-- **局部/功能对象池**：跟随特定的 UI 窗口、场景或预制体存在。其挂载的 `root` 节点**不应**设置 `DontDestroyOnLoad`，必须跟随父节点自然销毁以自动释放内存。
-- **防止内存泄漏**：局部对象池在其持有者（如 Model 或 UI 窗口）卸载或销毁时（如 `Unload` / `OnDestroy`），**必须显式调用 `pool.Clear()`**，以释放未归还的对象和 Prefab 引用，确保 GC 和 YooAsset 底层资源正常释放。
+**生命周期范围：**
+- **全局对象池**：生命期等同于游戏进程（如由 `PoolService` 单例托管的池），其挂载的 `root` 节点通常设置为 `DontDestroyOnLoad`
+- **局部/功能对象池**：跟随特定的 UI 窗口、场景或预制体存在，其 `root` 不应设置 `DontDestroyOnLoad`
+- **防止内存泄漏**：局部对象池在其持有者卸载时，**必须显式调用 `pool.Clear()`**
 
+### IInstanceRecyclePolicy — 实例回收策略
+
+```csharp
+// 默认：容量策略，maxIdlePerPrefab 控制
+var policy = new CapacityInstancePolicy(maxIdle: 20);
+
+// 常驻装饰器：部分路径永远保留
+var persistentSet = new HashSet<string> { "Prefabs/Player", "Prefabs/UI_Button" };
+var policy = new PersistentInstancePolicy(persistentSet, new CapacityInstancePolicy(10));
+// 命中 persistentSet → 永远保留；否则 → 按 CapacityInstancePolicy 决策
+```
 
 ### PoolDependencies — 静态委托桥接
 
@@ -144,10 +171,12 @@ PoolDependencies.ReleaseAssetByPath = path => _assetSystem.Release<GameObject>(p
 ## 最佳实践
 
 1. **集合池优先**: 任何临时集合都用 `using var list = CollectionPool.RentList<T>()`，而不是 `new List<T>()`
-2. **使用 IPoolable 接口**: 让池化对象实现 `IPoolable`，在 `ResetState()` 中清理所有可变状态
+2. **PooledX 禁止值拷贝**: `PooledList<T>` 等是 mutable struct，写 `var b = a;` 后两个都 Dispose 会把同一集合两次归还进共享池 → 池损坏
 3. **配置 maxIdle**: 根据内存预算设置合理的 maxIdle，避免无限堆积
 4. **预热关键路径**: 对频繁创建的类型在初始化时 preload
-5. **GameObjectPool 用 SemaphoreSlim**: Prefab 加载有并发保护，不用担心重复加载
+5. **GameObjectPool 仅主线程调用**: 有运行时断言保护，子线程调用会抛 InvalidOperationException
+6. **局部池必须 Clear**: 跟随 UI/场景的局部池销毁前调 `pool.Clear()` 释放实例和 Prefab 引用
+7. **常驻路径用 MarkPersistent**: 对不会卸载的常用 Prefab（如主角、UI 通用控件）标记常驻，避免被容量淘汰
 
 ## 依赖图
 
@@ -155,7 +184,7 @@ PoolDependencies.ReleaseAssetByPath = path => _assetSystem.Release<GameObject>(p
 Framework.Pool (Pool.asmdef)
   引用: UniTask, Cache
   不引用: 任何 Scripts/ 代码
-  
+
 Scripts/Core/ (Core.asmdef)
   引用: Pool, Cache
   PoolService.cs 负责桥接

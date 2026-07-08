@@ -1,9 +1,9 @@
 # KJ Framework Codemap
 
-**Generated:** 2026-07-01
+**Generated:** 2026-07-08
 **Unity:** 2022.3.62f2 LTS
-**C# Language Version:** 9.0
-**Target Platform:** Android (primary)
+**C# Language Version:** 9.0 (preview enabled for source generators)
+**Target Platform:** Android (primary), Windows IL2CPP (dev/testing)
 
 ---
 
@@ -13,7 +13,7 @@ KJ is a Unity client game framework implementing a strict 4-layer unidirectional
 
 **Core pattern:** `ISystem` + `[CoreSystem]` attribute for Core-layer systems, `IModel` + `[Model]` attribute for business-layer models. Lifecycle is driven by VContainer DI.
 
-**Bootstrap pattern:** Boot keeps minimal dependencies. `Entry` owns serialized startup settings, initializes the minimal `Framework.Asset` runtime, updates resources/code, loads HybridCLR metadata/DLLs, then reflects into `Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)`. Project creates the formal VContainer root and registers Core → General → Project, reusing the Boot asset runtime. C# layer changes are classified separately from package updates: if a managed DLL was already loaded, the replacement normally takes effect after restart/next launch; a package update is reserved for native/player/HybridCLR loading-mechanism changes or old packages that lack the needed loader path. Target architecture splits a tiny BootLoader from a future `Boot.Update` startup-update DLL.
+**Bootstrap pattern (HYB-03 implemented):** AOT `Launcher` (`KJ.Launcher.asmdef`) is the ultra-minimal native entry — it initializes YooAsset, loads hot-update DLLs, loads HybridCLR AOT metadata, then reflects into the hot-update `Boot.BootUpdateRunner`. The hot-update `Boot` (`KJ.Boot.asmdef`) handles resource version check, manifest update, download, and hands off `IAssetRuntime` to `Project.Bootstrap.ProjectStartup`. Project creates the formal VContainer root and registers Core → General → Project. C# layer changes are classified separately from package updates: if a managed DLL was already loaded, replacement normally takes effect after restart/next launch; a package update is reserved for native/player/HybridCLR loading-mechanism changes or old packages that lack the needed loader path.
 
 ---
 
@@ -26,20 +26,21 @@ Packages (UPM third-party libraries)
 Framework/ (KJ-owned independent packages, no Scripts/ references)
     ^
     |
-Boot ──▶ Core ──▶ General ──▶ Project
-(Scripts/Boot) (Scripts/Core) (Scripts/General) (Scripts/Project)
+Launcher (AOT) ──▶ Boot (HotUpdate) ──▶ Core ──▶ General ──▶ Project
 ```
 
 **Dependency direction (enforced by .asmdef):**
 
 | Layer | Can reference |
 |-------|--------------|
-| Boot | Asset, Log, RuntimeLog |
-| Core | Asset, Event, Log, RuntimeLog, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask |
-| General | Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer |
-| Project | Asset, Core, General, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer |
+| Launcher (AOT) | UniTask, YooAsset, HybridCLR.Runtime, AssetShared |
+| Boot (HotUpdate) | Asset, Log, RuntimeLog, UniTask, AssetShared, YooAsset, Launcher |
+| Core | Asset, AssetShared, Event, Log, RuntimeLog, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, ZLinq, ZLogger, Asset |
+| General | Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer, ZLinq |
+| Project | Asset, Core, General, Event, Log, VContainer, VContainer.Unity, MessagePipe |
 | Framework.Pool | UniTask, Cache |
 | Framework.Cache | (none) |
+| Framework.AssetShared | (none) |
 
 ---
 
@@ -47,380 +48,370 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 ```
                         Depends on
-              Boot   Core   General   Project   Pool   Cache   VContainer   MessagePipe   UniTask   YooAsset
-Boot           -      N       N         N        N      N         N              N          N         N
-Core           N      -       N         N        Y      Y         Y              Y          Y         Y
-General        N      Y       -         N        N      N         Y              Y          N         N
-Project        N      Y       Y         -        N      N         Y              Y          N         N
-Pool           N      N       N         N        -      Y         N              N          Y         N
-Cache          N      N       N         N        N      -         N              N          N         N
+              Launcher Boot  Core  Gen  Proj  Pool Cache  AssetShared  VContainer  MP  UniTask  YooAsset
+Launcher       -        N     N     N    N     N     N      Y           N          N    Y        Y
+Boot           Y        -     N     N    N     N     N      Y           N          N    Y        Y
+Core           N        N     -     N    N     Y     Y      Y           Y          Y    Y        Y
+General        N        N     Y     -    N     N     N      N           Y          Y    N        N
+Project        N        N     Y     Y    -     N     N      N           Y          Y    N        N
+Pool           N        N     N     N    N     -     Y      N           N          N    Y        N
+Cache          N        N     N     N    N     N     -      N           N          N    N        N
+AssetShared    N        N     N     N    N     N     N      -           N          N    N        N
 ```
 
 ---
 
 ## File Index
 
-### Layer: Boot (Assembly: `Boot`, Namespace: `Boot`)
+### Layer: Launcher / AOT (Assembly: `KJ.Launcher`, Namespace: `Boot`)
+
+Asmdef: `Assets/Scripts/Boot/Launcher/KJ.Launcher.asmdef`
+References: `UniTask`, `YooAsset`, `HybridCLR.Runtime`, `Framework.AssetShared`
+Hard rule: **Must not reference any Framework package or hot-update assembly** (asmdef-enforced).
+
+| File | Path | Key Types | Description | Dependencies |
+|------|------|-----------|-------------|-------------|
+| `Entry.cs` | `Assets/Scripts/Boot/Launcher/Entry.cs` | `Entry : MonoBehaviour` | AOT root MonoBehaviour. `Awake()` → `DontDestroyOnLoad` → `new BootLoader().RunAsync()`. Holds serialized startup settings. | `UnityEngine` |
+| `BootLoader.cs` | `Assets/Scripts/Boot/Launcher/BootLoader.cs` | `BootLoader` | AOT shell: init YooAsset, load all hot-update DLLs, load AOT metadata, construct `BootBridge`, reflect `"Boot.BootUpdateRunner, Boot"`. Crosses AOT→hot-update boundary. | `YooAsset`, `HybridCLR.Runtime` |
+| `BootBridge.cs` | `Assets/Scripts/Boot/Launcher/BootBridge.cs` | `BootBridge` | Cross-boundary state carrier: Package, Settings, View, Config, EarlyLogs. | none |
+| `BootStartupLog.cs` | `Assets/Scripts/Boot/Launcher/BootStartupLog.cs` | `BootStartupLog` | AOT-stage plain-text + in-memory log. Independent of `Framework.Log`/`RuntimeLog`. Replayed by `BootUpdateRunner.ReplayEarlyLogs()`. | none |
+| `IsExternalInit.cs` | `Assets/Scripts/Boot/Launcher/IsExternalInit.cs` | `System.Runtime.CompilerServices.IsExternalInit` | Polyfill for Unity .NET Standard 2.1 missing type. | none |
+| `BootStartupSettings.cs` | `Assets/Scripts/Boot/Launcher/Data/BootStartupSettings.cs` | `BootStartupSettings` | Serializable Entry settings: update toggles, local StreamingAssets fallback root, asset tag, startup type/method, AOT metadata entries, hot-update DLL entries. | none |
+| `BootAssemblyEntry.cs` | `Assets/Scripts/Boot/Launcher/Data/BootAssemblyEntry.cs` | `BootAssemblyEntry` | Serializable hot-update DLL entry: assembly name + YooAsset raw asset path / local file / Resources fallback. | none |
+| `BootMetadataEntry.cs` | `Assets/Scripts/Boot/Launcher/Data/BootMetadataEntry.cs` | `BootMetadataEntry` | Serializable AOT metadata entry: assembly name + asset path fallback. | none |
+| `IBootStartupView.cs` | `Assets/Scripts/Boot/Launcher/Data/IBootStartupView.cs` | `IBootStartupView` | Optional update UI contract: status, progress, repair visibility. | none |
+| `BootRemoteService.cs` | `Assets/Scripts/Boot/Launcher/YooAssetStrategy/BootRemoteService.cs` | `BootRemoteService : IRemoteService` | AOT-side YooAsset IRemoteService (fixed deadlock). | `YooAsset` |
+
+### Layer: Boot / HotUpdate (Assembly: `KJ.Boot`, Namespace: `Boot`)
 
 Asmdef: `Assets/Scripts/Boot/KJ.Boot.asmdef`
-References: Asset, Log, RuntimeLog
+References: `Asset`, `Log`, `RuntimeLog`, `UniTask`, `AssetShared`, `YooAsset`, `Launcher`
+Note: **Hot-update assembly** loaded by Launcher. No longer references `HybridCLR.Runtime`.
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
-| `Entry.cs` | `Assets/Scripts/Boot/Entry.cs` | `Entry : MonoBehaviour` | Game entry point. Holds serialized startup settings and optional startup view, runs update flow, exposes `Repair()` for retry. | `UnityEngine` |
-| `BootRuntimeLogBootstrap.cs` | `Assets/Scripts/Boot/BootRuntimeLogBootstrap.cs` | `static BootRuntimeLogBootstrap` | Installs an early `Framework.RuntimeLog.RuntimeLogSession` before Core/ZLogger exists so Boot logs and startup failures are written to JSONL/session files. | `Framework.Log`, `Framework.RuntimeLog`, `Framework.Asset`, `UnityEngine` |
-| `BootStartupSettings.cs` | `Assets/Scripts/Boot/BootStartupSettings.cs` | `BootStartupSettings` | Serializable Entry settings: update toggles, local StreamingAssets fallback root, asset tag, startup type/method, AOT metadata entries, hot-update DLL entries. DLL/AOT entries prefer YooAsset raw asset paths and can fall back to StreamingAssets/Resources. | none |
-| `BootUpdateRunner.cs` | `Assets/Scripts/Boot/BootUpdateRunner.cs` | `BootUpdateRunner : IDisposable` | Initializes `AssetRuntime` asynchronously, requests resource version, updates manifest, downloads resources, loads AOT metadata and hot-update DLLs, then reflects into the formal game startup entry and transfers the asset runtime. | `Framework.Asset` |
-| `BootAssemblyEntry.cs` | `Assets/Scripts/Boot/BootAssemblyEntry.cs` | `BootAssemblyEntry` | Serializable hot-update DLL entry: assembly name plus asset path / local file / Resources fallback. | none |
-| `BootMetadataEntry.cs` | `Assets/Scripts/Boot/BootMetadataEntry.cs` | `BootMetadataEntry` | Serializable AOT metadata entry: assembly name plus asset path / local file / Resources fallback. | none |
-| `IBootStartupView.cs` | `Assets/Scripts/Boot/IBootStartupView.cs` | `IBootStartupView` | Optional Boot update UI contract for status/progress/repair visibility. | none |
-| `HybridClrReflection.cs` | `Assets/Scripts/Boot/HybridClrReflection.cs` | `HybridClrReflection` | Reflection wrapper around `HybridCLR.RuntimeApi` so Boot asmdef does not reference HybridCLR.Runtime directly. | none |
+| `BootUpdateRunner.cs` | `Assets/Scripts/Boot/BootUpdateRunner.cs` | `BootUpdateRunner : IDisposable` | Hot-update startup entry. Reflect-launched by Launcher. Initializes `IAssetRuntime`, requests version, updates manifest, downloads, loads AOT metadata + DLLs, reflects into `ProjectStartup`. Replays early logs. | `Framework.Asset`, `Framework.RuntimeLog` |
+| `BootRuntimeLogBootstrap.cs` | `Assets/Scripts/Boot/BootRuntimeLogBootstrap.cs` | `static BootRuntimeLogBootstrap` | Installs `Framework.RuntimeLog.RuntimeLogSession` before Core/ZLogger exists. | `Framework.Log`, `Framework.RuntimeLog`, `UnityEngine` |
+| `HybridClrReflection.cs` | `Assets/Scripts/Boot/HybridClrReflection.cs` | `HybridClrReflection` | Reflection wrapper around `HybridCLR.RuntimeApi` (Boot does not reference HybridCLR.Runtime directly). | none |
 
-### Layer: Core (Assembly: `Core`, Namespace: `Core`, `Core.Bootstrap`, `Core.Systems`, `Core.Asset`)
+### Boot.Editor (Assembly: `Boot.Editor`, Editor-only)
+
+Asmdef: `Assets/Scripts/Boot.Editor/Boot.Editor.asmdef`
+References: `Boot`, `Asset`, `Framework.Asset.Editor`, `HybridCLR.Editor`, `YooAsset`, `YooAsset.Editor`
+
+| File | Path | Key Types | Description | Dependencies |
+|------|------|-----------|-------------|-------------|
+| `KJHybridClrBuildTools.cs` | `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` | `static KJHybridClrBuildTools` | `KJ/HybridCLR/*` menu commands: Prepare/Compile/Generate/Sync/Validate | HybridCLR, YooAsset Editor |
+| `KJBuildPipeline.cs` | `Assets/Scripts/Boot.Editor/Build/KJBuildPipeline.cs` | `static KJBuildPipeline` | S0–S9 stage orchestrator. `Build()` / `BuildWithMask()` / `IncrementalBuild()`. `KJ/Build/*` menu. | Build stages |
+| `StageDependencyTracker.cs` | `Assets/Scripts/Boot.Editor/Build/StageDependencyTracker.cs` | `StageDependencyTracker` | Change detection engine. Monitors `Assets/Scripts/**/*.cs` (S1/S2), `Assets/GameRes/HotUpdate/**` (S4), `Assets/Resources/AssetConfig.asset` (S5). Cascade: S1→S2→S3→S4→S6, S5→S6 independent. | none |
+| `BuildStagePanel.cs` | `Assets/Scripts/Boot.Editor/Build/BuildStagePanel.cs` | `BuildStagePanel : EditorWindow` | Visual build stage manager. Auto-detection checkboxes + "增量构建"/"全量构建" buttons. | KJBuildPipeline |
+| `BuildConfig.cs` | `Assets/Scripts/Boot.Editor/Build/BuildConfig.cs` | `BuildConfig : ScriptableObject` | Serializable build configuration: Platform, BuildType, output paths. | none |
+| `StageBuildYooAsset.cs` | `Assets/Scripts/Boot.Editor/Build/StageBuildYooAsset.cs` | (static methods) | YooAsset production build via `ScriptableBuildPipeline` → `StreamingAssets/`. | YooAsset.Editor |
+| `StageApplyConfig.cs` | `Assets/Scripts/Boot.Editor/Build/StageApplyConfig.cs` | (static methods) | Direct YAML write `AssetConfig.Mode = Offline` + SetDirty/SaveAssets/Refresh + rollback. | none |
+| `StageBuildPlayer.cs` | `Assets/Scripts/Boot.Editor/Build/StageBuildPlayer.cs` | (static methods) | `BuildPipeline.BuildPlayer` with IL2CPP + Android. | UnityEditor |
+| `StageSmokeRun.cs` | `Assets/Scripts/Boot.Editor/Build/StageSmokeRun.cs` | (static methods) | ADB install + logcat capture + `latest.jsonl` boot chain verification. | ADB |
+| `StageValidateArtifacts.cs` | `Assets/Scripts/Boot.Editor/Build/StageValidateArtifacts.cs` | (static methods) | Verify APK exists, StreamingAssets contains bundles. | none |
+| `PlayerBuildPrivatePathValidator.cs` | `Assets/Scripts/Boot.Editor/Build/PlayerBuildPrivatePathValidator.cs` | `PlayerBuildPrivatePathValidator` | Blocks Player builds when Build Settings/Resources/StreamingAssets contain `_` prefix segments. | none |
+
+### Layer: Core (Assembly: `KJ.Core`, Namespace: `Core`)
 
 Asmdef: `Assets/Scripts/Core/KJ.Core.asmdef`
-References: Asset, Event, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, Log, RuntimeLog
+References: Asset, AssetShared, Event, Pool, Cache, Log, RuntimeLog, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, ZLinq, ZLogger
 
-| File | Path | Key Types | Description | Dependencies |
-|------|------|-----------|-------------|-------------|
-| `ISystem.cs` | `Assets/Scripts/Core/Systems/ISystem.cs` | `ISystem` (interface), `ITickableSystem : ISystem` (interface) | `ISystem`: `int Priority`, `void Init()`, `void Shutdown()`. `ITickableSystem`: adds `Update(float)`, `LateUpdate(float)`, `FixedUpdate(float)`. | none |
-| `SystemManager.cs` | `Assets/Scripts/Core/Systems/SystemManager.cs` | `SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable, ICoreStartupStatus` | Manages all `ISystem` instances. Injected via constructor `IEnumerable<ISystem>`. `InitAll()` sorts by Priority, calls Init, records failures, and publishes `AppStartedEvent` only when all Core systems initialize successfully. VContainer drives `Start()` -> `InitAll()`, `Tick()` -> `Update()`, `LateTick()` -> `LateUpdate()`, `FixedTick()` -> `FixedUpdate()`. `ShutdownAll()` only shuts down systems whose `Init()` succeeded. | `MessagePipe`, `VContainer.Unity` |
-| `GameLogBridge.cs` | `Assets/Scripts/Core/Logging/GameLogBridge.cs` | `GameLogBridge : IGameLogSink` | Adapter installed by Core registration. Writes `Framework.Log.GameLog` entries to the current RuntimeLog session, then forwards them into the DI-managed `ILogger<T>`/ZLogger Unity Console pipeline. It is not a `[CoreSystem]`. | `Framework.Log`, `Framework.RuntimeLog`, `Microsoft.Extensions.Logging` |
-| `RuntimeLogBootstrap.cs` | `Assets/Scripts/Core/Logging/RuntimeLogBootstrap.cs` | `static RuntimeLogBootstrap` | Creates or reuses the RuntimeLog session, chooses Editor/Player log directory, fills Unity/session metadata, and updates Boot assembly/AOT metadata lists. | `Framework.RuntimeLog`, `Framework.Asset`, `UnityEngine` |
-| `RuntimeLogLoggerProvider.cs` | `Assets/Scripts/Core/Logging/RuntimeLogLoggerProvider.cs` | `RuntimeLogLoggerProvider : ILoggerProvider` | Microsoft.Extensions.Logging provider that writes `ILogger<T>` and `[ZLoggerMessage]` output into the same RuntimeLog JSONL session while avoiding duplicate `GameLogBridge` entries. | `Framework.RuntimeLog`, `Microsoft.Extensions.Logging` |
-| `StartupProbeSystem.cs` | `Assets/Scripts/Core/Systems/StartupProbeSystem.cs` | `StartupProbeSystem : ISystem` `[CoreSystem]` | Minimal verification system. Logs Init/Shutdown. Priority=0. | none |
-| `ICoreStartupStatus.cs` | `Assets/Scripts/Core/Systems/ICoreStartupStatus.cs` | `ICoreStartupStatus` | Exposes Core startup result (`IsStarted`, `HasInitFailures`, `FailedSystemNames`) so upper layers can avoid business loading after Core init failures. | none |
-| `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework/Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath` using `IAssetSystem`. Creates `GameObjectPool`. Exposes static shortcuts for `CollectionPool.RentList<>()` etc. Priority=110 (SystemPriority+10). | `IAssetSystem`, `Framework.Pool` |
-| `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` `[AttributeUsage(Class)]` | Marks a Core system class for automatic reflection-based DI registration. | none |
-| `AppStartedEvent.cs` | `Assets/Scripts/Core/Systems/Events/AppStartedEvent.cs` | `AppStartedEvent : struct` `[GameEvent]` | Published by `SystemManager` after all Core systems have initialized successfully. | none |
-| `AppShuttingDownEvent.cs` | `Assets/Scripts/Core/Systems/Events/AppShuttingDownEvent.cs` | `AppShuttingDownEvent : struct` `[GameEvent]` | Published by `SystemManager` before shutting down systems. | none |
-| `CoreTypeRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs` | `static CoreTypeRegistration` | Reflection scanner. `RegisterCoreTypes(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and registers MessageBroker, scans for `[CoreSystem]` classes and registers `AsSelf().AsImplementedInterfaces()`. Validates that `[CoreSystem]` types implement `ISystem` and are in `Core.*` namespace. | `VContainer`, `MessagePipe` |
-| `CoreStartupContext.cs` | `Assets/Scripts/Core/Bootstrap/CoreStartupContext.cs` | `CoreStartupContext` | Carries `IContainerBuilder` and `MessagePipeOptions` while Project composes Core/General/Project. | `VContainer`, `MessagePipe` |
-| `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry point: `RegisterCoreServices(IContainerBuilder)`. Calls `RegisterMessagePipe()`, then `RegisterCoreTypes()` scanning the Core assembly, then `RegisterEntryPoint<SystemManager>()`. | `VContainer`, `MessagePipe` |
-| `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `static CoreBootstrapStage` | Registers Core services into a `CoreStartupContext` and stores `MessagePipeOptions`. | `MessagePipe` |
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `ISystem.cs` | `Assets/Scripts/Core/Systems/ISystem.cs` | `ISystem`, `ITickableSystem : ISystem` | Core lifecycle contracts. |
+| `SystemManager.cs` | `Assets/Scripts/Core/Systems/SystemManager.cs` | `SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable, ICoreStartupStatus` | Manages `ISystem` instances via VContainer. Priority-sorted Init/Shutdown + Tick dispatch. |
+| `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework.Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath`. Creates `GameObjectPool`. Exposes `CollectionPool.RentList<>()` shortcuts. Priority=110. |
+| `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` | Marks a Core system class for reflection-based DI registration. |
+| `CoreTypeRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs` | `static CoreTypeRegistration` | Reflection scanner: `[GameEvent]` → MessageBroker, `[CoreSystem]` → `AsSelf().AsImplementedInterfaces()`. |
+| `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry: `RegisterCoreServices()` → MessagePipe + CoreTypes + SystemManager. |
+| `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `static CoreBootstrapStage` | Registers Core into `CoreStartupContext`. |
+| `CoreStartupContext.cs` | `Assets/Scripts/Core/Bootstrap/CoreStartupContext.cs` | `CoreStartupContext` | Carries `IContainerBuilder` and `MessagePipeOptions`. |
 
 #### Asset System (Core.Asset namespace)
 
-| File | Path | Key Types | Description | Dependencies |
-|------|------|-----------|-------------|-------------|
-| `AssetConfig.cs` | `Assets/Framework/Asset/AssetConfig.cs` | `AssetConfig : ScriptableObject`, `AssetConfig.PlayMode` (enum) | Configuration ScriptableObject. PlayMode: `EditorSimulate`, `Offline`, `Host`. Fields: `PackageName`, `EditorSimulatePackageRoot`, `CdnBaseUrl`, `DownloadTimeout`, `DownloadMaxConcurrency`, `FailedRetryCount`. `EditorSimulatePackageRoot` is written by the YooAsset EditorSimulate prepare menu. | none |
-| `AssetConstants.cs` | `Assets/Framework/Asset/AssetConstants.cs` | `static AssetConstants` | Constants: `InitPriority=-999`, `SystemPriority=100`. | none |
-| `AssetSystem.cs` | `Assets/Scripts/Core/Asset/AssetSystem.cs` | `AssetSystem : ISystem` `[CoreSystem]` | Thin orchestration layer. Verifies the Boot-provided `IAssetRuntime` is ready, publishes `AssetSystemReadyEvent`, and owns shutdown. | `Framework.Asset`, `MessagePipe` |
-| `IAssetSystem.cs` | `Assets/Framework/Asset/IAssetSystem.cs` | `IAssetSystem` (interface) | Public loading API: `LoadAssetHandleAsync<T>(path)`, `LoadAssetAsync<T>(path)`, `InstantiateAsync(path, parent)`, `LoadSceneAsync(path, mode, onProgress)`, `CreateDownloader(tag/tags)`, `Release<T>(path)`, `Release(path)`, `UnloadUnused()`. | `UniTask` |
-| `IAssetRuntime.cs` | `Assets/Framework/Asset/IAssetRuntime.cs` | `IAssetRuntime` (interface) | Startup-facing runtime API: `BeginInitialize(config)`, sync misuse guard `Initialize(config)`, `LastError`, `UpdateManifest()`, `CreateDownloader(tag/tags)`, `LoadRawBytes(path)`, `Shutdown()`. Boot uses this narrower surface; Core registers the same concrete runtime as `IAssetSystem` after startup. | none |
-| `AssetInitializeHandle.cs` | `Assets/Framework/Asset/AssetInitializeHandle.cs` | `AssetInitializeHandle` | Pollable package initialization handle used by Boot. Wraps YooAsset async operation progress/status/error without exposing YooAsset types outside `Framework.Asset`. | none |
-| `AssetRuntimeFactory.cs` | `Assets/Framework/Asset/AssetRuntimeFactory.cs` | `AssetRuntimeFactory` | Creates the concrete runtime behind the startup-facing `IAssetRuntime` interface so Boot does not directly touch the full `AssetRuntime` implementation type. | none |
-| `AssetUpdateManifestHandle.cs` | `Assets/Framework/Asset/AssetUpdateManifestHandle.cs` | `AssetUpdateManifestHandle` | Pollable manifest update handle used by Boot: request package version, start manifest load, expose progress/status/error without YooAsset types. | none |
-| `AssetHandle.cs` | `Assets/Scripts/Core/Asset/AssetHandle.cs` | `AssetHandle<T> : IDisposable` where T : Object | Typed handle wrapping `YooAsset.AssetHandle`. Properties: `Asset`, `Progress`, `IsDone`, `IsValid`, `Error`. Methods: `Instantiate(parent)`, `Dispose()`. Dispose releases the underlying handle and calls `onDispose` callback. | none |
-| `AssetInstanceHandle.cs` | `Assets/Scripts/Core/Asset/AssetInstanceHandle.cs` | `AssetInstanceHandle : IDisposable` | Joint lifecycle for a GameObject instance + its source handle. `Instance` property. `Dispose()` destroys the GameObject and disposes the source handle. | none |
-| `AssetSceneHandle.cs` | `Assets/Scripts/Core/Asset/AssetSceneHandle.cs` | `AssetSceneHandle : IDisposable` | Scene handle wrapping `YooAsset.SceneHandle`. `ActivateScene()`, `UnloadAsync()` (awaits unload), `Dispose()` (fire-and-forget unload). | `UniTask` |
-| `AssetSystemReadyEvent.cs` | `Assets/Scripts/Core/Asset/AssetSystemReadyEvent.cs` | `AssetSystemReadyEvent : struct` `[GameEvent]` | Published by `AssetSystem.Init()` after the system is ready. | none |
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `AssetSystem.cs` | `Assets/Scripts/Core/Asset/AssetSystem.cs` | `AssetSystem : ISystem` `[CoreSystem]` | Thin orchestration. Verifies Boot-provided `IAssetRuntime` ready, publishes `AssetSystemReadyEvent`, owns shutdown. |
+| `IAssetSystem.cs` | `Assets/Framework/Asset/IAssetSystem.cs` | `IAssetSystem` (interface) | Public loading API: `LoadAssetHandleAsync<T>`, `LoadAssetAsync<T>`, `InstantiateAsync`, `LoadSceneAsync`, `CreateDownloader`, `Release`, `UnloadUnused`. |
+| `IAssetRuntime.cs` | `Assets/Framework/Asset/IAssetRuntime.cs` | `IAssetRuntime` (interface) | Startup-facing API: `BeginInitialize(config)`, `LastError`, `UpdateManifest()`, `CreateDownloader(tag/tags)`, `LoadRawBytes(path)`, `Shutdown()`. |
+| `AssetRuntime.cs` | `Assets/Framework/Asset/AssetRuntime.cs` | `AssetRuntime` | YooAsset adapter implementation. Owned/cached dual-channel, SemaphoreSlim concurrency, `AssetCacheKey`. |
+| `AssetRuntimeFactory.cs` | `Assets/Framework/Asset/AssetRuntimeFactory.cs` | `AssetRuntimeFactory` | Creates concrete runtime behind `IAssetRuntime` interface. |
+| `AssetHandle.cs` | `Assets/Scripts/Core/Asset/AssetHandle.cs` | `AssetHandle<T> : IDisposable` where T : Object | Typed handle wrapping YooAsset handle. |
 
-### Layer: General (Assembly: `General`, Namespace: `General`)
+#### Logging (Core.Logging namespace)
+
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `GameLogBridge.cs` | `Assets/Scripts/Core/Logging/GameLogBridge.cs` | `GameLogBridge : IGameLogSink` | Adapter: writes `GameLog` → RuntimeLog session + ZLogger Console. NOT a `[CoreSystem]`. |
+| `RuntimeLogBootstrap.cs` | `Assets/Scripts/Core/Logging/RuntimeLogBootstrap.cs` | `static RuntimeLogBootstrap` | Creates/reuses RuntimeLog session, fills Unity/session metadata. |
+| `RuntimeLogLoggerProvider.cs` | `Assets/Scripts/Core/Logging/RuntimeLogLoggerProvider.cs` | `RuntimeLogLoggerProvider : ILoggerProvider` | Writes `ILogger<T>` / `[ZLoggerMessage]` into same JSONL session. |
+| `StartupProbeSystem.cs` | `Assets/Scripts/Core/Systems/StartupProbeSystem.cs` | `StartupProbeSystem : ISystem` `[CoreSystem]` | Minimal verification system. Priority=0. |
+
+### Layer: General (Assembly: `KJ.General`, Namespace: `General`)
 
 Asmdef: `Assets/Scripts/General/KJ.General.asmdef`
-References: Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer
+References: Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer, ZLinq
 
-| File | Path | Key Types | Description | Dependencies |
-|------|------|-----------|-------------|-------------|
-| `IModel.cs` | `Assets/Scripts/General/Models/IModel.cs` | `IModel` (interface) | Business lifecycle: `int Priority`, `void Load()`, `void Unload()`. | none |
-| `ModelAttribute.cs` | `Assets/Scripts/General/Models/ModelAttribute.cs` | `ModelAttribute : Attribute` `[AttributeUsage(Class)]` | Marks a business layer class for automatic DI registration as `IModel`. | none |
-| `ModelLifecycle.cs` | `Assets/Scripts/General/Models/ModelLifecycle.cs` | `ModelLifecycle : IPostStartable, IDisposable` | Manages `IModel` instances. Constructor sorts by Priority. `PostStart()` checks `ICoreStartupStatus` and calls `LoadAll()` only after Core start succeeds. `UnloadAll()` calls Unload in reverse order. `Dispose()` calls UnloadAll. | `Core`, `VContainer.Unity` |
-| `GameEventAttribute.cs` | `Assets/Scripts/General/Events/GameEventAttribute.cs` | `GameEventAttribute : Attribute` `[AttributeUsage(Struct)]` | Marks a business event struct for MessagePipe registration. Separate from Core's GameEvent to scope reflection scanning. | none |
-| `GeneralContainerRegistration.cs` | `Assets/Scripts/General/Bootstrap/GeneralContainerRegistration.cs` | `static GeneralContainerRegistration` | `RegisterBusinessLayer(IContainerBuilder, MessagePipeOptions, Assembly[])` -- scans assemblies for `[GameEvent]` structs and `[Model]` classes. Registers `ModelLifecycle` once as Singleton + implemented interfaces. | `VContainer`, `MessagePipe` |
-| `GeneralBootstrapStage.cs` | `Assets/Scripts/General/Bootstrap/GeneralBootstrapStage.cs` | `static GeneralBootstrapStage` | Gets `MessagePipeOptions` from `CoreStartupContext` and registers General business layer. | `Core`, `MessagePipe` |
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `IModel.cs` | `Assets/Scripts/General/Models/IModel.cs` | `IModel` (interface) | Business lifecycle: `int Priority`, `void Load()`, `void Unload()`. |
+| `ModelAttribute.cs` | `Assets/Scripts/General/Models/ModelAttribute.cs` | `ModelAttribute : Attribute` | Marks business class for DI registration as `IModel`. |
+| `ModelLifecycle.cs` | `Assets/Scripts/General/Models/ModelLifecycle.cs` | `ModelLifecycle : IPostStartable, IDisposable` | Priority-sorted Load/Unload lifecycle. Checks `ICoreStartupStatus`. |
+| `GeneralContainerRegistration.cs` | `Assets/Scripts/General/Bootstrap/GeneralContainerRegistration.cs` | `static GeneralContainerRegistration` | `RegisterBusinessLayer()`: scans `[GameEvent]` + `[Model]`. |
+| `GeneralBootstrapStage.cs` | `Assets/Scripts/General/Bootstrap/GeneralBootstrapStage.cs` | `static GeneralBootstrapStage` | Registers General business layer via `CoreStartupContext`. |
 
-### Layer: Project (Assembly: `Project`, Namespace: `Project`)
+### Layer: Project (Assembly: `KJ.Project`, Namespace: `Project`)
 
 Asmdef: `Assets/Scripts/Project/KJ.Project.asmdef`
 References: Asset, Core, General, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer
 
-| File | Path | Key Types | Description | Dependencies |
-|------|------|-----------|-------------|-------------|
-| `ProjectBootstrapper.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapper.cs` | `static ProjectBootstrapper` | Project layer registration hook. `Configure(IContainerBuilder, MessagePipeOptions)` -- calls `builder.RegisterBusinessLayer()` scanning the Project assembly. | `General`, `VContainer`, `MessagePipe`, `Log` |
-| `ProjectBootstrapStage.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapStage.cs` | `static ProjectBootstrapStage` | Gets `MessagePipeOptions` from `CoreStartupContext` and registers Project business layer. | `Core`, `MessagePipe` |
-| `ProjectStartup.cs` | `Assets/Scripts/Project/Bootstrap/ProjectStartup.cs` | `static ProjectStartup` | Formal hot-update startup entry called by Boot via reflection. Receives the Boot asset runtime and creates a VContainer `LifetimeScope`. | `Core`, `General`, `Framework.Asset`, `VContainer` |
-| `ProjectLifetimeScope.cs` | `Assets/Scripts/Project/Bootstrap/ProjectLifetimeScope.cs` | `ProjectLifetimeScope : LifetimeScope` | Formal game VContainer root created by `ProjectStartup`; consumes the pending Boot asset runtime during Configure and passes it into Core registration. | `Core`, `General`, `Framework.Asset`, `VContainer` |
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `ProjectStartup.cs` | `Assets/Scripts/Project/Bootstrap/ProjectStartup.cs` | `static ProjectStartup` | Formal hot-update entry called by Boot via reflection. Receives `IAssetRuntime`, creates VContainer root. |
+| `ProjectLifetimeScope.cs` | `Assets/Scripts/Project/Bootstrap/ProjectLifetimeScope.cs` | `ProjectLifetimeScope : LifetimeScope` | Formal VContainer root. Consumes pending Boot asset runtime, registers Core→General→Project. |
+| `ProjectBootstrapper.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapper.cs` | `static ProjectBootstrapper` | Project layer registration hook. |
+| `ProjectBootstrapStage.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapStage.cs` | `static ProjectBootstrapStage` | Registers Project business layer. |
 
-### Framework: Pool (Assembly: `Pool`, Namespace: `Framework.Pool`)
+### Framework: Pool (Assembly: `KJ.Pool`, Namespace: `Framework.Pool`)
 
 Asmdef: `Assets/Framework/Pool/Pool.asmdef`
 References: UniTask, Cache
-Note: Cannot reference any `Assets/Scripts/` code.
 
-**GameObjectPool Lifecycle Rule**:
-- **Global Scope (全局对象池)**: 生命期等同于游戏进程，挂载的 root 节点应该设置 `DontDestroyOnLoad`（例如由全局单例 `PoolService` 托管的池）。
-- **Local/Scoped Scope (局部/功能对象池)**: 生命期跟随特定的 UI、场景或玩法预制体。挂载的 root 节点**不应该**设置 `DontDestroyOnLoad`，必须跟随父节点自然销毁以回收内存。其持有者（如 Model 或 UI 窗口）需在 `Unload`/`OnDestroy` 时显式调用 `GameObjectPool.Clear()` 释放未归还的对象和 Prefab 引用，防内存泄漏。
-
-| File | Path | Key Types | Description | Dependencies |
-|------|------|-----------|-------------|-------------|
-| `IPool.cs` | `Assets/Framework/Pool/Interfaces/IPool.cs` | `IPool<T>` (interface) | `T Rent()`, `void Return(T)`, `int IdleCount`. | none |
-| `IPoolLease.cs` | `Assets/Framework/Pool/Interfaces/IPoolLease.cs` | `IPoolLease<out T> : IDisposable` (interface) | `T Value`, `bool IsDisposed`. Using-based auto-return. | none |
-| `IPoolable.cs` | `Assets/Framework/Pool/Interfaces/IPoolable.cs` | `IPoolable` (interface) | `void ResetState()`. | none |
-| `ObjectPool.cs` | `Assets/Framework/Pool/ObjectPool.cs` | `ObjectPool<T> : IPool<T>` where T : class | Generic object pool. `Stack<T>` backing, `lock`-based thread safety. Configurable: `factory`, `reset`, `maxIdle`, `preload`. Methods: `Rent()`, `Return(item)`, `RentLease()` -> `PoolLease<T>`, `GetStatistics()` -> `PoolStatistics`. | none |
-| `PoolLease.cs` | `Assets/Framework/Pool/PoolLease.cs` | `PoolLease<T> : IPoolLease<T>` (struct) | Using-compatible struct lease. `Dispose()` calls `_pool.Return(_value)`. | none |
-| `PoolStatistics.cs` | `Assets/Framework/Pool/PoolStatistics.cs` | `PoolStatistics` (readonly struct) | Diagnostic data: `IdleCount`, `CreatedCount`, `RentCount`, `ReturnCount`, `MaxIdle`. | none |
-| `CollectionPool.cs` | `Assets/Framework/Pool/CollectionPool.cs` | `static CollectionPool` | Static entry points for pooled collections. `RentList<T>()`, `RentHashSet<T>()`, `RentQueue<T>()`, `RentStack<T>()`, `RentDictionary<TKey,TValue>()`. Uses 5 internal static `ObjectPool` instances (ListPool, HashSetPool, QueuePool, StackPool, DictionaryPool) with `preload=32`, `reset=list.Clear()`. | none |
-| `PooledCollections.cs` | `Assets/Framework/Pool/PooledCollections.cs` | `PooledList<T>` (struct), `PooledHashSet<T>` (struct), `PooledQueue<T>` (struct), `PooledStack<T>` (struct), `PooledDictionary<TKey,TValue>` (struct), `LeaseState<T>` (sealed class) | RAII wrappers. Each struct holds a `LeaseState<T>` which calls `CollectionPool.Return(...)` on Dispose. Thread-safe disposal via `Interlocked.Exchange`. | none |
-| `PoolDependencies.cs` | `Assets/Framework/Pool/PoolDependencies.cs` | `static PoolDependencies` | Static delegate injection points. `Func<string, Transform, UniTask<GameObject>> LoadAssetAsync`, `Action<string> ReleaseAssetByPath`, `ConcurrentDictionary<string, SemaphoreSlim> LoadGates`. | `UniTask` |
-| `TypePool.cs` | `Assets/Framework/Pool/Types/TypePool.cs` | `static TypePool` | Global type-based pool registry (`ConcurrentDictionary<Type, object>`). `Register<T>(factory, reset, maxIdle)`, `TryGet<T>()`, `GetOrCreate<T>()`. | none |
-| `GameObjectPool.cs` | `Assets/Framework/Pool/Unity/GameObjectPool.cs` | `GameObjectPool` | Unity GameObject pooling. Per-path idle stacks + instance tracking. LIFO recycle with `PoolInstanceTag` pollution detection. Prefab cache via `Cache<string, GameObject>` (from Framework/Cache). Async loading via `PoolDependencies.LoadAssetAsync`. Warmup support. Two container modes: `ChangeParent` / `MovePos`. | `Framework.Cache`, `UniTask` |
-| `PoolContainerMode.cs` | `Assets/Framework/Pool/Unity/PoolContainerMode.cs` | `PoolContainerMode` (enum) | `ChangeParent=0` (move to root), `MovePos=1` (move to faraway position). | none |
-| `PoolInstanceTag.cs` | `Assets/Framework/Pool/Unity/PoolInstanceTag.cs` | `PoolInstanceTag : MonoBehaviour` (internal) | Attached to pooled GameObjects. Tracks `PrefabPath` and `IsRecycled` for pollution detection. | none |
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `ObjectPool.cs` | `Assets/Framework/Pool/ObjectPool.cs` | `ObjectPool<T> : IPool<T>` | Generic object pool. Stack backing, lock-based thread safety. |
+| `CollectionPool.cs` | `Assets/Framework/Pool/CollectionPool.cs` | `static CollectionPool` | Static entry: `RentList<T>()`, `RentHashSet<T>()`, `RentQueue<T>()`, `RentStack<T>()`, `RentDictionary<TKey,TValue>()`. |
+| `PooledCollections.cs` | `Assets/Framework/Pool/PooledCollections.cs` | `PooledList<T>` (struct), etc. | RAII wrappers, `[NonCopyable]` marker (mutable struct — forbid value copy). |
+| `TypePool.cs` | `Assets/Framework/Pool/Types/TypePool.cs` | `static TypePool` | `ConcurrentDictionary<Type, object>` type-based pool registry. |
+| `InstanceRecyclePolicy.cs` | `Assets/Framework/Pool/InstanceRecyclePolicy.cs` | `IInstanceRecyclePolicy`, `CapacityInstancePolicy`, `PersistentInstancePolicy` | Pluggable retention: capacity cap, persistent-path exemption (ETPro-inspired). |
+| `GameObjectPool.cs` | `Assets/Framework/Pool/Unity/GameObjectPool.cs` | `GameObjectPool`, `internal PrefabPoolState` | Unity GameObject pooling. `PrefabPoolState` merges old five dicts; reverse-index (`_instanceToPath`) guards double-recycle / cross-path; prefab cache via `BoundedStore<string, GameObject>` + `LruPolicy`; `IInstanceRecyclePolicy` pluggable retention; `AssertMainThread()` runtime check. |
+| `PoolDependencies.cs` | `Assets/Framework/Pool/PoolDependencies.cs` | `static PoolDependencies` | Static delegate injection: `LoadAssetAsync`, `ReleaseAssetByPath`. |
+| `PoolContainerMode.cs` | `Assets/Framework/Pool/Unity/PoolContainerMode.cs` | `PoolContainerMode` (enum) | `ChangeParent=0`, `MovePos=1`. |
 
 ### Framework: Cache (Assembly: `Cache`, Namespace: `Framework.Cache`)
+> Refreshed 2026-07-08: `BoundedStore<TKey,TValue>` is the sole container. Legacy `Cache` / `LruCachePolicy` / `ResourceCache` / `ICacheResContainer` / `IPoolable` deleted (no forward compat needed). Eviction policy interface: `IStoreEvictionPolicy` (OnAdded/OnAccessed/OnRemoved).
 
 Asmdef: `Assets/Framework/Cache/Cache.asmdef`
-References: (none -- zero external dependencies)
+References: (none)
 
-| File | Path | Key Types | Description | Dependencies |
-|------|------|-----------|-------------|-------------|
-| `ICache.cs` | `Assets/Framework/Cache/Interfaces/ICache.cs` | `ICache<TKey, TValue>` (interface) | `int Count`, `int Capacity`, `TryGet()`, `GetOrAdd()`, `Put()`, `Remove()`, `Clear()`. | none |
-| `ICacheEvictionPolicy.cs` | `Assets/Framework/Cache/Interfaces/ICacheEvictionPolicy.cs` | `ICacheEvictionPolicy<TKey>` (interface) | `Touch(key)`, `Remove(key)`, `TrySelectEvictionCandidate(out key)`, `Clear()`. | none |
-| `ICacheResContainer.cs` | `Assets/Framework/Cache/ResContainer/ICacheResContainer.cs` | `ICacheResContainer<TKey, TValue>` (interface) | `TryGet()`, `GetOrCreate()`, `TryRemove()`, `Clear()`. Factory-pattern resource container. | none |
-| `Cache.cs` | `Assets/Framework/Cache/Cache.cs` | `Cache<TKey, TValue> : ICache<TKey, TValue>` | Generic cache with pluggable eviction policy. `Dictionary` + `ICacheEvictionPolicy`. `lock`-based thread safety. `onEvicted` callback. O(1) put/get/remove, eviction when over capacity. | none |
-| `LruCachePolicy.cs` | `Assets/Framework/Cache/Strategy/LruCachePolicy.cs` | `LruCachePolicy<TKey> : ICacheEvictionPolicy<TKey>` | O(1) LRU via `LinkedList<TKey>` + `Dictionary<TKey, LinkedListNode<TKey>>`. `Touch` moves to front. `TrySelectEvictionCandidate` returns the last node. | none |
-| `ResourceCache.cs` | `Assets/Framework/Cache/ResContainer/ResourceCache.cs` | `ResourceCache<TKey, TValue> : ICacheResContainer<TKey, TValue>` | Factory-based resource container. `Function<TKey, TValue> factory` creates values on demand. `TryRemove` calls `reset` callback. | none |
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `ICache.cs` | `Assets/Framework/Cache/Interfaces/ICache.cs` | `ICache<TKey, TValue>` (interface) | `Count`, `Capacity`, `TryGet`, `GetOrAdd`, `Put`, `Remove`, `Clear`. Implemented by `BoundedStore`. |
+| `IStoreEvictionPolicy.cs` | `Assets/Framework/Cache/Interfaces/IStoreEvictionPolicy.cs` | `IStoreEvictionPolicy<TKey>` (interface) | `OnAdded` / `OnAccessed` / `OnRemoved` / `TrySelectEvictionCandidate` / `Clear`. |
+| `BoundedStore.cs` | `Assets/Framework/Cache/BoundedStore.cs` | `BoundedStore<TKey, TValue> : ICache<TKey, TValue>` | Container: single-flight `GetOrAdd`, `Put` overwrite = Remove+Add (onEvicted+OnRemoved), `onEvicted` outside lock, H1/H2 guards. |
+| `LruPolicy.cs` | `Assets/Framework/Cache/Strategy/LruPolicy.cs` | `LruPolicy<TKey> : IStoreEvictionPolicy<TKey>` | O(1) LRU. |
+| `TtlPolicy.cs` | `Assets/Framework/Cache/Strategy/TtlPolicy.cs` | `TtlPolicy<TKey> : IStoreEvictionPolicy<TKey>` | TTL expiry with injectable clock. |
+| `CapacityPolicy.cs` | `Assets/Framework/Cache/Strategy/CapacityPolicy.cs` | `CapacityPolicy<TKey> : IStoreEvictionPolicy<TKey>` | FIFO capacity. |
+| `CompositePolicy.cs` | `Assets/Framework/Cache/Strategy/CompositePolicy.cs` | `CompositePolicy<TKey> : IStoreEvictionPolicy<TKey>` | Fan-out combinator. |
+
+### Framework: Asset (Assembly: `KJ.Asset`, Namespace: `Framework.Asset`)
+
+Asmdef: `Assets/Framework/Asset/Asset.asmdef`
+References: UniTask, YooAsset
+
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `IAssetSystem.cs` | `Assets/Framework/Asset/IAssetSystem.cs` | `IAssetSystem` (interface) | Stable asset API for upper layers. |
+| `IAssetRuntime.cs` | `Assets/Framework/Asset/IAssetRuntime.cs` | `IAssetRuntime` (interface) | Startup-facing runtime interface. |
+| `AssetRuntime.cs` | `Assets/Framework/Asset/AssetRuntime.cs` | `AssetRuntime` | YooAsset adapter with owned/cached dual-channel. |
+| `AssetRuntimeFactory.cs` | `Assets/Framework/Asset/AssetRuntimeFactory.cs` | `AssetRuntimeFactory` | Factory for concrete runtime behind interface. |
+| `AssetDownloadHandle.cs` | `Assets/Framework/Asset/AssetDownloadHandle.cs` | `AssetDownloadHandle` | Downloader wrapper hiding YooAsset types. |
+| `AssetInitializeHandle.cs` | `Assets/Framework/Asset/AssetInitializeHandle.cs` | `AssetInitializeHandle` | Pollable init handle hiding YooAsset types. |
+| `AssetUpdateManifestHandle.cs` | `Assets/Framework/Asset/AssetUpdateManifestHandle.cs` | `AssetUpdateManifestHandle` | Pollable manifest update handle. |
+
+### Framework: AssetShared (Assembly: `KJ.AssetShared`, Namespace: `Framework.Asset`)
+
+Asmdef: `Assets/Framework/AssetShared/AssetShared.asmdef`
+References: (none — zero external dependencies)
+Purpose: Holds `AssetConfig` / `AssetConstants` so both AOT Launcher and hot-update layer can reference them across the boundary.
+
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `AssetConfig.cs` | `Assets/Framework/AssetShared/AssetConfig.cs` | `AssetConfig : ScriptableObject`, `PlayMode` (enum) | Config: `EditorSimulate`, `Offline`, `Host`. Fields: `PackageName`, `EditorSimulatePackageRoot`, `CdnBaseUrl`, `DownloadTimeout`, `DownloadMaxConcurrency`, `FailedRetryCount`. |
+| `AssetConstants.cs` | `Assets/Framework/AssetShared/AssetConstants.cs` | `static AssetConstants` | `InitPriority=-999`, `SystemPriority=100`. |
+
+### Framework: RuntimeLog (Assembly: `KJ.RuntimeLog`, Namespace: `Framework.RuntimeLog`)
+
+Asmdef: `Assets/Framework/RuntimeLog/RuntimeLog.asmdef`
+References: Log (`noEngineReferences=true`)
+
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `RuntimeLogSession.cs` | `Assets/Framework/RuntimeLog/RuntimeLogSession.cs` | `RuntimeLogSession` | JSONL writer + session manifest + flush/dispose. |
+| `RuntimeLogManager.cs` | `Assets/Framework/RuntimeLog/RuntimeLogManager.cs` | `RuntimeLogManager` | Current session management, avoids overwriting Core `GameLogBridge`. |
+| `RuntimeLogEntry.cs` | `Assets/Framework/RuntimeLog/RuntimeLogEntry.cs` | `RuntimeLogEntry` | AI-readable runtime log entry. |
+| `RuntimeLogSessionInfo.cs` | `Assets/Framework/RuntimeLog/RuntimeLogSessionInfo.cs` | `RuntimeLogSessionInfo` | Session manifest: Unity/platform/package/hot-update assemblies/AOT metadata. |
+| `RuntimeLogJson.cs` | `Assets/Framework/RuntimeLog/RuntimeLogJson.cs` | (static) | No-dependency JSON serializer. |
+| `RuntimeLogPhaseResolver.cs` | `Assets/Framework/RuntimeLog/RuntimeLogPhaseResolver.cs` | `RuntimeLogPhaseResolver` | Phase classification: Boot/HybridCLR/Core.Asset/Core.Init/ModelLifecycle. |
 
 ---
 
 ## Key Interfaces and Contracts
 
 ### `ISystem` (Core.Systems)
-- `int Priority` -- lower values initialize first
-- `void Init()` -- called in priority order by SystemManager
-- `void Shutdown()` -- called in reverse priority order by SystemManager
+- `int Priority` — lower values initialize first
+- `void Init()` — called in priority order by SystemManager
+- `void Shutdown()` — called in reverse priority order
 - Implementations: `StartupProbeSystem`, `AssetSystem`, `PoolService`
 
 ### `ITickableSystem : ISystem` (Core.Systems)
-- `void Update(float deltaTime)`
-- `void LateUpdate(float deltaTime)`
-- `void FixedUpdate(float fixedDeltaTime)`
-- No current implementations in the codebase (reserved for future systems like Timer).
+- `void Update(float)`, `void LateUpdate(float)`, `void FixedUpdate(float)`
+- No current implementations (reserved for future systems).
 
-### `IAssetSystem` (Core.Asset)
-- `UniTask<AssetHandle<T>> LoadAssetHandleAsync<T>(string path)` -- caller-managed lifecycle
-- `UniTask<T> LoadAssetAsync<T>(string path)` -- system-managed lifecycle (cached)
+### `IAssetSystem` (Framework.Asset)
+- `UniTask<AssetHandle<T>> LoadAssetHandleAsync<T>(string path)` — caller-managed lifecycle
+- `UniTask<T> LoadAssetAsync<T>(string path)` — system-managed lifecycle (cached)
 - `UniTask<AssetInstanceHandle> InstantiateAsync(string path, Transform parent)`
 - `UniTask<AssetSceneHandle> LoadSceneAsync(string path, LoadSceneMode, Action<float>)`
 - `AssetDownloadHandle CreateDownloader(string tag)` / `CreateDownloader(string[] tags)`
-- `byte[] LoadRawBytes(string path)` on `IAssetRuntime` reads YooAsset RawFile bytes for hot-update DLL/AOT metadata after manifest/download completes.
-- `AssetUpdateManifestHandle UpdateManifest()` on `IAssetRuntime` requests the latest package version; call `StartManifest()` after version success, then poll completion before creating the downloader.
-- `void Release<T>(string path)` / `void Release(string path)`
-- `void UnloadUnused()`
-- Implementation: `AssetSystem`
+- `byte[] LoadRawBytes(string path)` on `IAssetRuntime` — reads YooAsset RawFile bytes
+- `AssetUpdateManifestHandle UpdateManifest()` on `IAssetRuntime`
+- `void Release<T>(string path)`, `void Release(string path)`, `void UnloadUnused()`
+- Implementation: `AssetSystem` (lifecycle), `AssetRuntime` (adapter)
 
-### Boot Startup
-- `Entry` is the only Boot MonoBehaviour entry.
-- `BootStartupSettings` is serialized on the Entry prefab/scene object.
-- `BootUpdateRunner` performs resource/code update, then calls the configured static startup method by reflection.
+### Boot/Launcher Startup
+- `Entry` (AOT) is the only MonoBehaviour entry point in `Assets/Scripts/Boot/Launcher/`.
+- `BootLoader` (AOT) initializes YooAsset, loads DLLs, reflects `Boot.BootUpdateRunner`.
+- `BootUpdateRunner` (HotUpdate) performs resource/code update, reflects `ProjectStartup`.
 - `IBootStartupView` is optional and only supports update progress, status, and repair visibility.
 
 ### HybridCLR Editor Tooling
-- `Assets/Scripts/Boot.Editor/Boot.Editor.asmdef` is Editor-only and may reference `Boot`, `Asset`, `Framework.Asset.Editor`, `HybridCLR.Editor`, `YooAsset`, and `YooAsset.Editor`.
-- `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` provides menu commands under `KJ/HybridCLR`.
-- `Assets/Scripts/Boot.Editor/Build/PlayerBuildPrivatePathValidator.cs` blocks Player builds when enabled Build Settings scenes, `Resources`, or `StreamingAssets` contain a path segment starting with `_`.
-- `Prepare Runtime Assets And Boot` is the normal smoke-test path: compile runtime DLLs, generate missing stripped AOT metadata, sync `.dll.bytes`, build the YooAsset EditorSimulate package, write `AssetConfig.EditorSimulatePackageRoot`, apply generated entries to the Boot `Entry`, save the Boot scene, and ensure it is in build settings.
-- `Prepare YooAsset Editor Simulate Package` only rebuilds the YooAsset virtual raw-file package and writes its package root into `Assets/Resources/AssetConfig.asset`; run it before Editor Play Mode if only YooAsset collection changed.
-- `Generate Runtime Assets And Sync` performs the same runtime asset generation and sync without opening/saving the Boot scene.
-- `Compile Dlls And Sync` recompiles hot-update DLLs and reuses existing stripped AOT metadata.
-- `Generate All And Sync` runs HybridCLR's full prebuild generation and is intended for formal player-build preparation.
-- `Apply To Open Entry` writes generated `BootAssemblyEntry` / `BootMetadataEntry` data into the open Boot `Entry` serialized settings.
-- The tool ensures a YooAsset raw-file collector for `Assets/GameRes/HotUpdate/Dlls` and `Assets/GameRes/HotUpdate/AotMetadata` with the `hotupdate` tag.
-- The synced runtime DLL assets are restricted to the configured runtime preload assemblies (`Core`, `General`, `Project` by default). `Boot` and `Framework/*` managed updates need an explicit startup-update manifest, loading order, and restart policy before they should be added to this publication path. HybridCLR's intermediate compile output directory can contain many player script DLLs; it is not the runtime publication boundary.
+- `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` provides `KJ/HybridCLR/*` menus.
+- `Assets/Scripts/Boot.Editor/Build/PlayerBuildPrivatePathValidator.cs` blocks `_` prefix in build paths.
+- `Prepare Runtime Assets And Boot` is the normal smoke-test path for Editor Play.
+- `Prepare YooAsset Editor Simulate Package` rebuilds the editor-simulate virtual package.
+- `Generate All And Sync` is the full formal-build preparation (heavy).
+
+### Build Pipeline (KJ/Build/* menus)
+- S0: Environment Check → S1: Compile HotUpdate DLLs → S2: Generate AOT Metadata → S3: Sync to HotUpdate → S4: Build YooAsset → S5: Apply Config → S6: Build Player → S7: Validate → S8: Smoke → S9: Post-Build
+- Stage markers in `Build/Android/` prevent re-running completed stages.
+- `StageDependencyTracker` does change detection for incremental builds.
+- `BuildStagePanel` (`KJ → Build → Build Stage Manager...`) provides visual control.
 
 ### YooAsset Editor Rules
-- `Assets/Framework/Asset.Editor/Framework.Asset.Editor.asmdef` is Editor-only and owns resource-system editor rules.
-- `Assets/Framework/Asset.Editor/YooAsset/KJAssetIgnoreRule.cs` extends YooAsset collection with the project rule that any path segment starting with `_` is ignored.
-- `KJHybridClrBuildTools` assigns `KJAssetIgnoreRule` to the configured collector package so temporary/private paths do not enter YooAsset bundles.
-- YooAsset 3.0 `EditorSimulate` initialization needs the generated package root directory, not just the package name. The prepare menu writes this root into `AssetConfig.EditorSimulatePackageRoot`.
-- Player build validation covers Unity-native package paths; YooAsset collection validation covers AssetBundle/raw-file collection.
+- `Assets/Framework/Asset.Editor/YooAsset/KJAssetIgnoreRule.cs` ignores `_` prefix path segments.
+- YooAsset 3.0 `EditorSimulate` needs generated package root directory (not just package name).
+- Player build validation covers Unity-native paths; YooAsset collection validation covers AB/raw-file collection.
 
 ### AI Runtime Logging
-
-- `Assets/Framework/Log/GameLog.cs` owns the stable logging facade and a bounded startup buffer.
-- `Assets/Framework/RuntimeLog/RuntimeLogSession.cs` writes AI-readable JSON Lines plus `.session.json`; Editor/dev local runs also maintain `Logs/Runtime/latest.jsonl` and `latest.session.json`.
-- `BootRuntimeLogBootstrap` installs the RuntimeLog session in `Entry.Awake()` so Boot, YooAsset, HybridCLR and early startup failures are captured before Core/ZLogger exists.
-- `RuntimeLogLoggerProvider` writes `ILogger<T>` / `[ZLoggerMessage]` entries into the same session; `GameLogBridge` writes `GameLog` entries into RuntimeLog and then forwards them to ZLogger Unity Console.
-- `Assets/Scripts/Core.Editor/Logging/RuntimeLogEditorTools.cs` exposes `KJ/Runtime Logs/*` commands to open latest logs, generate a Markdown summary, export a diagnostic package and clear local logs.
-- Concrete tests live in `Assets/Tests/EditMode/RuntimeLogTests.cs`; TestKit provides `RecordingRuntimeLogSink`.
-
-### `IPool<T>` (Framework.Pool)
-- `T Rent()`
-- `void Return(T item)`
-- `int IdleCount`
-- Implementation: `ObjectPool<T>`
-
-### `IPoolLease<T> : IDisposable` (Framework.Pool)
-- `T Value`
-- `bool IsDisposed`
-- Implementation: `PoolLease<T>` (struct)
-
-### `IPoolable` (Framework.Pool)
-- `void ResetState()`
-
-### `ICache<TKey, TValue>` (Framework.Cache)
-- `int Count`, `int Capacity`
-- `bool TryGet(TKey, out TValue)`
-- `TValue GetOrAdd(TKey, Func<TKey, TValue>)`
-- `void Put(TKey, TValue)`
-- `bool Remove(TKey)`
-- `void Clear()`
-- Implementation: `Cache<TKey, TValue>`
-
-### `ICacheEvictionPolicy<TKey>` (Framework.Cache)
-- `void Touch(TKey key)`
-- `void Remove(TKey key)`
-- `bool TrySelectEvictionCandidate(out TKey key)`
-- `void Clear()`
-- Implementation: `LruCachePolicy<TKey>`
-
-### `ICacheResContainer<TKey, TValue>` (Framework.Cache)
-- `bool TryGet(TKey, out TValue)`
-- `TValue GetOrCreate(TKey)`
-- `bool TryRemove(TKey, out TValue)`
-- `void Clear()`
-- Implementation: `ResourceCache<TKey, TValue>`
-
-### `IModel` (General)
-- `int Priority`
-- `void Load()`
-- `void Unload()`
-- No current implementations (reserved for business models).
+- `Framework.Log/GameLog.cs` — stable logging facade + bounded startup buffer.
+- `Framework.RuntimeLog/RuntimeLogSession.cs` — JSON Lines + session manifest.
+- `BootRuntimeLogBootstrap` installs session in `Entry.Awake()` before Core/ZLogger exists.
+- `RuntimeLogLoggerProvider` writes `ILogger<T>` / `[ZLoggerMessage]` into same session.
+- `GameLogBridge` writes `GameLog` → RuntimeLog + ZLogger Unity Console.
+- `Core.Editor/Logging/RuntimeLogEditorTools.cs` → `KJ/Runtime Logs/*` menu.
 
 ---
 
 ## DI Registration Map
 
-### Attributes (markers for reflection scanning)
+### Attributes
 
 | Attribute | Target | Validates | Scanned by |
 |-----------|--------|-----------|------------|
-| `[CoreSystem]` | Class | Must implement `ISystem`, namespace must start with "Core" | `CoreTypeRegistration.RegisterSystems()` |
-| `[GameEvent]` (Core) | Struct | Must be value type, non-enum | `CoreTypeRegistration.RegisterGameEvents()` |
-| `[GameEvent]` (General) | Struct | Must be value type, non-enum | `GeneralContainerRegistration.RegisterBusinessEvents()` |
+| `[CoreSystem]` | Class | Must implement `ISystem`, namespace starts with "Core" | `CoreTypeRegistration.RegisterSystems()` |
+| `[GameEvent]` (Core/General) | Struct | Must be value type, non-enum | `CoreTypeRegistration` / `GeneralContainerRegistration` |
 | `[Model]` | Class | Must implement `IModel` | `GeneralContainerRegistration.RegisterModels()` |
 
-### Registered Systems (via `[CoreSystem]` reflection)
+### Registered Systems
 
-| Class | Namespace | Priority | Interfaces | Dependencies injected |
-|-------|-----------|----------|------------|----------------------|
+| Class | Namespace | Priority | Interfaces | Dependencies |
+|-------|-----------|----------|------------|-------------|
 | `StartupProbeSystem` | `Core.Systems` | 0 | `ISystem` | (none) |
 | `AssetSystem` | `Core.Asset` | 100 | `ISystem` | `IAssetRuntime`, `IPublisher<AssetSystemReadyEvent>` |
 | `PoolService` | `Core` | 110 | `ISystem` | `IAssetSystem` |
 
 ### Registration Flow
 
-1. **CoreTypeRegistration.RegisterCoreTypes(builder, options, assemblies)**
-   - `RegisterGameEvents()` -- for each `[GameEvent]` struct, calls `MessagePipe.ContainerBuilderExtensions.RegisterMessageBroker<T>()` via reflection
-   - `RegisterSystems()` -- for each `[CoreSystem]` class, calls `builder.Register(type, Lifetime.Singleton).AsSelf().AsImplementedInterfaces()`
-
-2. **CoreContainerRegistration.RegisterCoreServices(builder)**
-   - `options = builder.RegisterMessagePipe()`
-   - `builder.RegisterCoreTypes(options, CoreAssembly)` -- scans Core assembly
-   - `builder.RegisterEntryPoint<SystemManager>()` -- VContainer calls IStartable.Start() -> InitAll()
-
+1. **CoreContainerRegistration.RegisterCoreServices(builder)**
+   - `RegisterMessagePipe()` → `RegisterCoreTypes(CoreAssembly)` → `RegisterEntryPoint<SystemManager>()`
+2. **CoreTypeRegistration.RegisterCoreTypes(builder, options, assemblies)**
+   - `RegisterGameEvents()` — scans `[GameEvent]` structs → `RegisterMessageBroker<T>()`
+   - `RegisterSystems()` — scans `[CoreSystem]` classes → `AsSelf().AsImplementedInterfaces()`
 3. **GeneralContainerRegistration.RegisterBusinessLayer(builder, options, assemblies)**
-   - `RegisterBusinessEvents()` -- for each `[GameEvent]` struct in General/Project assemblies
-   - `RegisterModels()` -- for each `[Model]` class, `builder.Register(type, Singleton).AsSelf().As<IModel>()`
-   - `builder.Register<ModelLifecycle>(Singleton).AsSelf().AsImplementedInterfaces()` once
+   - Scans `[GameEvent]` + `[Model]` in General/Project assemblies
+   - `Register<ModelLifecycle>(Singleton).AsSelf().AsImplementedInterfaces()`
 
 ---
 
 ## Event Map
 
-All events are `readonly struct` types marked with `[GameEvent]`. MessagePipe auto-registers them as `IMessageBroker<T>` via reflection.
-
 | Event | Namespace | Publisher | Purpose |
 |-------|-----------|-----------|---------|
 | `AppStartedEvent` | `Core.Systems.Events` | `SystemManager.InitAll()` | All Core systems initialized successfully |
 | `AppShuttingDownEvent` | `Core.Systems.Events` | `SystemManager.ShutdownAll()` | Systems about to shut down |
-| `AssetSystemReadyEvent` | `Core.Asset` | `AssetSystem.Init()` | Asset system ready to serve requests |
-
-No subscribers are currently registered -- these events are published for future consumers.
+| `AssetSystemReadyEvent` | `Core.Asset` | `AssetSystem.Init()` | Asset system ready |
 
 ---
 
 ## Bootstrap Flow
 
 ```
-Entry.Awake()
-  |-- BootRuntimeLogBootstrap.EnsureInstalled(startupSettings)
-  |     |-- Creates/reuses Framework.RuntimeLog session
-  |     |-- Maintains Logs/Runtime/latest.jsonl + latest.session.json in Editor/dev
+Entry.Awake() (AOT Launcher)
+  |-- BootStartupLog captures early events
+  |-- DontDestroyOnLoad
   |
   v
-[Boot Entry stays DontDestroyOnLoad]
+BootLoader.RunAsync() (AOT)
+  |-- Creates YooAsset DefaultPackage + BootRemoteService
+  |-- Calls package.InitializeAsync() → polls completion
+  |-- Reads BootStartupSettings from Entry serialized fields
+  |-- Loads AOT metadata assemblies via HybridCLR.RuntimeApi
+  |-- Loads hot-update DLL bytes from YooAsset RawFile
+  |-- Assembles BootBridge { Package, Settings, View, Config, EarlyLogs }
+  |-- Assembly.Load(byte[]) for each hot-update DLL
+  |-- Reflects Boot.BootUpdateRunner.Start(BootBridge)
   |
   v
-BootUpdateRunner.Run()
-  |-- Begins Framework.Asset.AssetRuntime initialization from Resources/AssetConfig.asset and polls until done
-  |-- Requests resource version and loads the package manifest
-  |-- Downloads resources using AssetDownloadHandle
-  |-- Loads DLL/AOT bytes from configured YooAsset raw asset paths or local fallback
-  |-- Loads HybridCLR AOT metadata by reflection
-  |-- Loads Core/General/Project DLLs by Assembly.Load(bytes)
+BootUpdateRunner.Start(BootBridge) (HotUpdate Boot)
+  |-- BootRuntimeLogBootstrap.EnsureInstalled() → RuntimeLog session
+  |-- Replays BootStartupLog → RuntimeLog
+  |-- Creates IAssetRuntime via AssetRuntimeFactory
+  |-- Initializes/reuses asset runtime from BootBridge.Package
+  |-- Requests resource version and updates manifest
+  |-- Downloads resources
+  |-- Loads AOT metadata (supplemental)
+  |-- Loads Core/General/Project hot-update DLLs via Assembly.Load
   |-- Reflects Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
   |
   v
 ProjectStartup.Start()
   |-- Creates ProjectLifetimeScope GameObject
-  |-- VContainer ProjectLifetimeScope.Configure(builder)
-       |-- CoreBootstrapStage.Configure(context)
-       |     |-- builder.RegisterCoreServices(bootAssetRuntime)
-       |     |-- Reuse RuntimeLog session, register RuntimeLog provider + ZLogger + ILogger<T>
+  |-- VContainer Configure(builder)
+       |-- CoreBootstrapStage → RegisterCoreServices(bootAssetRuntime)
+       |     |-- Reuse RuntimeLog session, register ZLogger + ILogger<T>
        |     |-- Install GameLogBridge(runtimeLogSession, logger)
        |     |-- builder.RegisterMessagePipe()
        |     |-- builder.RegisterCoreTypes(options, CoreAssembly)
        |     |-- builder.RegisterEntryPoint<SystemManager>()
-       |-- GeneralBootstrapStage.Configure(context)
-       |     |-- builder.RegisterBusinessLayer(options, GeneralAssembly)
-       |-- ProjectBootstrapStage.Configure(context)
-       |     |-- ProjectBootstrapper.Configure(builder, options)
+       |-- GeneralBootstrapStage → RegisterBusinessLayer(options, GeneralAssembly)
+       |-- ProjectBootstrapStage → ProjectBootstrapper.Configure(builder, options)
 
-[After ProjectLifetimeScope Configure() returns, VContainer finalizes container]
+[VContainer finalizes container]
   |
   v
-VContainer calls IStartable.Start() on registered entry points
-  |
-  v
-SystemManager.Start() -> InitAll()
-  |-- Sorts systems by Priority
-  |-- Calls Init() on each system in order:
-  |     1. StartupProbeSystem (Priority=0) -- logs probe
-  |     2. AssetSystem (Priority=100) -- verifies Boot AssetRuntime is ready, publishes AssetSystemReadyEvent
-  |     3. PoolService (Priority=110) -- injects PoolDependencies, creates GameObjectPool
-  |-- Publishes AppStartedEvent only if all Core systems initialized successfully
-  |
-  v
-VContainer calls IPostStartable.PostStart()
-  |-- ModelLifecycle.PostStart() -> LoadAll()
+SystemManager.Start() → InitAll()
+  |-- 1. StartupProbeSystem (Priority=0) — logs probe
+  |-- 2. AssetSystem (Priority=100) — verifies runtime, publishes AssetSystemReadyEvent
+  |-- 3. PoolService (Priority=110) — injects PoolDependencies, creates GameObjectPool
+  |-- Publishes AppStartedEvent if all succeeded
 
-[Unity main loop]
-  |
-  v
-VContainer calls ITickable, ILateTickable, IFixedTickable
-  |
-  v
-SystemManager dispatches to ITickableSystem instances:
-  Tick() -> Update(dt) for each tickable system
-  LateTick() -> LateUpdate(dt) for each tickable system
-  FixedTick() -> FixedUpdate(fixedDt) for each tickable system
-
-[Application quit]
-  |
-  v
-VContainer disposes LifetimeScope
-  |
-  v
-SystemManager.Dispose() -> ShutdownAll()
-  |-- Publishes AppShuttingDownEvent only if Core startup succeeded
-  |-- Calls Shutdown() in reverse priority order for systems whose Init() succeeded
-  |     3. PoolService (Priority=110) -- clears GameObjectPool, nulls delegates
-  |     2. AssetSystem (Priority=100) -- releases all handles and scene handles
-  |     1. StartupProbeSystem (Priority=0) -- logs shutdown
-  |-- Core dispose callback uninstalls GameLogBridge, disposes logger factory and flushes RuntimeLog
+[VContainer IPostStartable → ModelLifecycle.LoadAll()]
+[Unity main loop → SystemManager Tick/LateTick/FixedTick dispatch]
+[Application quit → SystemManager.ShutdownAll() → reverse priority]
 ```
+
+---
+
+## Hot-Update Assembly List
+
+HYB-03 established 10 hot-update assemblies (single source of truth: `ProjectSettings/HybridCLRSettings.asset`):
+
+`Boot`, `Core`, `General`, `Project`, `Pool`, `Cache`, `Event`, `Asset`, `Log`, `RuntimeLog`
+
+AOT-only: `Launcher` (never in hotUpdateAssemblies).
 
 ---
 
@@ -429,63 +420,42 @@ SystemManager.Dispose() -> ShutdownAll()
 | Package | Version | Registry | Used by |
 |---------|---------|----------|---------|
 | VContainer | 1.1.0 | GitHub (hadashiA) | All layers: DI container foundation |
-| VContainerSourceGenerator | 1.1.0 | Analyzer DLL | Core/General/Project -- compile-time DI code gen |
+| VContainerSourceGenerator | 1.1.0 | Analyzer DLL | Core/General/Project — compile-time DI code gen |
 | UniTask | 2.5.11 | GitHub (Cysharp) | Core (asset system), Pool (dependencies, GameObjectPool) |
-| MessagePipe | latest | GitHub (Cysharp) | Core, General, Project -- type-safe event bus |
-| MessagePipe.VContainer | latest | GitHub (Cysharp) | Core, General, Project -- VContainer integration |
+| MessagePipe | latest | GitHub (Cysharp) | Core, General, Project — type-safe event bus |
+| MessagePipe.VContainer | latest | GitHub (Cysharp) | Core, General, Project — VContainer integration |
 | MessagePipe.Analyzer | 1.8.2 | Analyzer DLL | MessagePipe diagnostics |
-| YooAsset | 3.0 | GitHub (tuyoogame) UPM git | Core -- asset management pipeline |
-
----
-
-## Generic Type Instantiations (CollectionPool internal pools)
-
-| Pool type | Internal class | Capacity | Reset action |
-|-----------|---------------|----------|-------------|
-| `ObjectPool<List<T>>` | `CollectionPool.ListPool<T>` | 32 | `list.Clear()` |
-| `ObjectPool<HashSet<T>>` | `CollectionPool.HashSetPool<T>` | 32 | `set.Clear()` |
-| `ObjectPool<Queue<T>>` | `CollectionPool.QueuePool<T>` | 32 | `queue.Clear()` |
-| `ObjectPool<Stack<T>>` | `CollectionPool.StackPool<T>` | 32 | `stack.Clear()` |
-| `ObjectPool<Dictionary<TKey, TValue>>` | `CollectionPool.DictionaryPool<TKey, TValue>` | 32 | `dict.Clear()` |
+| YooAsset | 3.0 | GitHub (tuyoogame) UPM git | Core — asset management pipeline |
+| ZLogger | 2.5.10 | GitHub UPM + NuGetForUnity (Cysharp) | Core — structured logging backend |
+| ZLinq | 1.5.6 | GitHub UPM + NuGetForUnity (Cysharp) | Core, General — zero-allocation LINQ |
+| ZString | 2.6.0 | GitHub UPM (Cysharp) | Hot paths — low-allocation string building |
 
 ---
 
 ## Scene Objects / Startup Assets
 
-Boot startup is driven by the Entry scene object/prefab. Core/General/Project do not need boot prefabs in `Resources/`.
-
-Current Boot code is the minimal startup path. A future `Boot.Update` split can make the startup update flow a managed hot-update DLL, but because the community HybridCLR baseline cannot replace an already loaded assembly in the same process, startup code changes still require an app restart or next launch to take effect. This is restart classification, not an automatic app package requirement.
-
-Current validation gate: before adding UI/Login/Config/Network modules, verify the existing base stack in Player. Editor Play is already clean with `[AssetSystem] Ready` and `[SystemManager] 全部初始化完成`; next checks are Player packaging smoke, resource loading matrix (RawFile, cached/owned assets, instantiate, scene load/unload, downloader, release/unload), PlayMode coverage, and Project-layer hot-update smoke.
-
 | Asset | Purpose |
 |-------|---------|
-| `Assets/GameRes/Scene/Boot/Main.unity` | Minimal boot scene containing `Entry` and optional update UI |
-| `Assets/Resources/AssetConfig.asset` | Minimal Resources config loaded by Boot before the formal Core startup |
-| `Assets/GameRes/HotUpdate/` | YooAsset RawFile input for HybridCLR DLL and AOT metadata `.dll.bytes` files |
+| `Assets/GameRes/Scene/Boot/Main.unity` | Minimal boot scene containing AOT `Entry` |
+| `Assets/Resources/AssetConfig.asset` | Minimal Resources config loaded by Boot before formal Core startup |
+| `Assets/GameRes/HotUpdate/Dlls/` | YooAsset RawFile input: `Core.dll.bytes`, `General.dll.bytes`, `Project.dll.bytes` |
+| `Assets/GameRes/HotUpdate/AotMetadata/` | YooAsset RawFile input: `mscorlib.dll.bytes`, `System.dll.bytes`, `System.Core.dll.bytes` |
 
 `Assets/Resources/` is reserved for minimal boot configuration only.
 
 ---
 
-## Directories Not Yet Created
+## Directories Not Yet Created / Modules Not Yet Implemented
 
-Per `.planning/STATE.md`, the following resource directories are placeholder-only:
-- `Assets/GameRes/`
-- `Assets/Plugins/`
-- `Assets/StreamingAssets/`
-- `Assets/Editor/` (only cross-layer editor tools; module-owned editor code lives in `*.Editor` directories)
-
-The following source modules are in the roadmap but not yet implemented:
-- `Core/Timer/` -- tick-based timer system
-- `Core/Pool/` (beyond PoolService) -- more pool DI bridge
-- `Core/UI/` -- UIManager + UIWindow
-- `Core/Network/` -- NetManager, Session, MessageRouter, Protobuf
-- `General/Config/` -- Luban config manager
-- `General/Audio/` -- AudioManager
-- `General/RedDot/` -- RedDot system
-- `General/Guide/` -- Guide system
-- `General/L10N/` -- Localization
+- `Core/Timer/` — tick-based timer system
+- `Core/UI/` — UIManager + UIWindow
+- `Core/Network/` — NetManager, Session, MessageRouter, Protobuf
+- `General/Config/` — Luban config manager
+- `General/Audio/` — AudioManager
+- `General/RedDot/` — RedDot system
+- `General/Guide/` — Guide system
+- `General/L10N/` — Localization
+- `General/Login/` — Login business model
 
 ---
 
@@ -502,7 +472,11 @@ The following source modules are in the roadmap but not yet implemented:
 | DI/Event knowledge graph | `.planning/research/DI_EVENT_KNOWLEDGE_GRAPH.md` |
 | Stack decisions | `.planning/research/STACK.md` |
 | Pitfalls | `.planning/research/PITFALLS.md` |
+| Hot-update boundary | `.planning/HOT_UPDATE_BOUNDARY.md` |
+| AI runtime logging | `.planning/AI_RUNTIME_LOGGING.md` |
+| Build pipeline workflow | `ProgressDoc/Result/hybridclr_workflow.md` §4 |
+| Build pipeline design & impl | `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md` |
 
 ---
 
-*End of Codemap*
+*End of Codemap — aligned to code as of 2026-07-08*
