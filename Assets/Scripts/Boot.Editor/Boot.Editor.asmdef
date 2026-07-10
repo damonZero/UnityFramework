@@ -4,7 +4,9 @@
     "references": [
         "Boot",
         "Asset",
+        "Framework.BuildPipeline",
         "Framework.Asset.Editor",
+        "Framework.External.Sirenix.Odin.Editor",
         "HybridCLR.Editor",
         "YooAsset",
         "YooAsset.Editor",

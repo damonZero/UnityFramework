@@ -47,6 +47,9 @@ namespace Boot.Editor.Build
         [Tooltip("冒烟超时（秒）")]
         public int SmokeTimeoutSec = 120;
 
+        [Tooltip("Android 冒烟目标设备序列号（adb -s）。为空则自动选取首个 online 设备/模拟器")]
+        public string SmokeDeviceSerial = "";
+
         // ===== v2 预留字段（v1 仅声明，不实现逻辑）=====
 
         [Header("Extension (v2 reserved)")]

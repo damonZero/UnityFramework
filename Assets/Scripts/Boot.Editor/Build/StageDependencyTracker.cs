@@ -13,19 +13,19 @@ namespace Boot.Editor.Build
     /// </summary>
     public static class StageDependencyTracker
     {
-        /// <summary> 共 10 个 Stage 的名称（S0~S9），与 KJBuildPipeline 中的顺序严格一致。 </summary>
+        /// <summary> 共 10 个 Stage 的名称（P0~P9），与 BuildStageRegistry 中的顺序严格一致。 </summary>
         public static readonly string[] StageNames =
         {
-            "S0_PreFlightCheck",
-            "S1_GenerateAll",
-            "S2_Compile",
-            "S3_Sync",
-            "S4_BuildYooAsset",
-            "S5_ApplyConfig",
-            "S6_BuildPlayer",
-            "S7_ValidateArtifacts",
-            "S8_SmokeRun",
-            "S9_Report",
+            "P0.Plan",
+            "P1.Preflight",
+            "P2.Generate",
+            "P3.HybridCLR",
+            "P4.Assets",
+            "P5.ApplyConfig",
+            "P6.Player",
+            "P7.Verify",
+            "P8.Smoke",
+            "P9.Report",
         };
 
         /// <summary> 各 Stage 监控的输入路径（文件或目录）。null 表示始终运行。 </summary>
@@ -65,9 +65,9 @@ namespace Boot.Editor.Build
         // ===== 单 Stage 查询 =====
 
         /// <summary> 检查单个 Stage 的输入是否比标记文件更新、进而需要重跑。 </summary>
-        public static bool NeedsRun(string stageName)
+        public static bool NeedsRun(string stageName, BuildConfig config = null)
         {
-            string markerPath = Path.Combine("Build/.markers", $".{stageName}.done");
+            string markerPath = Path.Combine(GetMarkerDir(config), $".{stageName}.done");
             if (!File.Exists(markerPath))
                 return true; // 从未跑过
 
@@ -84,7 +84,7 @@ namespace Boot.Editor.Build
         /// 返回 bool[10]，表示各 Stage 是否需要重新运行（已应用级联）。
         /// S0/S7/S9 始终 true；S8 可由外部设置。
         /// </summary>
-        public static bool[] DetectChanges(bool includeSmoke = false)
+        public static bool[] DetectChanges(bool includeSmoke = false, BuildConfig config = null)
         {
             bool[] raw = new bool[10];
 
@@ -94,7 +94,7 @@ namespace Boot.Editor.Build
             // S1~S6：检查输入是否比标记新
             for (int i = 1; i <= 6; i++)
             {
-                string markerPath = Path.Combine("Build/.markers", $".{StageNames[i]}.done");
+                string markerPath = Path.Combine(GetMarkerDir(config), $".{StageNames[i]}.done");
                 if (!File.Exists(markerPath))
                 {
                     raw[i] = true;
@@ -127,13 +127,13 @@ namespace Boot.Editor.Build
         }
 
         /// <summary> 获取某个 Stage 需要重跑的原因描述（供 UI 展示）。 </summary>
-        public static string GetReason(int stageIndex)
+        public static string GetReason(int stageIndex, BuildConfig config = null)
         {
             if (stageIndex < 0 || stageIndex >= StageNames.Length)
                 return "未知";
 
             string name = StageNames[stageIndex];
-            string markerPath = Path.Combine("Build/.markers", $".{name}.done");
+            string markerPath = Path.Combine(GetMarkerDir(config), $".{name}.done");
 
             if (!File.Exists(markerPath))
                 return "从未构建（无标记文件）";
@@ -173,6 +173,14 @@ namespace Boot.Editor.Build
         }
 
         // ===== 辅助 =====
+
+        /// <summary>
+        /// 解析 marker 目录：优先用传入 config（尊重 OutputDir 覆盖），否则退回默认（Build/{Platform}/.markers）。
+        /// </summary>
+        private static string GetMarkerDir(BuildConfig config)
+        {
+            return (config ?? new BuildConfig()).GetMarkerDir();
+        }
 
         private static bool AnyInputNewerThan(int stageIndex, DateTime markerTime)
         {

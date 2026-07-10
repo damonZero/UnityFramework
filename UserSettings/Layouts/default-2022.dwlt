@@ -16,10 +16,10 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 43.2
-    width: 1536
-    height: 772.8
+    width: 2048
+    height: 1060.8
   m_ShowMode: 4
-  m_Title: Test Runner
+  m_Title: Project
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 321}
   m_MaxSize: {x: 10000, y: 10000}
@@ -44,8 +44,8 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1536
-    height: 772.8
+    width: 2048
+    height: 1060.8
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
   m_UseTopView: 1
@@ -69,7 +69,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1536
+    width: 2048
     height: 30
   m_MinSize: {x: 0, y: 0}
   m_MaxSize: {x: 0, y: 0}
@@ -90,8 +90,8 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 752.8
-    width: 1536
+    y: 1040.8
+    width: 2048
     height: 20
   m_MinSize: {x: 0, y: 0}
   m_MaxSize: {x: 0, y: 0}
@@ -114,12 +114,12 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 30
-    width: 1536
-    height: 722.8
+    width: 2048
+    height: 1010.80005
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 37
+  controlID: 192
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -140,12 +140,12 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1172
-    height: 722.8
+    width: 1562.4
+    height: 1010.80005
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 38
+  controlID: 193
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -166,8 +166,8 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1172
-    height: 335.2
+    width: 1562.4
+    height: 468.8
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
@@ -190,10 +190,10 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 290.4
-    height: 335.2
-  m_MinSize: {x: 201, y: 221}
-  m_MaxSize: {x: 4001, y: 4021}
+    width: 387.2
+    height: 468.8
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}
@@ -214,10 +214,10 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 290.4
+    x: 387.2
     y: 0
-    width: 881.6
-    height: 335.2
+    width: 1175.2
+    height: 468.8
   m_MinSize: {x: 202, y: 221}
   m_MaxSize: {x: 4002, y: 4021}
   m_ActualView: {fileID: 15}
@@ -236,24 +236,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: TestRunnerWindow
+  m_Name: ProjectBrowser
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 335.2
-    width: 1172
-    height: 387.59998
-  m_MinSize: {x: 101, y: 121}
-  m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 12}
+    y: 468.8
+    width: 1562.4
+    height: 542.00006
+  m_MinSize: {x: 231, y: 271}
+  m_MaxSize: {x: 10001, y: 10021}
+  m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 17}
   - {fileID: 13}
   - {fileID: 12}
-  m_Selected: 2
-  m_LastSelected: 1
+  m_Selected: 0
+  m_LastSelected: 2
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -269,12 +269,12 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1172
+    x: 1562.4
     y: 0
-    width: 364
-    height: 722.8
-  m_MinSize: {x: 276, y: 71}
-  m_MaxSize: {x: 4001, y: 4021}
+    width: 485.59998
+    height: 1010.80005
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 18}
   m_Panes:
   - {fileID: 18}
@@ -301,9 +301,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 408.80002
-    width: 1171
-    height: 366.59998
+    y: 542.4
+    width: 1561.4
+    height: 521.00006
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -315,12 +315,12 @@ MonoBehaviour:
     m_SaveData: []
     m_OverlaysVisible: 1
   m_Spl:
-    ID: 357
+    ID: 114
     splitterInitialOffset: 0
     currentActiveSplitter: -1
     realSizes:
-    - 221.6
-    - 74.399994
+    - 338.4
+    - 112.80002
     relativeSizes:
     - 0.75
     - 0.25
@@ -330,7 +330,7 @@ MonoBehaviour:
     maxSizes:
     - 0
     - 0
-    lastTotalSize: 296
+    lastTotalSize: 451.2
     splitSize: 6
     xOffset: 0
     m_Version: 1
@@ -399,7 +399,7 @@ MonoBehaviour:
       name: KJ
       fullName: KJ
       resultStatus: 1
-      duration: 0.2046259
+      duration: 0.1615511
       messages: 
       output: 
       stacktrace: 
@@ -415,7 +415,7 @@ MonoBehaviour:
       name: KJ.Tests.EditMode.dll
       fullName: C:/ZZS/Project/NewProjectK/KJ/Library/ScriptAssemblies/KJ.Tests.EditMode.dll
       resultStatus: 1
-      duration: 0.1840582
+      duration: 0.140669
       messages: 
       output: 
       stacktrace: 
@@ -431,7 +431,7 @@ MonoBehaviour:
       name: Tests
       fullName: Tests
       resultStatus: 1
-      duration: 0.1836837
+      duration: 0.1402198
       messages: 
       output: 
       stacktrace: 
@@ -447,7 +447,7 @@ MonoBehaviour:
       name: EditMode
       fullName: Tests.EditMode
       resultStatus: 1
-      duration: 0.1834915
+      duration: 0.1399887
       messages: 
       output: 
       stacktrace: 
@@ -463,7 +463,7 @@ MonoBehaviour:
       name: CacheThreadSafetyTests
       fullName: Tests.EditMode.CacheThreadSafetyTests
       resultStatus: 1
-      duration: 0.0323273
+      duration: 0.0219911
       messages: 
       output: 
       stacktrace: 
@@ -479,7 +479,7 @@ MonoBehaviour:
       name: EvictionCallbackIsInvokedOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.EvictionCallbackIsInvokedOutsideLock
       resultStatus: 1
-      duration: 0.0169607
+      duration: 0.0096644
       messages: 
       output: 
       stacktrace: 
@@ -496,7 +496,7 @@ MonoBehaviour:
       name: GetOrAddDiscardsDuplicateOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.GetOrAddDiscardsDuplicateOutsideLock
       resultStatus: 1
-      duration: 0.0033852
+      duration: 0.0024974
       messages: 
       output: 
       stacktrace: 
@@ -513,7 +513,7 @@ MonoBehaviour:
       name: GetOrAddEvictsOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.GetOrAddEvictsOutsideLock
       resultStatus: 1
-      duration: 0.0006838
+      duration: 0.0005814
       messages: 
       output: 
       stacktrace: 
@@ -530,7 +530,7 @@ MonoBehaviour:
       name: GetOrAddFactoryRunsOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.GetOrAddFactoryRunsOutsideLock
       resultStatus: 1
-      duration: 0.0004511
+      duration: 0.000315
       messages: 
       output: 
       stacktrace: 
@@ -543,11 +543,282 @@ MonoBehaviour:
       parentId: 1001
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.CacheThreadSafetyTests][suite]
     - id: 1006
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+      name: HybridCLRBootTests
+      fullName: Tests.EditMode.HybridCLRBootTests
+      resultStatus: 1
+      duration: 0.0245872
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 1
+      categories: []
+      parentId: 1052
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/[KJ.Tests.EditMode][Tests.EditMode][suite]
+    - id: 1021
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.AllTenHotUpdateAssembliesAreLoaded]
+      name: AllTenHotUpdateAssembliesAreLoaded
+      fullName: Tests.EditMode.HybridCLRBootTests.AllTenHotUpdateAssembliesAreLoaded
+      resultStatus: 1
+      duration: 0.0019771
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1010
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.AssetConfig_PlayModeHasExpectedValues]
+      name: AssetConfig_PlayModeHasExpectedValues
+      fullName: Tests.EditMode.HybridCLRBootTests.AssetConfig_PlayModeHasExpectedValues
+      resultStatus: 1
+      duration: 0.0026243
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1016
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.AssetRuntime_WrapFromExistingPackage_NullGuards]
+      name: AssetRuntime_WrapFromExistingPackage_NullGuards
+      fullName: Tests.EditMode.HybridCLRBootTests.AssetRuntime_WrapFromExistingPackage_NullGuards
+      resultStatus: 1
+      duration: 0.0034454
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1015
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.AssetRuntime_WrapFromExistingPackage_SetsReady]
+      name: AssetRuntime_WrapFromExistingPackage_SetsReady
+      fullName: Tests.EditMode.HybridCLRBootTests.AssetRuntime_WrapFromExistingPackage_SetsReady
+      resultStatus: 1
+      duration: 0.0003877
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1011
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootAssemblyEntry_ConstructorSetsProperties]
+      name: BootAssemblyEntry_ConstructorSetsProperties
+      fullName: Tests.EditMode.HybridCLRBootTests.BootAssemblyEntry_ConstructorSetsProperties
+      resultStatus: 1
+      duration: 0.0002209
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1014
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootBridge_ExposesState_AndEmptyEarlyLogsWhenNull]
+      name: BootBridge_ExposesState_AndEmptyEarlyLogsWhenNull
+      fullName: Tests.EditMode.HybridCLRBootTests.BootBridge_ExposesState_AndEmptyEarlyLogsWhenNull
+      resultStatus: 1
+      duration: 0.0011086
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1020
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName]
+      name: BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName
+      fullName: Tests.EditMode.HybridCLRBootTests.BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName
+      resultStatus: 1
+      duration: 0.0002182
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1012
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootMetadataEntry_ConstructorSetsProperties]
+      name: BootMetadataEntry_ConstructorSetsProperties
+      fullName: Tests.EditMode.HybridCLRBootTests.BootMetadataEntry_ConstructorSetsProperties
+      resultStatus: 1
+      duration: 0.0001917
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1009
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootRemoteService_CustomUrlProviderOverrides]
+      name: BootRemoteService_CustomUrlProviderOverrides
+      fullName: Tests.EditMode.HybridCLRBootTests.BootRemoteService_CustomUrlProviderOverrides
+      resultStatus: 1
+      duration: 0.0003313
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1008
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootRemoteService_DefaultUrlUsesBaseUrl]
+      name: BootRemoteService_DefaultUrlUsesBaseUrl
+      fullName: Tests.EditMode.HybridCLRBootTests.BootRemoteService_DefaultUrlUsesBaseUrl
+      resultStatus: 1
+      duration: 0.000154
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1007
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootStartupLog_RecordsSnapshotEntries]
+      name: BootStartupLog_RecordsSnapshotEntries
+      fullName: Tests.EditMode.HybridCLRBootTests.BootStartupLog_RecordsSnapshotEntries
+      resultStatus: 1
+      duration: 0.0045622
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1013
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootStartupSettings_Defaults]
+      name: BootStartupSettings_Defaults
+      fullName: Tests.EditMode.HybridCLRBootTests.BootStartupSettings_Defaults
+      resultStatus: 1
+      duration: 0.0002989
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1017
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.BootUpdateRunner_HasStaticStartTakingBootBridge]
+      name: BootUpdateRunner_HasStaticStartTakingBootBridge
+      fullName: Tests.EditMode.HybridCLRBootTests.BootUpdateRunner_HasStaticStartTakingBootBridge
+      resultStatus: 1
+      duration: 0.0001665
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1018
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.HybridCLRSettings_ContainsAllTenHotUpdateAssemblies]
+      name: HybridCLRSettings_ContainsAllTenHotUpdateAssemblies
+      fullName: Tests.EditMode.HybridCLRBootTests.HybridCLRSettings_ContainsAllTenHotUpdateAssemblies
+      resultStatus: 1
+      duration: 0.0022166
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1019
+      uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/HybridCLRBootTests/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests.Launcher_DoesNotReferenceHotUpdateAssemblies]
+      name: Launcher_DoesNotReferenceHotUpdateAssemblies
+      fullName: Tests.EditMode.HybridCLRBootTests.Launcher_DoesNotReferenceHotUpdateAssemblies
+      resultStatus: 1
+      duration: 0.0003879
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1006
+      parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.HybridCLRBootTests][suite]
+    - id: 1006
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.ModelLifecycleTests][suite]
       name: ModelLifecycleTests
       fullName: Tests.EditMode.ModelLifecycleTests
       resultStatus: 1
-      duration: 0.0185898
+      duration: 0.0168075
       messages: 
       output: 
       stacktrace: 
@@ -563,7 +834,7 @@ MonoBehaviour:
       name: CoreStartupFailureBlocksModelLoading
       fullName: Tests.EditMode.ModelLifecycleTests.CoreStartupFailureBlocksModelLoading
       resultStatus: 1
-      duration: 0.0101366
+      duration: 0.0086831
       messages: 
       output: 
       stacktrace: 
@@ -580,7 +851,7 @@ MonoBehaviour:
       name: LoadAllLoadsModelsOrderedByPriority
       fullName: Tests.EditMode.ModelLifecycleTests.LoadAllLoadsModelsOrderedByPriority
       resultStatus: 1
-      duration: 0.0024391
+      duration: 0.0011646
       messages: 
       output: 
       stacktrace: 
@@ -597,7 +868,7 @@ MonoBehaviour:
       name: ModelLoadFailureDoesNotBlockOtherModels
       fullName: Tests.EditMode.ModelLifecycleTests.ModelLoadFailureDoesNotBlockOtherModels
       resultStatus: 1
-      duration: 0.0005999
+      duration: 0.0005177
       messages: 
       output: 
       stacktrace: 
@@ -614,7 +885,7 @@ MonoBehaviour:
       name: UnloadAllUnloadsModelsInReverseOrder
       fullName: Tests.EditMode.ModelLifecycleTests.UnloadAllUnloadsModelsInReverseOrder
       resultStatus: 1
-      duration: 0.0007783
+      duration: 0.0005824
       messages: 
       output: 
       stacktrace: 
@@ -631,7 +902,7 @@ MonoBehaviour:
       name: PoolTests
       fullName: Tests.EditMode.PoolTests
       resultStatus: 1
-      duration: 0.0154881
+      duration: 0.0104952
       messages: 
       output: 
       stacktrace: 
@@ -647,7 +918,7 @@ MonoBehaviour:
       name: CollectionPoolRentListReturnsClearedListOnDispose
       fullName: Tests.EditMode.PoolTests.CollectionPoolRentListReturnsClearedListOnDispose
       resultStatus: 1
-      duration: 0.0021143
+      duration: 0.0018009
       messages: 
       output: 
       stacktrace: 
@@ -664,7 +935,7 @@ MonoBehaviour:
       name: ObjectPoolMaxIdleDiscardsItemsOverCapacity
       fullName: Tests.EditMode.PoolTests.ObjectPoolMaxIdleDiscardsItemsOverCapacity
       resultStatus: 1
-      duration: 0.0005883
+      duration: 0.0005132
       messages: 
       output: 
       stacktrace: 
@@ -681,7 +952,7 @@ MonoBehaviour:
       name: ObjectPoolPreloadInstantiatesFactoryItems
       fullName: Tests.EditMode.PoolTests.ObjectPoolPreloadInstantiatesFactoryItems
       resultStatus: 1
-      duration: 0.0003019
+      duration: 0.0002186
       messages: 
       output: 
       stacktrace: 
@@ -698,7 +969,7 @@ MonoBehaviour:
       name: ObjectPoolRentLeaseAutoReturnsOnDispose
       fullName: Tests.EditMode.PoolTests.ObjectPoolRentLeaseAutoReturnsOnDispose
       resultStatus: 1
-      duration: 0.0016777
+      duration: 0.0005045
       messages: 
       output: 
       stacktrace: 
@@ -715,7 +986,7 @@ MonoBehaviour:
       name: ObjectPoolRentReturnsFactoryItemAndPushesToStackOnReturn
       fullName: Tests.EditMode.PoolTests.ObjectPoolRentReturnsFactoryItemAndPushesToStackOnReturn
       resultStatus: 1
-      duration: 0.0005587
+      duration: 0.000499
       messages: 
       output: 
       stacktrace: 
@@ -732,7 +1003,7 @@ MonoBehaviour:
       name: TypePoolGetOrCreateLazilyRegistersPoolAndReturnsItems
       fullName: Tests.EditMode.PoolTests.TypePoolGetOrCreateLazilyRegistersPoolAndReturnsItems
       resultStatus: 1
-      duration: 0.002091
+      duration: 0.0014303
       messages: 
       output: 
       stacktrace: 
@@ -744,12 +1015,12 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1011
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.PoolTests][suite]
-    - id: 1018
+    - id: 1031
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
       name: RuntimeLogTests
       fullName: Tests.EditMode.RuntimeLogTests
       resultStatus: 1
-      duration: 0.0788717
+      duration: 0.0423396
       messages: 
       output: 
       stacktrace: 
@@ -758,14 +1029,14 @@ MonoBehaviour:
       description: 
       isSuite: 1
       categories: []
-      parentId: 1039
+      parentId: 1052
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/[KJ.Tests.EditMode][Tests.EditMode][suite]
-    - id: 1022
+    - id: 1035
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/RuntimeLogTests/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests.GameLog_BuffersBeforeSinkAndReplaysOnInstall]
       name: GameLog_BuffersBeforeSinkAndReplaysOnInstall
       fullName: Tests.EditMode.RuntimeLogTests.GameLog_BuffersBeforeSinkAndReplaysOnInstall
       resultStatus: 1
-      duration: 0.0098597
+      duration: 0.0089148
       messages: 
       output: 
       stacktrace: 
@@ -775,14 +1046,14 @@ MonoBehaviour:
       isSuite: 0
       categories:
       - Uncategorized
-      parentId: 1018
+      parentId: 1031
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
-    - id: 1024
+    - id: 1037
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/RuntimeLogTests/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests.RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries]
       name: RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries
       resultStatus: 1
-      duration: 0.0335689
+      duration: 0.0107135
       messages: 
       output: 
       stacktrace: 
@@ -792,14 +1063,14 @@ MonoBehaviour:
       isSuite: 0
       categories:
       - Uncategorized
-      parentId: 1018
+      parentId: 1031
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
-    - id: 1023
+    - id: 1036
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/RuntimeLogTests/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests.RuntimeLogManager_DoesNotReplaceExistingBridgeSinkWhenSessionAlreadyExists]
       name: RuntimeLogManager_DoesNotReplaceExistingBridgeSinkWhenSessionAlreadyExists
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogManager_DoesNotReplaceExistingBridgeSinkWhenSessionAlreadyExists
       resultStatus: 1
-      duration: 0.0029881
+      duration: 0.0036006
       messages: 
       output: 
       stacktrace: 
@@ -809,14 +1080,14 @@ MonoBehaviour:
       isSuite: 0
       categories:
       - Uncategorized
-      parentId: 1018
+      parentId: 1031
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
-    - id: 1020
+    - id: 1033
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/RuntimeLogTests/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests.RuntimeLogSession_EscapesMessagesAndWritesExceptionFields]
       name: RuntimeLogSession_EscapesMessagesAndWritesExceptionFields
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogSession_EscapesMessagesAndWritesExceptionFields
       resultStatus: 1
-      duration: 0.0086067
+      duration: 0.003965
       messages: 
       output: 
       stacktrace: 
@@ -826,14 +1097,14 @@ MonoBehaviour:
       isSuite: 0
       categories:
       - Uncategorized
-      parentId: 1018
+      parentId: 1031
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
-    - id: 1021
+    - id: 1034
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/RuntimeLogTests/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests.RuntimeLogSession_RespectsMinimumLevel]
       name: RuntimeLogSession_RespectsMinimumLevel
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogSession_RespectsMinimumLevel
       resultStatus: 1
-      duration: 0.0081867
+      duration: 0.0037759
       messages: 
       output: 
       stacktrace: 
@@ -843,14 +1114,14 @@ MonoBehaviour:
       isSuite: 0
       categories:
       - Uncategorized
-      parentId: 1018
+      parentId: 1031
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
-    - id: 1019
+    - id: 1032
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/RuntimeLogTests/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests.RuntimeLogSession_WritesJsonlAndLatestFiles]
       name: RuntimeLogSession_WritesJsonlAndLatestFiles
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogSession_WritesJsonlAndLatestFiles
       resultStatus: 1
-      duration: 0.0101375
+      duration: 0.0065215
       messages: 
       output: 
       stacktrace: 
@@ -860,14 +1131,14 @@ MonoBehaviour:
       isSuite: 0
       categories:
       - Uncategorized
-      parentId: 1018
+      parentId: 1031
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.RuntimeLogTests][suite]
     - id: 1018
       uniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.SystemManagerTests][suite]
       name: SystemManagerTests
       fullName: Tests.EditMode.SystemManagerTests
       resultStatus: 1
-      duration: 0.0161065
+      duration: 0.0101203
       messages: 
       output: 
       stacktrace: 
@@ -883,7 +1154,7 @@ MonoBehaviour:
       name: InitAllSortsAndInitializesSystemsByPriority
       fullName: Tests.EditMode.SystemManagerTests.InitAllSortsAndInitializesSystemsByPriority
       resultStatus: 1
-      duration: 0.0039182
+      duration: 0.0032637
       messages: 
       output: 
       stacktrace: 
@@ -900,7 +1171,7 @@ MonoBehaviour:
       name: InitFailuresAreTrackedAndDoNotCrashEntireInitialization
       fullName: Tests.EditMode.SystemManagerTests.InitFailuresAreTrackedAndDoNotCrashEntireInitialization
       resultStatus: 1
-      duration: 0.0014122
+      duration: 0.0008154
       messages: 
       output: 
       stacktrace: 
@@ -917,7 +1188,7 @@ MonoBehaviour:
       name: ShutdownAllExecutesInReverseOrderOfInitialization
       fullName: Tests.EditMode.SystemManagerTests.ShutdownAllExecutesInReverseOrderOfInitialization
       resultStatus: 1
-      duration: 0.0015367
+      duration: 0.0011277
       messages: 
       output: 
       stacktrace: 
@@ -934,7 +1205,7 @@ MonoBehaviour:
       name: TickingDispatchesToTickableSystems
       fullName: Tests.EditMode.SystemManagerTests.TickingDispatchesToTickableSystems
       resultStatus: 1
-      duration: 0.0013142
+      duration: 0.000839
       messages: 
       output: 
       stacktrace: 
@@ -951,7 +1222,7 @@ MonoBehaviour:
       name: TestKitSmokeTests
       fullName: Tests.EditMode.TestKitSmokeTests
       resultStatus: 1
-      duration: 0.017748
+      duration: 0.0121682
       messages: 
       output: 
       stacktrace: 
@@ -967,7 +1238,7 @@ MonoBehaviour:
       name: CallProbeAssertSequenceAcceptsMatchingCalls
       fullName: Tests.EditMode.TestKitSmokeTests.CallProbeAssertSequenceAcceptsMatchingCalls
       resultStatus: 1
-      duration: 0.0003836
+      duration: 0.0001932
       messages: 
       output: 
       stacktrace: 
@@ -984,7 +1255,7 @@ MonoBehaviour:
       name: ManualClockAdvanceUpdatesTimeAndDelta
       fullName: Tests.EditMode.TestKitSmokeTests.ManualClockAdvanceUpdatesTimeAndDelta
       resultStatus: 1
-      duration: 0.0023295
+      duration: 0.0018058
       messages: 
       output: 
       stacktrace: 
@@ -1001,7 +1272,7 @@ MonoBehaviour:
       name: RecordingAssetSystemRecordsOnlySuccessfulLoads
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingAssetSystemRecordsOnlySuccessfulLoads
       resultStatus: 1
-      duration: 0.0063319
+      duration: 0.0036255
       messages: 
       output: 
       stacktrace: 
@@ -1018,7 +1289,7 @@ MonoBehaviour:
       name: RecordingAssetSystemTracksMissingRequestsWithoutSuccessfulLoads
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingAssetSystemTracksMissingRequestsWithoutSuccessfulLoads
       resultStatus: 1
-      duration: 0.0012817
+      duration: 0.0008851
       messages: 
       output: 
       stacktrace: 
@@ -1035,7 +1306,7 @@ MonoBehaviour:
       name: RecordingAssetSystemTracksReleaseAndUnloadUnused
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingAssetSystemTracksReleaseAndUnloadUnused
       resultStatus: 1
-      duration: 0.0005993
+      duration: 0.0003454
       messages: 
       output: 
       stacktrace: 
@@ -1052,7 +1323,7 @@ MonoBehaviour:
       name: RecordingPublisherCapturesPublishedEvents
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingPublisherCapturesPublishedEvents
       resultStatus: 1
-      duration: 0.0012794
+      duration: 0.0012122
       messages: 
       output: 
       stacktrace: 
@@ -1064,13 +1335,13 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1026
       parentUniqueId: KJ.Tests.EditMode.dll/Tests/EditMode/[KJ.Tests.EditMode][Tests.EditMode.TestKitSmokeTests][suite]
-    m_ResultText: RuntimeLogTests (0.079s)
+    m_ResultText: 
     m_ResultStacktrace: 
     m_TestListState:
-      scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 26519438
-      m_LastClickedID: 949244198
-      m_ExpandedIDs: 371930a91b3403ae835387be8f6723f105c28c02dc1af803dab68c1b26519438f125b7579c2f3565ffffff7f
+      scrollPos: {x: 0, y: 466}
+      m_SelectedIDs: 
+      m_LastClickedID: 0
+      m_ExpandedIDs: 371930a91b3403ae3f6bc9b4835387be8f6723f105c28c02dc1af803dab68c1bf125b7579c2f3565ffffff7f
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1117,9 +1388,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 408.80002
-    width: 1171
-    height: 366.59998
+    y: 542.4
+    width: 1561.4
+    height: 521.00006
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1152,8 +1423,8 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 73.6
-    width: 289.4
-    height: 314.2
+    width: 386.2
+    height: 447.8
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1169,7 +1440,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: d4edffff2afbffff
+      m_ExpandedIDs: eee5ffffa6e7ffff4ee9ffff38eaffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1213,10 +1484,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 290.4
+    x: 387.2
     y: 73.6
-    width: 879.6
-    height: 314.2
+    width: 1173.2
+    height: 447.8
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1575,7 +1846,7 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: -0.08717229, y: 0.89959055, z: -0.21045254, w: -0.3726226}
   m_Size:
-    m_Target: 10
+    m_Target: 9.55
     speed: 2
     m_Value: 10
   m_Ortho:
@@ -1642,7 +1913,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
-  m_TargetSize: {x: 1099.5, y: 366.5}
+  m_TargetSize: {x: 879.6, y: 293.2}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -1657,10 +1928,10 @@ MonoBehaviour:
     m_VRangeLocked: 0
     hZoomLockedByDefault: 0
     vZoomLockedByDefault: 0
-    m_HBaseRangeMin: -439.80002
-    m_HBaseRangeMax: 439.80002
-    m_VBaseRangeMin: -146.6
-    m_VBaseRangeMax: 146.6
+    m_HBaseRangeMin: -351.84
+    m_HBaseRangeMax: 351.84
+    m_VBaseRangeMin: -117.28001
+    m_VBaseRangeMax: 117.28001
     m_HAllowExceedBaseRangeMin: 1
     m_HAllowExceedBaseRangeMax: 1
     m_VAllowExceedBaseRangeMin: 1
@@ -1693,7 +1964,7 @@ MonoBehaviour:
       width: 703.68
       height: 234.56001
     m_MinimalGUI: 1
-  m_defaultScale: 0.99999994
+  m_defaultScale: 1
   m_LastWindowPixelSize: {x: 1099.5, y: 392.75}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
@@ -1722,9 +1993,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 408.80002
-    width: 1171
-    height: 366.59998
+    y: 542.4
+    width: 1561.4
+    height: 521.00006
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1746,7 +2017,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Tests
+    - Assets/Framework/Asset
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -1754,16 +2025,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Tests
+  - Assets/Framework/Asset
   m_LastFoldersGridSize: -1
-  m_LastProjectPath: C:\ZZS\Project\NewProjectK\KJ
+  m_LastProjectPath: G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 185.40002}
-    m_SelectedIDs: 7e680000
-    m_LastClickedID: 26750
-    m_ExpandedIDs: 0000000066660000686600006a66000000ca9a3b
+    scrollPos: {x: 0, y: 0}
+    m_SelectedIDs: 406a0000
+    m_LastClickedID: 27200
+    m_ExpandedIDs: 00000000b4690000b6690000b8690000ba690000bc690000c2690000c4690000ca69000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1791,7 +2062,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 0000000066660000686600006a660000
+    m_ExpandedIDs: 00000000b4690000b6690000b8690000ba690000bc690000be690000c0690000c2690000c4690000c6690000c8690000ca690000cc690000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1818,7 +2089,7 @@ MonoBehaviour:
   m_ListAreaState:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: c6230000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1867,10 +2138,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1172
+    x: 1562.4
     y: 73.6
-    width: 363
-    height: 701.8
+    width: 484.59998
+    height: 989.80005
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using UnityEngine;
 
@@ -48,19 +49,41 @@ namespace Boot.Editor.Build
         }
 
         /// <summary>
-        /// 添加产物条目
+        /// 添加产物条目。同时支持文件与目录：
+        /// 目录会计算其下所有文件的总大小（sha256 留空，因为目录无单一哈希）。
         /// </summary>
         public void AddArtifact(string path, string description = "")
         {
             string fullPath = Path.GetFullPath(path);
-            bool exists = File.Exists(fullPath);
+            bool isFile = File.Exists(fullPath);
+            bool isDir = Directory.Exists(fullPath);
+            bool exists = isFile || isDir;
+
+            long size = 0;
+            string sha = "";
+            if (isFile)
+            {
+                size = new FileInfo(fullPath).Length;
+                sha = ComputeSha256(fullPath);
+            }
+            else if (isDir)
+            {
+                size = Directory.GetFiles(fullPath, "*", SearchOption.AllDirectories)
+                    .Sum(f =>
+                    {
+                        try { return new FileInfo(f).Length; }
+                        catch { return 0L; }
+                    });
+                sha = "";
+            }
+
             var entry = new ArtifactEntry
             {
                 path = path,
                 description = description,
                 exists = exists,
-                sizeBytes = exists ? new FileInfo(fullPath).Length : 0,
-                sha256 = exists ? ComputeSha256(fullPath) : ""
+                sizeBytes = size,
+                sha256 = sha
             };
 
             artifacts.Add(entry);

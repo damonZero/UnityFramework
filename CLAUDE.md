@@ -18,6 +18,8 @@ KJ — Unity 2022.3.62f2 客户端游戏框架。VContainer + MessagePipe + YooA
 ## 依赖方向（强制单向）
 
 ```
+1External (非UPM第三方本地库，如 Odin)
+    ↑
 Packages (UPM 第三方)
     ↑
 Framework (KJ 自有框架包，不含业务逻辑)
@@ -25,8 +27,9 @@ Framework (KJ 自有框架包，不含业务逻辑)
 Boot ──▶ Core ──▶ General ──▶ Project
 ```
 
+- **1External**：非 UPM 管理的第三方本地库（预编译 DLL、Editor-only 插件如 Odin Inspector）。**只能引用 Unity 内置程序集和同目录第三方库**，禁止引用 Packages、Framework 及 Scripts 下任何代码。详见 `.claude/rules/1external.md`。
 - **Packages**：UPM 管理的第三方库（VContainer、UniTask、MessagePipe、YooAsset 等）。可以互相引用。
-- **Framework**：KJ 自有的独立包（`Asset/`、`Event/`、`Pool/`、`Cache/`）。**最多只能依赖 Packages**，不能引用 Scripts 下任何代码。稳定底层模块直接放在 `Assets/Framework/`，不使用 `Assets/Framework/Package/`。如果需要项目能力，通过接口、适配器或静态委托注入，由 Core 层桥接。
+- **Framework**：KJ 自有的独立包（`Asset/`、`Event/`、`Pool/`、`Cache/`、`BuildPipeline/`）。**最多只能依赖 Packages**，不能引用 Scripts 下任何代码。稳定底层模块直接放在 `Assets/Framework/`，不使用 `Assets/Framework/Package/`。`BuildPipeline/` 是纯数据契约层（`noEngineReferences=false`），不引用 `UnityEditor`/`Boot`/`Core` 等业务层。如果需要项目能力，通过接口、适配器或静态委托注入，由 Core 层桥接。
 - **Boot**：启动更新壳（热更 `KJ.Boot.asmdef`），只做资源/代码更新与反射启动。引用 `Asset / Log / RuntimeLog / UniTask / AssetShared / YooAsset / Launcher`；不引用 VContainer、HybridCLR.Runtime、Core/General/Project。AOT 壳 `Launcher`（`KJ.Launcher.asmdef`，位于 `Boot/Launcher/`）只引用 `UniTask / YooAsset / HybridCLR.Runtime / AssetShared`。
 - **Core**：引擎基础设施。可以引用 Boot、Framework、Packages。不引用 General/Project。
 - **General**：通用业务。可以引用 Core、Packages。不引用 Project。
@@ -57,7 +60,7 @@ Boot ──▶ Core ──▶ General ──▶ Project
 | `Scripts/Core/` | `Core` |
 | `Scripts/General/` | `General` |
 | `Scripts/Project/` | `Project` |
-| `Framework/` | `Framework.Asset`、`Framework.Event`、`Framework.Pool`、`Framework.Cache` 等 |
+| `Framework/` | `Framework.Asset`、`Framework.Event`、`Framework.Pool`、`Framework.Cache`、`Framework.BuildPipeline` 等 |
 
 ## 底层模块原则
 

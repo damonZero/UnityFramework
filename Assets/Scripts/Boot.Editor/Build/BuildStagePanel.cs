@@ -18,6 +18,10 @@ namespace Boot.Editor.Build
         private bool _initialized = false;
         private Vector2 _scrollPos;
 
+        // 由 BuildConfig.asset 解析（尊重 OutputDir），marker 目录据此计算
+        private BuildConfig _config;
+        private string _markerDir;
+
         private static readonly string[] StageLabels =
         {
             "S0  PreFlightCheck     ─ 前置校验",
@@ -42,15 +46,25 @@ namespace Boot.Editor.Build
 
         private void OnEnable()
         {
+            LoadConfig();
             DetectChanges();
+        }
+
+        private void LoadConfig()
+        {
+            string configPath = "Assets/Scripts/Boot.Editor/Build/BuildConfig.asset";
+            _config = AssetDatabase.LoadAssetAtPath<BuildConfig>(configPath);
+            if (_config == null)
+                _config = ScriptableObject.CreateInstance<BuildConfig>();
+            _markerDir = _config.GetMarkerDir();
         }
 
         private void DetectChanges()
         {
-            _mask = StageDependencyTracker.DetectChanges();
+            _mask = StageDependencyTracker.DetectChanges(includeSmoke: false, _config);
             _reasons = new string[10];
             for (int i = 0; i < 10; i++)
-                _reasons[i] = StageDependencyTracker.GetReason(i);
+                _reasons[i] = StageDependencyTracker.GetReason(i, _config);
             _initialized = true;
             Repaint();
         }
@@ -127,7 +141,7 @@ namespace Boot.Editor.Build
         {
             bool isNeeded = _mask[index];
             string reason = _reasons[index];
-            string markerPath = System.IO.Path.Combine("Build/.markers", $".{StageDependencyTracker.StageNames[index]}.done");
+            string markerPath = System.IO.Path.Combine(_markerDir, $".{StageDependencyTracker.StageNames[index]}.done");
             bool hasMarker = System.IO.File.Exists(markerPath);
 
             // 背景色标记
@@ -182,6 +196,10 @@ namespace Boot.Editor.Build
                 config = ScriptableObject.CreateInstance<BuildConfig>();
                 Debug.LogWarning("[BuildStagePanel] BuildConfig.asset not found, using defaults.");
             }
+
+            // 全量构建：先清所有 marker，确保从 S0 跑到 S9
+            if (mask == null)
+                KJBuildPipeline.ClearAllMarkers(config);
 
             // 关闭面板
             Close();

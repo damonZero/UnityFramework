@@ -4,6 +4,7 @@
     "references": [
         "Boot",
         "Boot.Editor",
+        "Framework.BuildPipeline",
         "Asset",
         "AssetShared",
         "Log",
@@ -21,7 +22,9 @@
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "UnityEditor.Android.Extensions.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
