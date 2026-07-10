@@ -14,7 +14,7 @@ namespace Boot.Editor.Build
     /// 涵盖：AssetConfig.asset、PlayerSettings defines、Android 签名。
     /// 原则：任何 Stage 需要修改上述对象时，必须先 snapshot 再修改。
     /// </summary>
-    public class BuildConfigTransaction
+    public class BuildTransaction
     {
         private readonly List<ISnapshot> _snapshots = new List<ISnapshot>();
         private bool _committed = false;
@@ -90,6 +90,21 @@ namespace Boot.Editor.Build
             }
 
             public void Restore() => _setter(_original);
+        }
+
+        private class ScriptingBackendSnapshot : ISnapshot
+        {
+            private readonly BuildTargetGroup _targetGroup;
+            private readonly ScriptingImplementation _original;
+            public string Description => $"Setting: ScriptingBackend.{_targetGroup}";
+
+            public ScriptingBackendSnapshot(BuildTargetGroup targetGroup, ScriptingImplementation original)
+            {
+                _targetGroup = targetGroup;
+                _original = original;
+            }
+
+            public void Restore() => PlayerSettings.SetScriptingBackend(_targetGroup, _original);
         }
 
         // ===== 公共 API =====
@@ -193,6 +208,13 @@ namespace Boot.Editor.Build
                 "Android.useCustomKeystore",
                 v => PlayerSettings.Android.useCustomKeystore = v,
                 () => PlayerSettings.Android.useCustomKeystore);
+        }
+
+        public void SnapshotScriptingBackend(BuildTargetGroup targetGroup)
+        {
+            var original = PlayerSettings.GetScriptingBackend(targetGroup);
+            _snapshots.Add(new ScriptingBackendSnapshot(targetGroup, original));
+            Debug.Log($"[Transaction] Snapshot setting: ScriptingBackend.{targetGroup} = {original}");
         }
     }
 }

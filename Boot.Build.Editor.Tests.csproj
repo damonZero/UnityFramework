@@ -760,6 +760,10 @@
       <Project>{086a023d-434f-7930-a47c-f38f84519272}</Project>
       <Name>Boot.Build.Editor</Name>
     </ProjectReference>
+    <ProjectReference Include="Framework.BuildPipeline.csproj">
+      <Project>{705b3896-6e9b-726d-d188-2c3d010fa111}</Project>
+      <Name>Framework.BuildPipeline</Name>
+    </ProjectReference>
     <ProjectReference Include="Boot.csproj">
       <Project>{1235a294-2906-ceaf-fb3a-c7ec04de06ec}</Project>
       <Name>Boot</Name>

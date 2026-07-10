@@ -1,222 +1,87 @@
 using System;
-using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace Boot.Editor.Build
 {
     /// <summary>
-    /// KJ 构建打包全流程管线 —— 基于 IBuildStage 插件化架构。
-    /// 使用: KJBuildPipeline.Build(config) 或菜单 KJ/Build/*
+    /// KJ 构建打包全流程管线入口。
+    /// 最新设计只接受 BuildProfile，并由 Stage fingerprint 控制增量跳过。
     /// </summary>
     public static class KJBuildPipeline
     {
-        /// <summary>
-        /// 全量构建：清除所有 marker，通过 BuildPipelineRunner 执行 P0-P9。
-        /// </summary>
-        public static BuildReport Build(BuildConfig config)
-        {
-            ClearAllMarkers(config);
+        public const string DefaultProfilePath = "Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset";
 
-            var context = new BuildContext { Config = config };
+        public static BuildReportData Build(BuildProfile profile)
+        {
+            if (profile == null)
+                throw new ArgumentNullException(nameof(profile), "BuildProfile is required");
+
+            var context = new BuildContext { Profile = profile };
             var runner = new BuildPipelineRunner(context);
-            var reportData = runner.Run();
-
-            return ToLegacyReport(reportData, config);
+            return runner.Run();
         }
 
-        /// <summary>
-        /// 按掩码选择性构建。
-        /// mask[i]=true  → Stage i 强制重跑；mask[i]=false → 强制跳过。
-        /// mask=null     → Runner 自动判断（指纹比对）。
-        /// </summary>
-        public static BuildReport BuildWithMask(BuildConfig config, bool[] stageMask)
+        public static BuildReportData BuildDefaultProfile()
         {
-            if (stageMask != null)
-            {
-                for (int i = 0; i < 10 && i < stageMask.Length; i++)
-                {
-                    if (stageMask[i])
-                        ClearStageMarker(StageDependencyTracker.StageNames[i]);
-                }
-            }
-
-            var context = new BuildContext { Config = config };
-            var runner = new BuildPipelineRunner(context);
-            var reportData = runner.Run();
-
-            return ToLegacyReport(reportData, config);
+            return Build(LoadDefaultProfileOrThrow());
         }
 
-        /// <summary>
-        /// 增量构建：自动检测变更，仅重跑有变化的 Stage 及其下游。
-        /// </summary>
-        public static BuildReport IncrementalBuild(BuildConfig config, bool includeSmoke = false)
+        public static BuildProfile LoadDefaultProfileOrThrow()
         {
-            bool[] mask = StageDependencyTracker.DetectChanges(includeSmoke, config);
-            Debug.Log($"[KJBuildPipeline] Incremental mask: {string.Join(", ", mask)}");
-            return BuildWithMask(config, mask);
+            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(DefaultProfilePath);
+            if (profile == null)
+                throw new InvalidOperationException(
+                    $"BuildProfile not found: {DefaultProfilePath}. Create one via KJ/Build/Create Build Profile.");
+            return profile;
+        }
+
+        public static BuildProfile LoadProfileOrThrow(string profilePath)
+        {
+            if (string.IsNullOrWhiteSpace(profilePath))
+                return LoadDefaultProfileOrThrow();
+
+            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(profilePath);
+            if (profile == null)
+                throw new InvalidOperationException($"BuildProfile not found: {profilePath}");
+            return profile;
         }
 
         /// <summary>
-        /// CI 无头入口: -executeMethod Boot.Editor.Build.KJBuildPipeline.BuildFromCommandLine
+        /// CI 无头入口: -executeMethod Boot.Editor.Build.KJBuildPipeline.BuildFromCommandLine -profile <assetPath>
         /// </summary>
         public static void BuildFromCommandLine()
         {
-            string platform = GetArg("platform") ?? "StandaloneWindows64";
-            bool dev = GetArgBool("development", true);
-            string version = GetArg("version") ?? Application.version;
-            string configPath = GetArg("config");
-
-            BuildConfig config;
-            if (!string.IsNullOrEmpty(configPath))
+            try
             {
-                config = AssetDatabase.LoadAssetAtPath<BuildConfig>(configPath);
-                if (config == null)
-                {
-                    Debug.LogError($"[KJBuildPipeline] BuildConfig not found at: {configPath}");
-                    EditorApplication.Exit(1);
-                    return;
-                }
+                string profilePath = GetArg("profile");
+                var profile = LoadProfileOrThrow(profilePath);
+                var report = Build(profile);
+                EditorApplication.Exit(report.AllPassed ? 0 : 1);
             }
-            else
+            catch (Exception ex)
             {
-                config = ScriptableObject.CreateInstance<BuildConfig>();
-                config.Platform = (BuildTarget)Enum.Parse(typeof(BuildTarget), platform);
-                config.Development = dev;
-                config.Version = version;
-            }
-
-            var report = Build(config);
-            EditorApplication.Exit(report.summary.allPassed ? 0 : 1);
-        }
-
-        // ===== Marker 管理 =====
-
-        public static bool IsStageDone(string stageName, BuildConfig config = null)
-        {
-            string markerDir = GetMarkerDir(config);
-            if (Directory.Exists(markerDir))
-                return File.Exists(Path.Combine(markerDir, $".{stageName}.done"));
-            return false;
-        }
-
-        public static void MarkStageDone(string stageName, BuildConfig config = null)
-        {
-            string markerDir = GetMarkerDir(config);
-            if (!Directory.Exists(markerDir))
-                Directory.CreateDirectory(markerDir);
-            File.WriteAllText(Path.Combine(markerDir, $".{stageName}.done"), DateTime.Now.ToString("o"));
-        }
-
-        public static void ClearAllMarkers(BuildConfig config = null)
-        {
-            string markerDir = GetMarkerDir(config);
-            if (Directory.Exists(markerDir))
-            {
-                foreach (string f in Directory.GetFiles(markerDir, "*.done"))
-                    File.Delete(f);
-                Debug.Log("[KJBuildPipeline] All stage markers cleared");
+                Debug.LogError($"[KJBuildPipeline] Command line build failed: {ex}");
+                EditorApplication.Exit(1);
             }
         }
-
-        public static void ClearStageMarker(string stageName, BuildConfig config = null)
-        {
-            string markerPath = Path.Combine(GetMarkerDir(config), $".{stageName}.done");
-            if (File.Exists(markerPath))
-            {
-                File.Delete(markerPath);
-                Debug.Log($"[KJBuildPipeline] Marker cleared: {stageName}");
-            }
-        }
-
-        private static string GetMarkerDir(BuildConfig config)
-        {
-            if (config == null)
-                config = LoadConfigOrDefault();
-            return config.GetMarkerDir();
-        }
-
-        private static BuildConfig LoadConfigOrDefault()
-        {
-            string configPath = "Assets/Scripts/Boot.Editor/Build/BuildConfig.asset";
-            var c = AssetDatabase.LoadAssetAtPath<BuildConfig>(configPath);
-            return c ?? new BuildConfig();
-        }
-
-        // ===== 报告转换（Runner → 兼容旧格式）=====
-
-        private static BuildReport ToLegacyReport(BuildReportData data, BuildConfig config)
-        {
-            var report = new BuildReport
-            {
-                platform = data.Platform,
-                development = config?.Development ?? true,
-                packageName = config?.PackageName ?? "DefaultPackage",
-                version = data.Version,
-                buildStartedAt = data.BuildStartedAt,
-                totalDuration = data.TotalDurationMs > 0
-                    ? TimeSpan.FromMilliseconds(data.TotalDurationMs).ToString(@"hh\:mm\:ss")
-                    : "00:00:00",
-            };
-
-            foreach (var sr in data.StageResults)
-            {
-                var legacy = report.AddStage(sr.DisplayName);
-                legacy.passed = sr.Status == StageStatus.Passed || sr.Status == StageStatus.Skipped;
-                legacy.skipped = sr.Status == StageStatus.Skipped;
-                legacy.durationSec = sr.DurationMs / 1000f;
-                legacy.errorMessage = sr.ErrorMessage;
-                if (sr.Status == StageStatus.Skipped)
-                    legacy.skipReason = sr.SkipReason;
-            }
-
-            report.summary.allPassed = data.AllPassed;
-            if (!data.AllPassed)
-            {
-                var failed = data.StageResults.Find(s => s.Status == StageStatus.Failed);
-                if (failed != null)
-                {
-                    report.summary.failedStage = failed.StageId;
-                    report.summary.errorMessage = failed.ErrorMessage;
-                }
-            }
-            report.summary.stagesPassed = data.StageResults.FindAll(s => s.Passed).Count;
-            report.summary.stagesFailed = data.StageResults.FindAll(
-                s => s.Status == StageStatus.Failed).Count;
-            report.summary.stagesSkipped = data.StageResults.FindAll(
-                s => s.Status == StageStatus.Skipped).Count;
-
-            // 汇总输出
-            Debug.Log($"[KJBuildPipeline] ========== BUILD {(report.summary.allPassed ? "SUCCESS" : "FAILED")} ==========");
-            Debug.Log($"[KJBuildPipeline] Duration: {report.totalDuration}");
-            Debug.Log($"[KJBuildPipeline] Stages: {report.summary.stagesPassed} passed, {report.summary.stagesFailed} failed, {report.summary.stagesSkipped} skipped");
-
-            return report;
-        }
-
-        // ===== CLI 参数解析 =====
 
         private static string GetArg(string name)
         {
             string[] args = Environment.GetCommandLineArgs();
-            foreach (string prefix in new[] { $"-{name}:", $"-{name}=" })
+            for (int i = 0; i < args.Length; i++)
             {
-                foreach (string arg in args)
-                {
-                    if (arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                        return arg.Substring(prefix.Length);
-                }
+                if (args[i] == $"-{name}" && i + 1 < args.Length)
+                    return args[i + 1];
+
+                string colonPrefix = $"-{name}:";
+                string equalsPrefix = $"-{name}=";
+                if (args[i].StartsWith(colonPrefix, StringComparison.OrdinalIgnoreCase))
+                    return args[i].Substring(colonPrefix.Length);
+                if (args[i].StartsWith(equalsPrefix, StringComparison.OrdinalIgnoreCase))
+                    return args[i].Substring(equalsPrefix.Length);
             }
             return null;
-        }
-
-        private static bool GetArgBool(string name, bool defaultValue)
-        {
-            string val = GetArg(name);
-            if (val == null) return defaultValue;
-            if (bool.TryParse(val, out bool result)) return result;
-            return defaultValue;
         }
     }
 
@@ -234,74 +99,35 @@ namespace Boot.Editor.Build
         }
     }
 
-    // ===== Editor 菜单入口 =====
-
     public static class KJBuildPipelineMenu
     {
-        [UnityEditor.MenuItem("KJ/Build/Dashboard", priority = 0)]
-        private static void OpenDashboard()
-        {
-            BuildDashboardWindow.Open();
-        }
-
-        [UnityEditor.MenuItem("KJ/Build/Full Player Build & Validate")]
+        [MenuItem("KJ/Build/Full Player Build & Validate")]
         private static void BuildFullPlayer()
         {
-            string configPath = "Assets/Scripts/Boot.Editor/Build/BuildConfig.asset";
-            var config = UnityEditor.AssetDatabase.LoadAssetAtPath<BuildConfig>(configPath);
-            if (config == null)
+            try
             {
-                config = ScriptableObject.CreateInstance<BuildConfig>();
-                Debug.LogWarning("[KJBuildPipeline] BuildConfig.asset not found, using defaults.");
+                var profile = KJBuildPipeline.LoadDefaultProfileOrThrow();
+                Debug.Log($"[KJBuildPipeline] ========== FULL BUILD STARTED: {profile.ProfileName} ==========");
+                var report = KJBuildPipeline.Build(profile);
+
+                if (report.AllPassed)
+                {
+                    EditorUtility.DisplayDialog("Build Complete",
+                        $"Build succeeded.\n\nReports: {new BuildPaths(profile).ReportsDir}", "OK");
+                }
+                else
+                {
+                    var failed = report.StageResults.Find(s => s.Status == StageStatus.Failed);
+                    EditorUtility.DisplayDialog("Build Failed",
+                        $"Failed at: {failed?.StageId ?? "Unknown"}\n\n{failed?.ErrorMessage}\n\nReports: {new BuildPaths(profile).ReportsDir}", "OK");
+                }
             }
-
-            Debug.Log("[KJBuildPipeline] ========== FULL BUILD STARTED ==========");
-            var report = KJBuildPipeline.Build(config);
-            Debug.Log($"[KJBuildPipeline] Build result: {(report.summary.allPassed ? "SUCCESS" : "FAILED")}");
-
-            if (report.summary.allPassed)
-                UnityEditor.EditorUtility.DisplayDialog("Build Complete",
-                    $"Build succeeded!\n\nReport: {config.GetReportPath()}.json", "OK");
-            else
-                UnityEditor.EditorUtility.DisplayDialog("Build Failed",
-                    $"Build failed at: {report.summary.failedStage}\n\n{report.summary.errorMessage}\n\nReport: {config.GetReportPath()}.json", "OK");
-        }
-
-        [UnityEditor.MenuItem("KJ/Build/Incremental Build (Auto-detect changes)")]
-        private static void BuildIncremental()
-        {
-            string configPath = "Assets/Scripts/Boot.Editor/Build/BuildConfig.asset";
-            var config = UnityEditor.AssetDatabase.LoadAssetAtPath<BuildConfig>(configPath);
-            if (config == null)
+            catch (Exception ex)
             {
-                config = ScriptableObject.CreateInstance<BuildConfig>();
-                Debug.LogWarning("[KJBuildPipeline] BuildConfig.asset not found, using defaults.");
+                Debug.LogError($"[KJBuildPipeline] Build failed before report generation: {ex}");
+                EditorUtility.DisplayDialog("Build Failed", ex.Message, "OK");
             }
-
-            Debug.Log("[KJBuildPipeline] ========== INCREMENTAL BUILD STARTED ==========");
-            var report = KJBuildPipeline.IncrementalBuild(config);
-            Debug.Log($"[KJBuildPipeline] Build result: {(report.summary.allPassed ? "SUCCESS" : "FAILED")}");
-
-            if (report.summary.allPassed)
-                UnityEditor.EditorUtility.DisplayDialog("Build Complete",
-                    $"Incremental build succeeded!\n\nReport: {config.GetReportPath()}.json", "OK");
-            else
-                UnityEditor.EditorUtility.DisplayDialog("Build Failed",
-                    $"Build failed at: {report.summary.failedStage}\n\n{report.summary.errorMessage}\n\nReport: {config.GetReportPath()}.json", "OK");
         }
 
-        [UnityEditor.MenuItem("KJ/Build/Build Stage Manager...")]
-        private static void OpenBuildStagePanel()
-        {
-            BuildStagePanel.Open();
-        }
-
-        [UnityEditor.MenuItem("KJ/Build/Clear All Stage Markers")]
-        private static void ClearMarkers()
-        {
-            KJBuildPipeline.ClearAllMarkers();
-            UnityEditor.EditorUtility.DisplayDialog("Markers Cleared",
-                "All .stageN.done markers have been deleted.\nNext build will run all stages from scratch.", "OK");
-        }
     }
 }

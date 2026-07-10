@@ -78,12 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Stages\P6_BuildPlayerStage.cs" />
-    <Compile Include="Assets\Scripts\Boot.Editor\Build\Pipeline\BuildConfigTransaction.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Pipeline\BuildContext.cs" />
-    <Compile Include="Assets\Scripts\Boot.Editor\Build\StageDependencyTracker.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Config\BuildProfileValidator.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\CI\BuildCommandLine.cs" />
-    <Compile Include="Assets\Scripts\Boot.Editor\Build\BuildReport.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Stages\P8_SmokeStage.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Diagnostics\SmokeLogParser.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\UI\BuildDashboardWindow.cs" />
@@ -93,10 +90,10 @@
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Pipeline\BuildStageBase.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Stages\P4_BuildAssetStage.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Stages\P5_ApplyConfigStage.cs" />
+    <Compile Include="Assets\Scripts\Boot.Editor\Build\Pipeline\BuildTransaction.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Config\BuildProfileSet.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Diagnostics\BuildAnalyzer.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Stages\P0_PlanStage.cs" />
-    <Compile Include="Assets\Scripts\Boot.Editor\Build\BuildConfig.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Pipeline\BuildStagePolicy.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Pipeline\BuildEnvironmentSnapshot.cs" />
     <Compile Include="Assets\Scripts\Boot.Editor\Build\Config\BuildProfile.cs" />

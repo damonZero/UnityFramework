@@ -29,38 +29,17 @@ namespace Boot.Editor.Build
         {
             Debug.Log("[P0] Plan: Generating build plan...");
 
-            // 验证 Profile
             var profile = context.Profile;
             if (profile == null)
-            {
-                // 如果使用旧 BuildConfig，从 Config 构建 Profile
-                if (context.Config != null)
-                {
-                    Debug.Log("[P0] Using legacy BuildConfig");
-                    context.Paths = new BuildPaths(context.Config);
-                }
-                else
-                {
-                    throw new InvalidOperationException("No BuildProfile or BuildConfig provided");
-                }
-            }
-            else
-            {
-                context.Paths = new BuildPaths(profile);
-            }
+                throw new InvalidOperationException("BuildProfile is required");
 
             // 验证 Profile 合法性
-            if (profile != null)
+            var issues = BuildProfileValidator.Validate(profile);
+            context.Issues.AddRange(issues);
+            foreach (var issue in issues)
             {
-                var issues = BuildProfileValidator.Validate(profile);
-                context.Issues.AddRange(issues);
-
-                // 阻断性错误（Profile 自身有问题）→ Plan 阶段标记失败
-                foreach (var issue in issues)
-                {
-                    if (issue.IsBlocking)
-                        Debug.LogWarning($"[P0] Profile issue: [{issue.Code}] {issue.Message}");
-                }
+                if (issue.IsBlocking)
+                    throw new InvalidOperationException($"Profile issue: [{issue.Code}] {issue.Message}");
             }
 
             // 验证 Stage 依赖完整性
@@ -84,8 +63,8 @@ namespace Boot.Editor.Build
         public override void Verify(BuildContext context)
         {
             base.Verify(context);
-            if (context.Profile == null && context.Config == null)
-                throw new InvalidOperationException("No build configuration provided");
+            if (context.Profile == null)
+                throw new InvalidOperationException("No BuildProfile provided");
         }
     }
 }

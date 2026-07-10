@@ -3,6 +3,7 @@
     "rootNamespace": "Boot.Editor.Build.Tests",
     "references": [
         "Boot.Build.Editor",
+        "Framework.BuildPipeline",
         "Boot",
         "Boot.Editor",
         "AssetShared",

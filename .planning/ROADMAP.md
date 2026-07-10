@@ -24,7 +24,7 @@
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 | HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，正式构建前走完整 `Generate All And Sync` |
 | HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
-| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | S0-S9 十阶段全量构建管线（PreFlight→GenerateAll→Compile→Sync→YooAsset→ApplyConfig→BuildPlayer→Validate→SmokeRun→Report）；`BuildConfig` + `BuildProfile` 双配置驱动；`KJBuildPipeline` 编排器支持续跑标记/差量检测/CI 无头；`BuildPipelineRunner` 新 Plan 驱动编排器 + 事务系统；`IBuildStage` 阶段插件化（P0-P9）；`StageDependencyTracker` 文件时间戳差量引擎；`SmokeLogParser` 多里程碑判定；`FormalLeakageVerifier` Formal/Audit 泄露检查；`BuildAnalyzer` + `BuildKnowledgeBase` 诊断系统；`BuildDashboardWindow` OdinMenuEditorWindow 六视图面板；`BuildCommandLine` CI 命令行入口；`BuildConfigTransaction` 事务化文件/设置修改与回滚 |
+| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | BuildProfile-only 配置；`BuildPipelineRunner` Plan 驱动 P0-P9；Profile/Input/Tool/Output fingerprint 增量判断；`BuildTransaction` 统一回滚 AssetConfig/Defines/ScriptingBackend/build flags；YooAsset/HybridCLR/Player/Verify/Smoke/Report 全链路；Odin Dashboard、CI 无头入口和 AI handoff。旧 BuildConfig/BuildReport/StageDependencyTracker/marker/mask 已删除。Unity 编译通过，待 EditMode 与端到端验证。 |
 | Object Pool & Cache 重构 | `Framework/Pool/` + `Framework/Cache/` | `BoundedStore<TKey,TValue>` 替代旧 `Cache`（Put 覆盖两步 Remove+Add、Clear/Remove/淘汰统一 onEvicted、GetOrAdd single-flight、TTL 读路径清理）；`IStoreEvictionPolicy`/`IStoreExpirationPolicy` + `LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`；`ObjectPool<T>` 保持 lock 并发安全，`CollectionPool` 使用 `SingleThreadObjectPool<T>` 主线程热路径；`GameObjectPool` 五字典合并 `PrefabPoolState`+实例库存策略 `IInstanceRecyclePolicy`+反向索引污染检测+[MainThread] 断言；`PoolService.cs` DI 桥接；相关 EditMode 单测全绿 |
 
 ---
@@ -36,6 +36,9 @@
 | 验证项 | 状态 | 范围 | 说明 |
 |------|------|------|------|
 | Editor Play 启动链 smoke | Done | Boot + YooAsset + HybridCLR + Core | 用户已确认无报错；`Editor.log` 已看到 `[AssetSystem] Ready` 与 `[SystemManager] 全部初始化完成` |
+| Build Pipeline Unity 编译 | Done | Boot.Build.Editor + Tests asmdef | BuildProfile-only 重构后 Unity 编译无错误 |
+| Build Pipeline EditMode | Next | Profile/Transaction/Registry/Report | 运行 `Boot.Build.Editor.Tests`，确认新架构测试全绿 |
+| Build Pipeline Standalone E2E | Next | P0-P9 | 使用默认 BuildProfile 跑一次完整 Standalone IL2CPP 构建与 smoke |
 | Player 打包 smoke | Next | Boot + HybridCLR + YooAsset + Core | 构建并运行 Player，验证完整启动链、AOT metadata/DLL 加载、资源清单/下载流程、无启动期 Error/Exception |
 | 资源加载矩阵 | Next | Framework.Asset + Core.AssetSystem | 验证 RawFile bytes、cached/owned 资源加载、实例化、场景加载/卸载、下载器、Release、UnloadUnused |
 | PlayMode 覆盖 | Next | EditorSimulate / Offline / Host | 已通过 EditorSimulate Play；下一步至少覆盖 Player Offline，Host/CDN 后续用本地 HTTP 或测试服验证 |

@@ -70,10 +70,10 @@ the full Unity Player + YooAsset resource bundle + HybridCLR hot-update assets.
 
 | Menu | What it does |
 |------|-------------|
-| `KJ → Build → Full Player Build & Validate` | Clear all markers, run all stages |
-| `KJ → Build → Incremental Player Build` | Change detection, only re-run changed stages |
-| `KJ → Build → Build Stage Manager...` | Visual panel: auto-detect changes + manual checkboxes |
-| `KJ → Build → Clear All Stage Markers` | Manually clear stage markers |
+| `KJ → Build → Full Player Build & Validate` | Run P0-P9 using the default BuildProfile |
+| `KJ → Build → Dashboard` | Odin Dashboard: Profile, stage overview, reports, diagnostics |
+| `KJ → Build → Build Stage Manager...` | Read-only stage overview; no manual mask/marker flow |
+| `KJ → Build → Create Build Profile` | Create a BuildProfile template |
 
 ### Build Stages (S0–S9)
 
@@ -95,20 +95,22 @@ the full Unity Player + YooAsset resource bundle + HybridCLR hot-update assets.
 | File | Purpose |
 |------|---------|
 | `KJBuildPipeline.cs` | Stage orchestrator, `Build()` / `BuildWithMask()` / `IncrementalBuild()` |
-| `StageDependencyTracker.cs` | Change detection (S1→S2→S3→S4→S6 chain, S5→S6 independent) |
-| `BuildStagePanel.cs` | EditorWindow with auto-detection + manual stage checkboxes |
-| `StageBuildYooAsset.cs` | Production YooAsset build via `ScriptableBuildPipeline` |
-| `StageApplyConfig.cs` | Direct YAML write `AssetConfig.Mode = Offline` with rollback |
-| `StageBuildPlayer.cs` | `BuildPlayer` IL2CPP Android |
-| `StageSmokeRun.cs` | ADB install + logcat capture + `latest.jsonl` verification |
-| `StageValidateArtifacts.cs` | APK existence + StreamingAssets content validation |
-| `BuildConfig.cs` | Serializable build configuration (Platform, BuildType, etc.) |
+| `BuildProfile.cs` | Single source of build configuration (environment, platform, signing, smoke, output) |
+| `BuildPipelineRunner.cs` | Plan-driven P0-P9 runner with fingerprint skip decisions and reports |
+| `BuildTransaction.cs` | Transaction snapshots/rollback for config files and PlayerSettings |
+| `BuildStagePanel.cs` | Read-only stage overview window |
+| `P4_BuildAssetStage.cs` | Production YooAsset build via `ScriptableBuildPipeline` |
+| `P5_ApplyConfigStage.cs` | Transactional `AssetConfig.Mode = Offline` + build symbols |
+| `P6_BuildPlayerStage.cs` | `BuildPlayer` IL2CPP with transactional build setting changes |
+| `P8_SmokeStage.cs` | Standalone/Android smoke verification from runtime logs |
+| `P7_VerifyStage.cs` | Player, StreamingAssets, DLL, metadata validation |
 
-### Change Detection Rules
+### Incremental Rules
 
-- **Cascade trigger**: S1→S2→S3→S4→S6 (any upstream change triggers downstream)
-- **Independent**: S5→S6 (AssetConfig change triggers all stages)
-- **Monitored paths**: S1/S2 watch `Assets/Scripts/**/*.cs`; S4 watches `Assets/GameRes/HotUpdate/**`; S5 watches `Assets/Resources/AssetConfig.asset`
+- Build configuration is `Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset`.
+- Old `BuildConfig`, `.markers`, `StageDependencyTracker`, and mask-based manual stage execution are removed.
+- Each successful stage writes `state/{StageId}.fingerprint.json`.
+- Skip decisions compare Profile hash, input paths, tool versions, dependency declarations, and required outputs.
 
 When modifying build pipeline code, update `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`
 and `ProgressDoc/Result/hybridclr_workflow.md` §4 to prevent documentation drift.

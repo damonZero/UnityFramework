@@ -13,7 +13,6 @@ namespace Boot.Editor.Build
         public string ReportsDir { get; }
         public string StateDir { get; }
         public string TempDir { get; }
-        public string MarkersPath { get; }
         public string BuildPlanPath { get; }
 
         public BuildPaths(BuildProfile profile)
@@ -24,19 +23,6 @@ namespace Boot.Editor.Build
             ReportsDir = Path.Combine(ArchiveRoot, "reports");
             StateDir = Path.Combine(ArchiveRoot, "state");
             TempDir = Path.Combine("Library", "KJBuild", profile.ProfileName ?? "default");
-            MarkersPath = Path.Combine(StateDir, "stage_markers.json");
-            BuildPlanPath = Path.Combine(StateDir, "build_plan.json");
-        }
-
-        public BuildPaths(BuildConfig config)
-        {
-            ArchiveRoot = config.GetOutputDir();
-            ArtifactsDir = Path.Combine(ArchiveRoot, "artifacts");
-            LogsDir = Path.Combine(ArchiveRoot, "logs");
-            ReportsDir = Path.Combine(ArchiveRoot, "reports");
-            StateDir = Path.Combine(ArchiveRoot, "state");
-            TempDir = Path.Combine("Library", "KJBuild", Path.GetFileName(ArchiveRoot));
-            MarkersPath = Path.Combine(StateDir, "stage_markers.json");
             BuildPlanPath = Path.Combine(StateDir, "build_plan.json");
         }
 

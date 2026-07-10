@@ -47,8 +47,8 @@ namespace Boot.Editor.Build
         {
             Debug.Log("[P3] HybridCLR: Compiling DLLs...");
 
-            var buildTarget = context.Profile?.Platform ?? context.Config?.Platform
-                ?? BuildTarget.StandaloneWindows64;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
+            var buildTarget = profile.Platform;
             string targetName = GetHybridCLRTargetName(buildTarget);
 
             // 1. 清理旧产物
@@ -58,8 +58,7 @@ namespace Boot.Editor.Build
             CleanDirectory(aotMetaPath);
 
             // 2. 编译热更 DLL
-            CompileDllCommand.CompileDll(buildTarget,
-                context.Profile?.DevelopmentBuild ?? true);
+            CompileDllCommand.CompileDll(buildTarget, profile.DevelopmentBuild);
 
             // 3. 生成 stripped AOT metadata
             StripAOTDllCommand.GenerateStripedAOTDlls(buildTarget);

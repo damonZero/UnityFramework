@@ -9,7 +9,7 @@ last_updated: "2026-07-08T14:00:00.000Z"
 # Project State: KJ Unity Framework
 
 **Last Updated:** 2026-07-09
-**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中（HybridCLR 边界【含 HYB-03 裂变】、最小加载闭环、编辑器同步工具、AI_RUNTIME_LOGGING、构建打包全流程管线+增量构建 已落地；构建管线工业级重构（配置驱动/Stage 插件化/事务系统/Odin Dashboard）已落地待编译验证；Editor Play 启动链已通过；HYB-03 EditMode 测试 45/45 全绿；Player 全量构建已在 Gradle 编译阶段；下一步真机冒烟验证 + 资源加载矩阵验证后进入 UI/Login 等新模块）
+**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中（HybridCLR 边界【含 HYB-03 裂变】、最小加载闭环、编辑器同步工具、AI_RUNTIME_LOGGING 已落地；构建管线已收敛为 BuildProfile-only + P0-P9 + fingerprint + BuildTransaction，Unity 编译通过；Editor Play 启动链已通过；HYB-03 EditMode 测试 45/45 全绿；下一步执行构建管线 EditMode 测试、Standalone P0-P9 端到端构建、Android 真机冒烟与资源加载矩阵验证）
 
 ## 进度
 
@@ -39,21 +39,21 @@ last_updated: "2026-07-08T14:00:00.000Z"
 - [x] HYB-02A: 热更构建同步工具（`KJ/HybridCLR/*` Editor 菜单：生成/编译 HybridCLR 产物，同步 `.dll.bytes` RawFile，维护 YooAsset collector，回写打开的 Entry 序列化配置；日常 smoke 与完整构建前生成已拆分；工具归属 `Assets/Scripts/Boot.Editor/HybridCLR/`）
 - [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
 - [x] PKG-00: 构建打包全流程管线设计（S0–S9 全阶段编排，见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`）
-- [x] PKG-01: KJBuildPipeline 编排器实现（`KJBuildPipeline.cs`：`Build()`/`BuildWithMask()`/`IncrementalBuild()`，KJ/Build/* 菜单）
+- [x] PKG-01: KJBuildPipeline 编排器入口（`Build(BuildProfile)` + 默认 Profile 菜单 + CI）
 - [x] PKG-02: YooAsset 生产构建 Stage（`StageBuildYooAsset.cs` → `ScriptableBuildPipeline` → StreamingAssets；与旧 `EditorSimulateBuildInvoker` 不同 API）
 - [x] PKG-03: AssetConfig.Mode 直接 YAML 写入 + 回滚（`StageApplyConfig.cs`：设 Offline 后保存三连，构建完成后 `RollbackAssetConfig()` 恢复 Editor 状态）
 - [x] PKG-04: BuildPlayer + Gradle 编译（`StageBuildPlayer.cs`：IL2CPP Android）
-- [x] PKG-05: 增量构建 + 变更检测（`StageDependencyTracker.cs`：监视源码/资源/配置变更，级联 S1→S2→S3→S4→S6，S5→S6 独立）
-- [x] PKG-06: 构建管理面板（`BuildStagePanel.cs`：EditorWindow 自动检测 + 手动勾选 Stage + 增量/全量按钮）
+- [x] PKG-05: fingerprint 增量构建（`BuildPipelineRunner`：Profile/Input/Tool/Output 指纹；成功后写 `state/{StageId}.fingerprint.json`）
+- [x] PKG-06: 构建管理界面（Odin Dashboard + 只读 `BuildStagePanel`；不提供手动 mask/marker）
 - [x] PKG-07: APK 冒烟验证（`StageSmokeRun.cs`：ADB 安装 + logcat 监听 + `latest.jsonl` 启动链验证）
 - [x] PKG-08: 产物校验（`StageValidateArtifacts.cs`：APK 存在 + StreamingAssets 内容完整性）
 - [x] PKG-09: 构建管线数据模型层（`Assets/Framework/BuildPipeline/` — 纯契约程序集：`BuildEnvironment`、`BuildIssue`/`BuildErrorCodes`、`BuildPlan`/`BuildStageFingerprint`/`BuildSkipDecision`、`BuildArtifactManifest`/`AiBuildHandoff`、`BuildExitCode`）
-- [x] PKG-10: 构建管线配置与执行框架（`BuildProfile`/`BuildProfileValidator`、`BuildContext`/`BuildPaths`/`BuildEnvironmentSnapshot`、`IBuildStage`/`BuildStageBase`/`BuildStageRegistry`、`BuildPipelineRunner`、`BuildConfigTransaction` 事务系统）
+- [x] PKG-10: 构建管线配置与执行框架（`BuildProfile`/`BuildProfileValidator`、`BuildContext`/`BuildPaths`/`BuildEnvironmentSnapshot`、`IBuildStage`/`BuildStageBase`/`BuildStageRegistry`、`BuildPipelineRunner`、`BuildTransaction` 事务系统）
 - [x] PKG-11: Stage 插件化重写（P0–P9 Stage 类实现 `IBuildStage`，输入/输出/跳过/验证/失败分析；`BuildStageRegistry` 注册与依赖验证）
 - [x] PKG-12: 诊断与报告系统（`SmokeLogParser` 多里程碑判定、`FormalLeakageVerifier` Formal/Audit 泄露检查、`BuildAnalyzer` 规则化诊断、`BuildKnowledgeBase` 已知错误库、`BuildReportWriter` JSON/MD/HTML）
 - [x] PKG-13: Odin Build Dashboard（`BuildDashboardWindow : OdinMenuEditorWindow` — Profile/Plan/Stage Monitor/Reports/Artifacts/Diagnostics 六视图）
 - [x] PKG-14: CI 无头入口（`BuildCommandLine.cs` — `-executeMethod` + `-profile`/`-mode Full` 参数；退出码按阶段区分）
-- [ ] PKG-15: 构建管线编译验证 + EditMode 单元测试（asmdef ref 修复、`BuildProfileValidationTests`、`BuildTransactionTests`、`SmokeLogParserTests`）
+- [ ] PKG-15: 构建管线验证（Unity 编译已通过；待运行 EditMode：`BuildProfileValidationTests`、`BuildTransactionTests`、`SmokeLogParserTests`、报告 schema）
 - [x] DOC-01: 构建流程文档对齐（`ProgressDoc/Result/hybridclr_workflow.md` §4、`AGENTS.md` 构建管线章节）
 - [x] BUGFIX-01: YooAsset EditorFileSystem 错误（APK 中 `AssetConfig.Mode` 未正确序列化为 Offline → 改用 YAML 直写）
 - [x] BUGFIX-02: BuiltinFileSystem URI 错误（`BootLoader` 传入 `packageName` 作为 `packageRoot` → 改用无参重载取 `GetDefaultBuiltinPackageRoot()`）
@@ -86,32 +86,19 @@ Assets/Scripts/
 ├── Boot.Editor/
 │   ├── Boot.Editor.asmdef       ← Editor-only，引用 Boot + Asset + Framework.BuildPipeline + Framework.Asset.Editor + Framework.External.Sirenix.Odin.Editor + HybridCLR.Editor + YooAsset + YooAsset.Editor + AssetShared + Launcher（共 10）
 │   ├── Build/
-│   │   ├── BuildConfig.cs             ← 可序列化构建配置（Platform/BuildType/输出路径）
-│   │   ├── BuildReport.cs             ← S0-S9 阶段报告 + 产物清单 + 冒烟结论
-│   │   ├── BuildStagePanel.cs         ← EditorWindow 构建管理面板（自动检测+手动勾选+增量/全量按钮）
-│   │   ├── KJBuildPipeline.cs         ← S0–S9 全阶段编排器（Build/BuildWithMask/IncrementalBuild）+ KJ/Build/* 菜单
-│   │   ├── StageDependencyTracker.cs  ← 变更检测引擎（监视源码/资源/配置，级联 S1→S4→S6、S5→S6）
+│   │   ├── BuildStagePanel.cs         ← P0-P9 Stage 只读概览
+│   │   ├── KJBuildPipeline.cs         ← BuildProfile-only 构建入口 + KJ/Build/* 菜单
 │   │   ├── Stages/
-│   │   │   ├── StagePreFlightCheck.cs ← S0: HybridCLR/平台/BootScene/AssetConfig/IL2CPP 预检
-│   │   │   ├── StageGenerateAll.cs    ← S1: HybridCLR GenerateAll
-│   │   │   ├── StageCompile.cs        ← S2: 编译热更 DLL + AOT metadata
-│   │   │   ├── StageSync.cs           ← S3: 同步 DLL → HotUpdate 目录
-│   │   │   ├── StageBuildYooAsset.cs  ← S4: YooAsset ScriptableBuildPipeline 生产构建
-│   │   │   ├── StageApplyConfig.cs    ← S5: AssetConfig.Mode YAML 直写 Offline + 回滚
-│   │   │   ├── StageBuildPlayer.cs    ← S6: BuildPipeline.BuildPlayer IL2CPP
-│   │   │   ├── StageValidateArtifacts.cs ← S7: 产物校验（APK + StreamingAssets + DLL 数量）
-│   │   │   ├── StageSmokeRun.cs       ← S8: ADB 安装 + logcat + latest.jsonl/boot.log 双日志判定
-│   │   │   ├── StageReport.cs         ← S9: JSON/MD 报告输出
-│   │   │   ├── P0_PlanStage.cs        ← 🆕 P0: 验证 Profile、生成 BuildPlan、输出目录初始化
-│   │   │   ├── P1_PreflightStage.cs   ← 🆕 P1: 全维度预检（HybridCLR/平台/BootScene/AssetConfig/IL2CPP/Android/Formal）
-│   │   │   ├── P2_GenerateStage.cs    ← 🆕 P2: HybridCLR GenerateAll + link.xml 校验
-│   │   │   ├── P3_HybridCLRStage.cs   ← 🆕 P3: 编译热更 DLL + AOT metadata + 同步 .dll.bytes + 清理过期
-│   │   │   ├── P4_BuildAssetStage.cs  ← 🆕 P4: YooAsset ScriptableBuildPipeline → StreamingAssets
-│   │   │   ├── P5_ApplyConfigStage.cs ← 🆕 P5: 事务化 AssetConfig YAML 写入 + ScriptingDefines
-│   │   │   ├── P6_BuildPlayerStage.cs ← 🆕 P6: BuildPipeline.BuildPlayer + Android 工具链
-│   │   │   ├── P7_VerifyStage.cs      ← 🆕 P7: 产物静态校验 + Formal 泄露检查
-│   │   │   ├── P8_SmokeStage.cs       ← 🆕 P8: 多里程碑冒烟（Launcher→YooAsset→HybridCLR→Boot→Core）
-│   │   │   └── P9_ReportStage.cs      ← 🆕 P9: 复制 Editor.log + Runtime 日志到归档目录
+│   │   │   ├── P0_PlanStage.cs        ← P0: Profile/BuildPlan/输出目录
+│   │   │   ├── P1_PreflightStage.cs   ← P1: 环境与约束预检
+│   │   │   ├── P2_GenerateStage.cs    ← P2: HybridCLR GenerateAll
+│   │   │   ├── P3_HybridCLRStage.cs   ← P3: DLL/AOT metadata 编译同步
+│   │   │   ├── P4_BuildAssetStage.cs  ← P4: YooAsset 生产构建
+│   │   │   ├── P5_ApplyConfigStage.cs ← P5: 事务化运行时配置
+│   │   │   ├── P6_BuildPlayerStage.cs ← P6: IL2CPP Player 构建
+│   │   │   ├── P7_VerifyStage.cs      ← P7: 静态产物/Formal 校验
+│   │   │   ├── P8_SmokeStage.cs       ← P8: Standalone/Android Runtime smoke
+│   │   │   └── P9_ReportStage.cs      ← P9: 日志归档
 │   │   ├── Config/
 │   │   │   ├── BuildProfile.cs        ← 🆕 ScriptableObject 环境/平台/签名/日志/冒烟/输出配置
 │   │   │   ├── BuildProfileValidator.cs ← 🆕 Formal/Audit 强约束校验规则
@@ -125,7 +112,7 @@ Assets/Scripts/
 │   │   │   ├── BuildStagePolicy.cs    ← 🆕 Stage 策略标志（Required/Optional/AlwaysRun/NoSkip/Transactional/…）
 │   │   │   ├── BuildStageRegistry.cs  ← 🆕 Stage 注册/排序/依赖验证
 │   │   │   ├── BuildPipelineRunner.cs ← 🆕 Plan 驱动编排器 + 报告写入
-│   │   │   └── BuildConfigTransaction.cs ← 🆕 事务系统（文件/PlayerSettings snapshot + rollback）
+│   │   │   └── BuildTransaction.cs    ← 文件/PlayerSettings snapshot + rollback
 │   │   ├── Diagnostics/
 │   │   │   ├── SmokeLogParser.cs      ← 🆕 多里程碑冒烟判定（boot.log + latest.jsonl）
 │   │   │   ├── FormalLeakageVerifier.cs ← 🆕 Formal/Audit 泄露检查
@@ -360,6 +347,7 @@ Phase 2 规划：
 
 ## 最新验证记录
 
+- 2026-07-10: **构建管线单架构收敛 + Unity 编译通过**：删除旧 `BuildConfig.cs/.asset`、旧 `BuildReport.cs`、`StageDependencyTracker.cs`、marker/mask 入口；配置统一为 `BuildProfile`，执行统一为 `BuildPipelineRunner` P0-P9；实现真实 Profile/Input/Tool/Output fingerprint；`BuildConfigTransaction` 重命名并强化为 `BuildTransaction`，统一回滚 AssetConfig、Defines、ScriptingBackend、Editor build flags；修复 P0 初始化、P9 报告顺序、Formal/Audit mandatory smoke、测试 asmdef 引用。用户确认 Unity 编译无错误。待 EditMode、Standalone P0-P9 E2E、Android ADB smoke。
 - 2026-07-09: **构建管线工业级重构落地**：PKG-09~PKG-14 全部代码完成 + Unity 编译通过。删除旧 S0-S9 static 方法（StagePreFlightCheck/StageGenerateAll/StageCompile/StageSync/StageBuildYooAsset/StageApplyConfig/StageBuildPlayer/StageValidateArtifacts/StageSmokeRun/StageReport + AndroidToolResolver + PlayerBuildPrivatePathValidator）。`KJBuildPipeline.cs` 重写为委托 `BuildPipelineRunner`。`BuildStagePanel` 保留兼容，`BuildDashboardWindow` 新增 Odin 六视图面板。`StageDependencyTracker.StageNames` 更新为 P0-P9 ID。
 - 2026-07-08: 构建打包全流程管线 PKG-00~08 落地：`KJBuildPipeline.cs` S0–S9 全阶段编排、`StageBuildYooAsset` 生产构建（`ScriptableBuildPipeline`，非旧 `EditorSimulateBuildInvoker`）、`StageApplyConfig` YAML 直写 `AssetConfig.Mode=Offline`+回滚、`StageBuildPlayer` IL2CPP Android、`StageValidateArtifacts` 产物校验、`StageSmokeRun` ADB 冒烟验证、`StageDependencyTracker` 变更检测级联、`BuildStagePanel` 可视化管理面板、`BuildConfig` 构建配置。
 - 2026-07-08: BUGFIX-01 — 修复 YooAsset APK EditorFileSystem 错误：`StageApplyConfig` 从 ScriptableObject API（SetDirty+SaveAssets）改为 YAML 正则直写 `Mode: 0→Mode: 1` + `ImportAsset(ForceSynchronousImport)`，消除 `AssetDatabase.Refresh` 竞态。

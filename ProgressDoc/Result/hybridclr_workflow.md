@@ -75,7 +75,7 @@ HybridCLR 编译后产生的临时文件默认位于项目根目录：
 
 ---
 
-## 4. 构建打包管线（v1 已落地，v2 设计中）
+## 4. 构建打包管线（BuildProfile-only）
 
 以上 `KJ/HybridCLR/*` 菜单为**开发内循环**（Editor Play），不产出可运行的 Player 包。真正的"构建→打包→冒烟"走以下菜单：
 
@@ -83,16 +83,22 @@ HybridCLR 编译后产生的临时文件默认位于项目根目录：
 
 | 菜单 | 用途 |
 |------|------|
-| `KJ → Build → Full Player Build & Validate` | 全量构建（清除所有标记，跑全部 Stage） |
-| `KJ → Build → Incremental Player Build` | 增量构建（差量检测，仅重跑变更的 Stage） |
-| `KJ → Build → Build Stage Manager...` | 可视化管理面板（自动检测+手动勾选） |
-| `KJ → Build → Clear All Stage Markers` | 手动清除续跑标记 |
+| `KJ → Build → Full Player Build & Validate` | 使用默认 `BuildProfile.asset` 执行 P0-P9 |
+| `KJ → Build → Dashboard` | Odin Dashboard：Profile 查看、预检、构建、Stage/报告/诊断 |
+| `KJ → Build → Build Stage Manager...` | Stage 只读概览；不再支持手动 mask/marker |
+| `KJ → Build → Create Build Profile` | 创建默认 Profile 模板 |
+
+当前权威配置源是 `Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset`。
+旧 `BuildConfig.cs` / `BuildConfig.asset` / `BuildReport.cs` / `StageDependencyTracker.cs`
+以及 `.markers` / mask 续跑机制已删除。增量跳过统一由
+`BuildPipelineRunner` 写入 `state/{StageId}.fingerprint.json` 后按输入、工具、
+Profile 和输出指纹判断。
 
 ### 4.2 构建产物
 
-- **Player**：`Build/Android/KJ.apk/launcher/build/outputs/apk/debug/launcher-debug.apk`
+- **Player**：`BuildProfile.GetPlayerPath()`（默认 `BuildBackup/{Environment}/{VersionName}/{VersionCode}/KJ.exe`）
 - **YooAsset 真包**：`Assets/StreamingAssets/DefaultPackage/`（Offline 模式）
-- **报告**：`Build/Android/build_report.json` + `build_report.md`
+- **报告**：`{OutputRoot}/reports/build_report.json` + `build_report.md` + `ai_handoff.json`
 
 ### 4.3 ADB 测试流程
 
@@ -108,14 +114,12 @@ adb logcat -s Unity:V YooAsset:V Framework:V Boot:V  # 监听日志
 
 v2 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPipelineV2_开发验证计划.md`。
 
-### 4.5 v2 工业级演进方向
-
-当前 v1 管线已具备 S0-S9 基础链路，但后续商业化打包应按设计文档附录 E/F 演进为 Build Pipeline v2：
+### 4.5 当前实现要点
 
 - **BuildProfile 配置驱动**：Dev / Profiling / Audit / Formal / QA / Pre 按环境区分 Development Build、日志策略、GM/Debug UI、RuntimeLog、签名、SmokeRequired、输出目录。
-- **阶段插件化**：用 `BuildContext` / `BuildStage` / `BuildPlan` / `BuildPipelineRunner` 替代单一大编排器，保留可恢复、可跳过、可解释的 Stage 执行模型。
+- **阶段插件化**：用 `BuildContext` / `IBuildStage` / `BuildPlan` / `BuildPipelineRunner` 执行 P0-P9。
 - **产物归档**：输出到 `BuildBackup/{Environment}/{Version}/{BuildNo}/`，包含 artifacts、logs、reports、state。
 - **Odin Dashboard**：Profile 编辑、预检、构建、Stage Monitor、报告查看、日志打开、失败诊断统一在 `KJ -> Build -> Dashboard`。
 - **AI 可接管报告**：构建失败时生成 `issues.json` 与 `ai_handoff.json`，包含错误码、阶段、证据、可能原因、建议修复和相关文件。
 - **Smoke 与日志系统强化**：Runtime smoke 必须收集 `boot.log`、`latest.jsonl`、`latest.session.json`；Formal/Audit 不允许因缺 adb/缺设备而静默通过。
-- **实现规格已补齐**：附录 F 定义 `IBuildStage`、`BuildContext`、`BuildProfile`、`BuildPlan`/fingerprint、事务系统、报告 schema、错误码、Odin 交互、CI 退出码、测试清单和首轮落地顺序。
+- **事务回滚**：`BuildTransaction` 统一快照并回滚 `AssetConfig`、Scripting Defines、ScriptingBackend、Editor build flags。

@@ -39,8 +39,8 @@ namespace Boot.Editor.Build
             context.Transaction.SnapshotFile(AssetConfigPath);
 
             // Snapshot Scripting Defines
-            var buildTarget = context.Profile?.Platform ?? context.Config?.Platform
-                ?? BuildTarget.StandaloneWindows64;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
+            var buildTarget = profile.Platform;
             var targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             context.Transaction.SnapshotScriptingDefines(targetGroup);
 
@@ -118,8 +118,6 @@ namespace Boot.Editor.Build
 
         private void ApplyScriptingDefines(BuildContext context, BuildTargetGroup targetGroup)
         {
-            if (context.Profile == null) return;
-
             var namedTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(targetGroup);
             string current = PlayerSettings.GetScriptingDefineSymbols(namedTarget);
             var defines = new HashSet<string>(

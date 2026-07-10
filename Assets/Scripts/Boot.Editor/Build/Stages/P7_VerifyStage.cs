@@ -25,14 +25,12 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            var profile = context.Profile;
-            var buildTarget = profile?.Platform ?? BuildTarget.StandaloneWindows64;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
+            var buildTarget = profile.Platform;
             Debug.Log("[P7] Verify: Checking artifacts...");
 
             // 1. Player 文件存在
-            string playerPath = profile?.GetPlayerPath()
-                ?? context.Config?.GetPlayerPath()
-                ?? $"Build/{buildTarget}/KJ.exe";
+            string playerPath = profile.GetPlayerPath();
 
             if (File.Exists(playerPath))
             {
@@ -52,7 +50,7 @@ namespace Boot.Editor.Build
             }
 
             // 2. YooAsset 包完整性
-            string packageName = profile?.PackageName ?? "DefaultPackage";
+            string packageName = profile.PackageName;
             string streamingAssetsPackage = $"Assets/StreamingAssets/{packageName}";
             if (Directory.Exists(streamingAssetsPackage))
             {

@@ -31,9 +31,8 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            var profile = context.Profile;
-            var buildTarget = profile?.Platform ?? context.Config?.Platform
-                ?? BuildTarget.StandaloneWindows64;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
+            var buildTarget = profile.Platform;
 
             Debug.Log("[P1] Preflight: Starting checks...");
 
@@ -103,13 +102,9 @@ namespace Boot.Editor.Build
             BuildTargetGroup targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             var currentBackend = PlayerSettings.GetScriptingBackend(targetGroup);
             if (currentBackend != ScriptingImplementation.IL2CPP)
-            {
-                context.AddIssue(BuildIssue.Error(
-                    BuildErrorCodes.PreIL2CPPRequired, Id,
-                    $"ScriptingBackend is {currentBackend}, must be IL2CPP for HybridCLR Player build."));
-                throw new BuildFailedException(Id, "IL2CPP required");
-            }
-            Debug.Log("[P1] ✓ ScriptingBackend: IL2CPP");
+                Debug.LogWarning($"[P1] ScriptingBackend is {currentBackend}; P6 will switch it transactionally to IL2CPP.");
+            else
+                Debug.Log("[P1] ✓ ScriptingBackend: IL2CPP");
 
             // 6. Android 平台检查
             if (buildTarget == BuildTarget.Android)

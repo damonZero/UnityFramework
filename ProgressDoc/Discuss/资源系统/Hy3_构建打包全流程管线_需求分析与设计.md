@@ -1,6 +1,6 @@
 # KJ 构建打包全流程管线 — 需求分析与设计文档
 
-> **⚠️ 状态对齐（2026-07-08 补）**：本文为构建管线实施**前**的需求分析与设计文档。文中所提方案已全部落地实现（S0-S9 全 Stage + StageDependencyTracker 差量检测 + BuildStagePanel 可视化管理 + CI 命令行入口）。当前权威实现说明以 `CODEMAP.md` 的 **Framework: Boot.Build.Editor** 章节和 `.planning/ROADMAP.md`「构建打包管线」条目为准。本文中的里程碑划分（M0-M6）、Stage 设计（§5）、BuildConfig 扩展（§7）等设计内容仍有效，可作为理解代码的参照。
+> **⚠️ 状态对齐（2026-07-10 补）**：当前代码已收敛为 **BuildProfile-only + BuildPipelineRunner + P0-P9 + fingerprint** 架构。旧 `BuildConfig.cs` / `BuildConfig.asset` / `BuildReport.cs` / `StageDependencyTracker.cs`、`.markers` 续跑和 mask 手动 Stage 执行已删除。本文保留历史需求分析与演进讨论；涉及 BuildConfig、旧 S0-S9 marker/mask 的段落仅作为历史背景，不再代表当前实现。当前权威入口是 `KJ/Build/Full Player Build & Validate`、`KJ/Build/Dashboard`、`Boot.Editor.Build.BuildCommandLine.Run -profile <BuildProfile.asset>`。
 >
 > 文档前缀 `Hy3_`：由本 agent（Hy3）基于项目真实代码产出，便于在 `ProgressDoc/Discuss/` 追溯。
 > 关联：`.planning/STATE.md`（运行验证 gate）、`AGENTS.md` / `CLAUDE.md`（架构边界）、`KJHybridClrBuildTools.cs`（现有构建工具）。

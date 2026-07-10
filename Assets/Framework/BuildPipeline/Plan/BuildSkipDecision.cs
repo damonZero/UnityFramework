@@ -5,7 +5,7 @@ namespace Framework.BuildPipeline.Plan
 {
     /// <summary>
     /// 跳过决策 —— 包含是否可跳过及其原因。
-    /// 机器可读，不允许只靠 marker 存在而无明确原因。
+    /// 机器可读，不允许只靠缓存文件存在而无明确原因。
     /// </summary>
     [Serializable]
     public sealed class BuildSkipDecision

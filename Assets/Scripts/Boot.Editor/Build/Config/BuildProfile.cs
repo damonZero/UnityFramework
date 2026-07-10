@@ -9,7 +9,7 @@ namespace Boot.Editor.Build
     /// <summary>
     /// 构建档案 —— 环境驱动的构建配置。
     /// 所有环境差异收敛到一个 Profile：Dev 可开 GM/调试，Formal 全禁。
-    /// 替代旧 BuildConfig 的环境/平台/签名/日志/冒烟设置。
+    /// 构建管线唯一配置源：环境、平台、签名、日志、冒烟和输出策略。
     /// </summary>
     public class BuildProfile : ScriptableObject
     {
@@ -162,8 +162,6 @@ namespace Boot.Editor.Build
         }
 
         public string GetReportDir() => $"{GetOutputDir()}/reports";
-
-        public string GetMarkerDir() => $"{GetOutputDir()}/.markers";
 
         public string GetArchiveDir() => $"{GetOutputDir()}/artifacts";
 

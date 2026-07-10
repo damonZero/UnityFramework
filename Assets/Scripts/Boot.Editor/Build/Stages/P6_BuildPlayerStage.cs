@@ -29,17 +29,15 @@ namespace Boot.Editor.Build
 
         public override BuildStageOutputs GetExpectedOutputs(BuildContext context)
         {
-            string playerPath = context.Profile?.GetPlayerPath()
-                ?? context.Config?.GetPlayerPath() ?? "Build/StandaloneWindows64/KJ.exe";
+            string playerPath = context.Profile.GetPlayerPath();
             return new BuildStageOutputs()
                 .WithRequiredFile(playerPath);
         }
 
         public override void Execute(BuildContext context)
         {
-            var profile = context.Profile;
-            var config = context.Config;
-            var buildTarget = profile?.Platform ?? config?.Platform ?? BuildTarget.StandaloneWindows64;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
+            var buildTarget = profile.Platform;
             var targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
 
             Debug.Log($"[P6] BuildPlayer: Building for {buildTarget}...");
@@ -49,11 +47,20 @@ namespace Boot.Editor.Build
             if (currentBackend != ScriptingImplementation.IL2CPP)
             {
                 Debug.Log($"[P6] Switching ScriptingBackend to IL2CPP");
+                context.Transaction.SnapshotScriptingBackend(targetGroup);
                 PlayerSettings.SetScriptingBackend(targetGroup, ScriptingImplementation.IL2CPP);
             }
 
             // 2. Development Build
-            bool isDev = profile?.DevelopmentBuild ?? config?.Development ?? true;
+            context.Transaction.SnapshotBoolSetting(
+                "EditorUserBuildSettings.development",
+                v => EditorUserBuildSettings.development = v,
+                () => EditorUserBuildSettings.development);
+            context.Transaction.SnapshotBoolSetting(
+                "EditorUserBuildSettings.allowDebugging",
+                v => EditorUserBuildSettings.allowDebugging = v,
+                () => EditorUserBuildSettings.allowDebugging);
+            bool isDev = profile.DevelopmentBuild;
             EditorUserBuildSettings.development = isDev;
             EditorUserBuildSettings.allowDebugging = isDev;
 
@@ -71,8 +78,7 @@ namespace Boot.Editor.Build
             AssetDatabase.Refresh();
 
             // 5. 构建 Player
-            string playerOutputPath = profile?.GetPlayerPath() ?? config?.GetPlayerPath()
-                ?? $"Build/{buildTarget}/KJ.exe";
+            string playerOutputPath = profile.GetPlayerPath();
             string outputDir = Path.GetDirectoryName(playerOutputPath);
             if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
                 Directory.CreateDirectory(outputDir);

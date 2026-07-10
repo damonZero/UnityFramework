@@ -27,8 +27,6 @@ namespace Boot.Editor.Build
                 "AssetConfig.Mode must be Offline (1) for Player builds. Verify P5 ApplyConfig ran.",
             ["System.UriFormatException"] =
                 "YooAsset BuiltinFileSystem URI error — check BootLoader.CreateDefaultBuiltinFileSystemParameters() uses parameterless overload.",
-            ["Skipped by mask"] =
-                "Build stage was excluded by incremental detection mask. Run full build to include all stages.",
             ["CompileDllCommand failed"] =
                 "Check Console for compilation errors in your hot-update assemblies.",
             ["YooAsset build failed"] =

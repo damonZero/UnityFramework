@@ -29,7 +29,7 @@ namespace Boot.Editor.Build
 
         public override BuildStageOutputs GetExpectedOutputs(BuildContext context)
         {
-            string packageName = context.Profile?.PackageName ?? "DefaultPackage";
+            string packageName = context.Profile.PackageName;
             string streamingAssetsRoot = $"Assets/StreamingAssets/{packageName}";
             return new BuildStageOutputs()
                 .WithRequiredDirectory(streamingAssetsRoot)
@@ -38,9 +38,9 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            string packageName = context.Profile?.PackageName ?? "DefaultPackage";
-            var buildTarget = context.Profile?.Platform ?? context.Config?.Platform
-                ?? BuildTarget.StandaloneWindows64;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
+            string packageName = profile.PackageName;
+            var buildTarget = profile.Platform;
 
             Debug.Log($"[P4] BuildAsset: Building YooAsset package '{packageName}' for {buildTarget}");
 
@@ -61,7 +61,7 @@ namespace Boot.Editor.Build
                 BuildBundleType = (int)EBundleType.AssetBundle,
                 BuildTarget = buildTarget,
                 PackageName = packageName,
-                PackageVersion = context.Profile?.VersionName ?? "1.0.0",
+                PackageVersion = profile.VersionName,
                 CompressOption = ECompressOption.LZ4,
                 DisableWriteTypeTree = true,
                 FileNameStyle = EFileNameStyle.HashName,
@@ -87,7 +87,7 @@ namespace Boot.Editor.Build
 
         public override void Verify(BuildContext context)
         {
-            string packageName = context.Profile?.PackageName ?? "DefaultPackage";
+            string packageName = context.Profile.PackageName;
             string streamingAssetsPath = $"Assets/StreamingAssets/{packageName}";
             string versionFile = $"{streamingAssetsPath}/{packageName}.version";
 

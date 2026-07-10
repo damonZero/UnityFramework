@@ -36,37 +36,34 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            var profile = context.Profile;
-            var config = context.Config;
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
 
-            bool smokeEnabled = profile?.SmokeEnabled ?? config?.SmokeEnabled ?? true;
-            if (!smokeEnabled)
+            if (!profile.SmokeEnabled)
             {
                 Debug.Log("[P8] Smoke disabled in config, skipping");
                 return;
             }
 
-            bool smokeRequired = profile?.IsSmokeMandatory ?? false;
+            bool smokeRequired = profile.IsSmokeMandatory;
 
-            var buildTarget = profile?.Platform ?? config?.Platform ?? BuildTarget.StandaloneWindows64;
+            var buildTarget = profile.Platform;
             Debug.Log($"[P8] Smoke: Testing on {buildTarget} (required={smokeRequired})...");
 
             if (buildTarget == BuildTarget.Android)
             {
-                RunAndroidSmoke(context, profile, config);
+                RunAndroidSmoke(context, profile);
             }
             else
             {
-                RunStandaloneSmoke(context, profile, config);
+                RunStandaloneSmoke(context, profile);
             }
         }
 
         // ===== Standalone Smoke =====
 
-        private void RunStandaloneSmoke(BuildContext context, BuildProfile profile, BuildConfig config)
+        private void RunStandaloneSmoke(BuildContext context, BuildProfile profile)
         {
-            string playerPath = profile?.GetPlayerPath() ?? config?.GetPlayerPath()
-                ?? "Build/StandaloneWindows64/KJ.exe";
+            string playerPath = profile.GetPlayerPath();
 
             if (Directory.Exists(playerPath))
             {
@@ -88,7 +85,7 @@ namespace Boot.Editor.Build
                     File.Delete(f);
             }
 
-            int timeout = profile?.SmokeTimeoutSec ?? config?.SmokeTimeoutSec ?? 120;
+            int timeout = profile.SmokeTimeoutSec;
             Debug.Log($"[P8] Starting: {playerPath}, timeout={timeout}s");
 
             try
@@ -137,27 +134,31 @@ namespace Boot.Editor.Build
 
         // ===== Android Smoke =====
 
-        private void RunAndroidSmoke(BuildContext context, BuildProfile profile, BuildConfig config)
+        private void RunAndroidSmoke(BuildContext context, BuildProfile profile)
         {
             string adb = FindAdb();
             if (adb == null)
             {
-                Debug.LogWarning("[P8] Smoke: adb not found, skipping Android smoke");
+                if (profile.IsSmokeMandatory)
+                    throw new BuildFailedException(Id, "ADB not found but smoke is mandatory");
+                Debug.LogWarning("[P8] Smoke: adb not found, optional Android smoke skipped");
                 return;
             }
 
-            string device = ResolveDevice(adb, profile?.SmokeDeviceSerial ?? config?.SmokeDeviceSerial);
+            string device = ResolveDevice(adb, profile.SmokeDeviceSerial);
             if (device == null)
             {
-                Debug.LogWarning("[P8] Smoke: no online Android device, skipping");
+                if (profile.IsSmokeMandatory)
+                    throw new BuildFailedException(Id, "No online Android device but smoke is mandatory");
+                Debug.LogWarning("[P8] Smoke: no online Android device, optional Android smoke skipped");
                 return;
             }
 
-            int timeout = profile?.SmokeTimeoutSec ?? config?.SmokeTimeoutSec ?? 120;
+            int timeout = profile.SmokeTimeoutSec;
             string packageId = PlayerSettings.applicationIdentifier;
             if (string.IsNullOrEmpty(packageId)) packageId = "com.DefaultCompany.KJ";
 
-            string playerPath = profile?.GetPlayerPath() ?? config?.GetPlayerPath() ?? "Build/Android/KJ.apk";
+            string playerPath = profile.GetPlayerPath();
             if (File.Exists(playerPath))
                 RunAdb(adb, device, $"install -r -d \"{playerPath}\"", timeout);
 

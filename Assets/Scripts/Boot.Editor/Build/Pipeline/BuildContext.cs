@@ -23,9 +23,6 @@ namespace Boot.Editor.Build
         /// <summary>当前使用的 Profile</summary>
         public BuildProfile Profile { get; set; }
 
-        /// <summary>旧版 BuildConfig 兼容引用（后续逐步移除）</summary>
-        public BuildConfig Config { get; set; }
-
         /// <summary>本次构建计划</summary>
         public BuildPlan Plan { get; set; }
 
@@ -39,7 +36,7 @@ namespace Boot.Editor.Build
         public BuildPaths Paths { get; set; }
 
         /// <summary>事务系统（若 Stage 需要修改项目状态）</summary>
-        public BuildConfigTransaction Transaction { get; set; }
+        public BuildTransaction Transaction { get; set; }
 
         /// <summary>是否已请求取消</summary>
         public bool IsCancellationRequested { get; set; }

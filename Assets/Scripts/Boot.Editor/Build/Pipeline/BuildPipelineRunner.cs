@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Framework.BuildPipeline.Diagnostics;
 using Framework.BuildPipeline.Plan;
 using Framework.BuildPipeline.Reports;
@@ -26,6 +28,9 @@ namespace Boot.Editor.Build
 
         public BuildReportData Run()
         {
+            if (_ctx.Profile == null)
+                throw new InvalidOperationException("BuildProfile is required.");
+
             var snapshot = BuildEnvironmentSnapshot.Capture();
             var stages = BuildStageRegistry.GetAll();
 
@@ -38,12 +43,14 @@ namespace Boot.Editor.Build
                     $"BuildStage dependency validation failed: {depErrors.Count} errors");
             }
 
+            _ctx.Paths = new BuildPaths(_ctx.Profile);
+            _ctx.Paths.EnsureDirectories();
+            _ctx.Transaction = new BuildTransaction();
             _ctx.Plan = GeneratePlan(stages);
             _ctx.Paths.EnsureDirectories();
             WriteBuildPlan();
-            _ctx.Transaction = new BuildConfigTransaction();
 
-            Debug.Log($"[BuildPipelineRunner] Build starting: RunId={_ctx.RunId}, Platform={_ctx.Profile?.Platform}");
+            Debug.Log($"[BuildPipelineRunner] Build starting: RunId={_ctx.RunId}, Profile={_ctx.Profile.ProfileName}, Platform={_ctx.Profile.Platform}");
 
             try
             {
@@ -52,6 +59,7 @@ namespace Boot.Editor.Build
                     if (_ctx.IsCancellationRequested)
                     {
                         Debug.LogWarning("[BuildPipelineRunner] Build cancelled by user");
+                        _allPassed = false;
                         _ctx.Transaction.Rollback();
                         break;
                     }
@@ -77,10 +85,16 @@ namespace Boot.Editor.Build
                 Debug.LogError($"[BuildPipelineRunner] Unexpected error: {ex}");
                 try { _ctx.Transaction.Rollback(); } catch { }
             }
+            finally
+            {
+                try { _ctx.Transaction.Rollback(); }
+                catch (Exception ex) { Debug.LogError($"[BuildPipelineRunner] Final rollback failed: {ex.Message}"); }
+            }
 
             var report = BuildReport();
             report.EnvironmentSnapshot = snapshot;
             WriteReports(report);
+            VerifyReportFiles();
             return report;
         }
 
@@ -162,6 +176,14 @@ namespace Boot.Editor.Build
             {
                 var previous = LoadPreviousFingerprint(stage.Id);
                 var decision = stage.CanSkip(_ctx, previous);
+                if (decision.CanSkip)
+                {
+                    var current = ComputeStageFingerprint(stage, includeOutputs: false);
+                    if (!current.Matches(previous))
+                    {
+                        decision = BuildSkipDecision.DoNotSkip("Input, tool, profile, or pipeline fingerprint changed");
+                    }
+                }
                 plan.AddEntry(stage.Id, stage.DisplayName, stage.Order,
                     decision.CanSkip, decision.ReasonCode, decision.HumanReason);
             }
@@ -184,36 +206,118 @@ namespace Boot.Editor.Build
 
         private BuildStageFingerprint LoadPreviousFingerprint(string stageId)
         {
-            string markerPath = Path.Combine(_ctx.Paths.StateDir, $"{stageId}.fingerprint.json");
-            if (!File.Exists(markerPath)) return null;
+            string fingerprintPath = Path.Combine(_ctx.Paths.StateDir, $"{stageId}.fingerprint.json");
+            if (!File.Exists(fingerprintPath)) return null;
             try
             {
-                return JsonUtility.FromJson<BuildStageFingerprint>(File.ReadAllText(markerPath));
+                return JsonUtility.FromJson<BuildStageFingerprint>(File.ReadAllText(fingerprintPath));
             }
             catch { return null; }
         }
 
         private void WriteStageFingerprint(IBuildStage stage)
         {
-            var fp = new BuildStageFingerprint
-            {
-                StageId = stage.Id,
-                ProfileHash = _ctx.Profile?.ComputeProfileHash() ?? "",
-                InputsHash = "stage-completed",
-                OutputsHash = "stage-completed",
-                CompletedAtUtc = DateTime.UtcNow.ToString("o"),
-                UnityVersion = Application.unityVersion,
-            };
+            var fp = ComputeStageFingerprint(stage, includeOutputs: true);
+            fp.CompletedAtUtc = DateTime.UtcNow.ToString("o");
 
             try
             {
-                string markerPath = Path.Combine(_ctx.Paths.StateDir, $"{stage.Id}.fingerprint.json");
-                File.WriteAllText(markerPath, JsonUtility.ToJson(fp, true));
+                string fingerprintPath = Path.Combine(_ctx.Paths.StateDir, $"{stage.Id}.fingerprint.json");
+                File.WriteAllText(fingerprintPath, JsonUtility.ToJson(fp, true));
             }
             catch (Exception ex)
             {
                 Debug.LogWarning($"[BuildPipelineRunner] Failed to write fingerprint: {ex.Message}");
             }
+        }
+
+        private BuildStageFingerprint ComputeStageFingerprint(IBuildStage stage, bool includeOutputs)
+        {
+            var inputs = stage.GetInputs(_ctx);
+            inputs.ProfileHash = _ctx.Profile.ComputeProfileHash();
+            inputs.WithToolVersion("Unity", Application.unityVersion);
+
+            var outputs = stage.GetExpectedOutputs(_ctx);
+
+            return new BuildStageFingerprint
+            {
+                StageId = stage.Id,
+                PipelineVersion = "1.0.0",
+                StageVersion = 1,
+                ProfileHash = inputs.ProfileHash,
+                InputsHash = HashInputs(inputs),
+                OutputsHash = includeOutputs ? HashOutputs(outputs) : "",
+                ToolsHash = HashTools(inputs),
+                UnityVersion = Application.unityVersion,
+            };
+        }
+
+        private static string HashInputs(BuildStageInputs inputs)
+        {
+            var sb = new StringBuilder();
+            sb.Append(inputs.ProfileHash).Append('\n');
+            foreach (string path in inputs.SourcePaths.OrderBy(p => p))
+                AppendPathFingerprint(sb, path);
+            foreach (string dep in inputs.DependsOnStages.OrderBy(d => d))
+                sb.Append("dep:").Append(dep).Append('\n');
+            return Sha256(sb.ToString());
+        }
+
+        private static string HashOutputs(BuildStageOutputs outputs)
+        {
+            var sb = new StringBuilder();
+            foreach (string file in outputs.RequiredFiles.OrderBy(p => p))
+                AppendPathFingerprint(sb, file);
+            foreach (string dir in outputs.RequiredDirectories.OrderBy(p => p))
+                AppendPathFingerprint(sb, dir);
+            return Sha256(sb.ToString());
+        }
+
+        private static string HashTools(BuildStageInputs inputs)
+        {
+            var sb = new StringBuilder();
+            foreach (var kv in inputs.ToolVersions.OrderBy(kv => kv.Key))
+                sb.Append(kv.Key).Append('=').Append(kv.Value).Append('\n');
+            return Sha256(sb.ToString());
+        }
+
+        private static void AppendPathFingerprint(StringBuilder sb, string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            string normalized = path.Replace('\\', '/');
+            if (File.Exists(path))
+            {
+                var fi = new FileInfo(path);
+                sb.Append("file:").Append(normalized).Append('|')
+                    .Append(fi.Length).Append('|')
+                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                return;
+            }
+
+            if (!Directory.Exists(path))
+            {
+                sb.Append("missing:").Append(normalized).Append('\n');
+                return;
+            }
+
+            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories)
+                         .Where(f => !f.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                         .OrderBy(f => f.Replace('\\', '/')))
+            {
+                var fi = new FileInfo(file);
+                sb.Append("file:").Append(file.Replace('\\', '/')).Append('|')
+                    .Append(fi.Length).Append('|')
+                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+            }
+        }
+
+        private static string Sha256(string text)
+        {
+            using var sha = SHA256.Create();
+            byte[] bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(text ?? ""));
+            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
         }
 
         // ===== 报告 =====
@@ -241,6 +345,20 @@ namespace Boot.Editor.Build
         private void WriteReports(BuildReportData report)
         {
             new BuildReportWriter().WriteAll(report, _ctx.Paths);
+        }
+
+        private void VerifyReportFiles()
+        {
+            foreach (string file in new[]
+            {
+                Path.Combine(_ctx.Paths.ReportsDir, "build_report.json"),
+                Path.Combine(_ctx.Paths.ReportsDir, "build_report.md"),
+                Path.Combine(_ctx.Paths.ReportsDir, "ai_handoff.json"),
+            })
+            {
+                if (!File.Exists(file) || new FileInfo(file).Length == 0)
+                    throw new InvalidOperationException($"Build report was not written correctly: {file}");
+            }
         }
 
         private List<Framework.BuildPipeline.Diagnostics.BuildIssue> AnalyzeStageIssues(IBuildStage stage, Exception ex)
@@ -357,7 +475,7 @@ namespace Boot.Editor.Build
     // ===== 结果与报告类型 =====
 
     /// <summary>
-    /// Stage 执行结果（新架构用，区别于 BuildReport.StageResult）
+    /// Stage 执行结果。
     /// </summary>
     [Serializable]
     public class StageExecutionResult
