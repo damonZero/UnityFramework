@@ -4,7 +4,7 @@ namespace Framework.Cache
     /// 组合策略：将多个 <see cref="IStoreEvictionPolicy{TKey}"/> 扇出。
     /// 任一子策略返回淘汰候选即淘汰该 key（OnRemoved 会扇出到所有子策略以保持一致）。
     /// </summary>
-    public sealed class CompositePolicy<TKey> : IStoreEvictionPolicy<TKey>
+    public sealed class CompositePolicy<TKey> : IStoreEvictionPolicy<TKey>, IStoreExpirationPolicy<TKey>
         where TKey : notnull
     {
         private readonly IStoreEvictionPolicy<TKey>[] _policies;
@@ -44,6 +44,19 @@ namespace Framework.Cache
             {
                 policy.Clear();
             }
+        }
+
+        public bool IsExpired(TKey key)
+        {
+            foreach (var policy in _policies)
+            {
+                if (policy is IStoreExpirationPolicy<TKey> expirationPolicy && expirationPolicy.IsExpired(key))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool TrySelectEvictionCandidate(out TKey key)

@@ -103,6 +103,48 @@ namespace Tests.EditMode
         }
 
         [Test]
+        public void ObjectPoolIgnoresDuplicateReturnOfSameInstance()
+        {
+            var pool = new ObjectPool<TestItem>(
+                factory: () => new TestItem(),
+                maxIdle: 4
+            );
+            var item = pool.Rent();
+
+            pool.Return(item);
+            pool.Return(item);
+
+            Assert.AreEqual(1, pool.GetStatistics().IdleCount, "Duplicate returns must not enqueue the same object twice.");
+            var first = pool.Rent();
+            var second = pool.Rent();
+            Assert.AreSame(item, first);
+            Assert.AreNotSame(item, second, "After duplicate return, the same instance must not be rented twice.");
+        }
+
+        [Test]
+        public void CollectionPoolValueCopyDoubleDisposeDoesNotDuplicateIdleEntry()
+        {
+#if UNITY_ASSERTIONS
+            PooledList<TestItem> copy;
+            using (var list = CollectionPool.RentList<TestItem>())
+            {
+                var rented = list.Value;
+                copy = list;
+                copy.Dispose();
+                list.Dispose();
+
+                using var next = CollectionPool.RentList<TestItem>();
+                Assert.AreSame(rented, next.Value);
+
+                using var another = CollectionPool.RentList<TestItem>();
+                Assert.AreNotSame(rented, another.Value, "Double-disposing a copied pooled struct must not enqueue the same List twice.");
+            }
+#else
+            Assert.Pass("CollectionPool duplicate-return detection is enabled in Unity assertions builds.");
+#endif
+        }
+
+        [Test]
         public void CollectionPoolRentListReturnsClearedListOnDispose()
         {
             // Arrange & Act

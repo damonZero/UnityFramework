@@ -22,4 +22,10 @@ namespace Framework.Cache
 
         void Clear();
     }
+
+    public interface IStoreExpirationPolicy<TKey>
+        where TKey : notnull
+    {
+        bool IsExpired(TKey key);
+    }
 }

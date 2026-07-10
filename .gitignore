@@ -13,3 +13,8 @@ Temp/
 obj/
 Logs/
 Bundles/
+
+# Build artifacts (large files, generated per build)
+Build/
+BuildBackup/
+HybridCLRData/

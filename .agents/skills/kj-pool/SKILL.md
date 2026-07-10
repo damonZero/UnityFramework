@@ -1,9 +1,9 @@
 ---
 name: kj-pool
 description: >
-  KJ Framework 对象池系统完整指南。涵盖 ObjectPool<T>（泛型对象池，lock 并发安全）、CollectionPool（List/HashSet/Queue/Stack/Dictionary 集合池）、PooledCollections（RAII struct 自动归还，[NonCopyable] 标记）、TypePool（类型池注册表）、GameObjectPool（Unity GameObject 池，PrefabPoolState 内聚状态，BoundedStore+LruPolicy Prefab 缓存，IInstanceRecyclePolicy 实例库策略，反向索引污染检测，主线程断言）、PoolLease<T>（using 模式）、PoolDependencies（静态委托注入桥接资源加载）、InstanceRecyclePolicy（CapacityInstancePolicy/PersistentInstancePolicy）。
+  KJ Framework 对象池系统完整指南。涵盖 ObjectPool<T>（泛型对象池，lock 并发安全 + 重复归还防护）、SingleThreadObjectPool<T>（内部单线程轻量池，CollectionPool 热路径使用）、CollectionPool（List/HashSet/Queue/Stack/Dictionary 集合池）、PooledCollections（RAII struct 自动归还，[NonCopyable] 标记）、TypePool（类型池注册表）、GameObjectPool（Unity GameObject 池，PrefabPoolState 内聚状态，BoundedStore+LruPolicy Prefab 缓存，IInstanceRecyclePolicy 实例库策略，反向索引污染检测，主线程断言）、PoolLease<T>（using 模式）、PoolDependencies（静态委托注入桥接资源加载）、InstanceRecyclePolicy（CapacityInstancePolicy/PersistentInstancePolicy）。
   触发场景：创建/使用对象池、性能优化减少 GC 分配、管理 GameObject 频繁创建销毁、使用 using 模式自动归还、配置池容量和预热、常驻路径保护、实例回收策略定制。
-  核心规则：Framework.Pool 不引用 Scripts；通过 PoolDependencies 静态委托桥接外部依赖；集合池通过 CollectionPool.Rent*() + using 使用；GameObject 池依赖 PoolInstanceTag 做污染检测 + _instanceToPath 反向索引；GameObjectPool 仅主线程调用；PooledX struct 禁止值拷贝。
+  核心规则：Framework.Pool 不引用 Scripts；通过 PoolDependencies 静态委托桥接外部依赖；ObjectPool<T> 是通用线程安全池；CollectionPool 使用 SingleThreadObjectPool<T>，面向主线程/帧内热路径；GameObjectPool 仅主线程调用，异步加载只做同路径 single-flight，不表示多线程 Unity 对象池；PooledX struct 禁止值拷贝。
 metadata:
   doc: CODEMAP.md
   layer: Framework
@@ -18,6 +18,8 @@ metadata:
 ```
 IPool<T>  ←──  ObjectPool<T>  ←──  PoolLease<T> (struct, IDisposable)
                                                 ↑
+SingleThreadObjectPool<T> (internal, no lock, assertion guards)
+        ↑
 CollectionPool ──→ PooledList<T> / PooledHashSet<T> / ...  (RAII struct wrappers, [NonCopyable])
 
 TypePool  ←──  ConcurrentDictionary<Type, object>  (类型→池注册表)
@@ -62,7 +64,8 @@ var stats = pool.GetStatistics();  // IdleCount / CreatedCount / RentCount / Ret
 **性能要点：**
 - `Stack<T>` 做 LIFO 空闲缓存（CPU cache 友好）
 - `lock(_gate)` 保护所有 mutation 操作
-- `Return` 先调 `reset`（锁外），再入栈（锁内）— 减少锁持有时间
+- `_idleSet` 防止同一对象重复归还，避免 PoolLease / 调用方误用导致同实例多次入栈
+- 适合跨线程或后台逻辑使用；不要把它作为 CollectionPool 热路径的默认实现
 
 ### CollectionPool — 集合池
 
@@ -79,9 +82,12 @@ dict.Value["key"] = 100;
 ```
 
 **性能要点：**
-- 每种集合类型 5 个内部 static `ObjectPool`，capacity=32
+- 每种集合类型使用内部 static `SingleThreadObjectPool<T>`，capacity=32
+- `SingleThreadObjectPool<T>` 不加 lock，面向 Unity 主线程/帧内临时集合热路径
+- `UNITY_ASSERTIONS` 下会校验创建线程与重复归还；正式包不保留 `_idleSet`，避免额外开销
 - reset 动作为 `collection.Clear()`，不释放内部 capacity（避免下次重新分配）
 - `PooledCollections` 是 struct wrapper，零 GC 分配
+- 不要从后台线程使用 `CollectionPool`；后台多线程临时对象应使用 `ObjectPool<T>` 或局部 new
 
 ### TypePool — 类型池注册表
 
@@ -136,6 +142,7 @@ pool.Clear();
 - **Prefab 缓存**：`BoundedStore<string, GameObject>` + `LruPolicy`，替换旧 `Cache` 硬编码 LRU
 - **主线程断言**：`GameObjectPool` 构造时记录 `_mainThreadId`，所有公开方法入口 `AssertMainThread()` 抛 `InvalidOperationException`
 - **污染检测**：回收的实例必须有 `PoolInstanceTag` 组件（自动添加），`IsRecycled` 防重复回收，反向索引校验 `PrefabPath` 防跨路径混淆
+- **线程模型**：Unity 对象操作主线程 only；`LoadGates` 只防止同一路径异步重复加载，不代表 `GameObjectPool` 支持多线程调用
 
 **容器模式：**
 - `ChangeParent` — 回收时移回 root（层级整洁，但有 Transform 变更开销）
@@ -172,11 +179,12 @@ PoolDependencies.ReleaseAssetByPath = path => _assetSystem.Release<GameObject>(p
 
 1. **集合池优先**: 任何临时集合都用 `using var list = CollectionPool.RentList<T>()`，而不是 `new List<T>()`
 2. **PooledX 禁止值拷贝**: `PooledList<T>` 等是 mutable struct，写 `var b = a;` 后两个都 Dispose 会把同一集合两次归还进共享池 → 池损坏
-3. **配置 maxIdle**: 根据内存预算设置合理的 maxIdle，避免无限堆积
-4. **预热关键路径**: 对频繁创建的类型在初始化时 preload
-5. **GameObjectPool 仅主线程调用**: 有运行时断言保护，子线程调用会抛 InvalidOperationException
-6. **局部池必须 Clear**: 跟随 UI/场景的局部池销毁前调 `pool.Clear()` 释放实例和 Prefab 引用
-7. **常驻路径用 MarkPersistent**: 对不会卸载的常用 Prefab（如主角、UI 通用控件）标记常驻，避免被容量淘汰
+3. **CollectionPool 仅主线程热路径使用**: 它为性能使用单线程池，后台线程不要调用
+4. **配置 maxIdle**: 根据内存预算设置合理的 maxIdle，避免无限堆积
+5. **预热关键路径**: 对频繁创建的类型在初始化时 preload
+6. **GameObjectPool 仅主线程调用**: 有运行时断言保护，子线程调用会抛 InvalidOperationException
+7. **局部池必须 Clear**: 跟随 UI/场景的局部池销毁前调 `pool.Clear()` 释放实例和 Prefab 引用
+8. **常驻路径用 MarkPersistent**: 对不会卸载的常用 Prefab（如主角、UI 通用控件）标记常驻，避免被容量淘汰
 
 ## 依赖图
 

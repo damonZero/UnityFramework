@@ -232,5 +232,49 @@ namespace Tests.EditMode
             // 修复后：错误归还销毁实例时，应补足 registeredPath 的活跃计数（减回 0）。
             Assert.AreEqual(0, pool.GetActiveCount(registeredPath), "反向索引污染销毁后，注册路径活跃计数不应泄漏");
         }
+
+        [Test]
+        public void InstanceFromAnotherPoolIsRejectedAndDoesNotChangeCounts()
+        {
+            FakeLoadCube();
+
+            var ownerPool = new GameObjectPool(null, 64);
+            var otherPool = new GameObjectPool(null, 64);
+            const string prefabPath = "cube";
+
+            var inst = ownerPool.GetAsync(prefabPath).GetAwaiter().GetResult();
+            Assert.AreEqual(1, ownerPool.GetActiveCount(prefabPath));
+            Assert.AreEqual(0, otherPool.GetActiveCount(prefabPath));
+
+            LogAssert.Expect(LogType.Error, $"[GameObjectPool] 实例 '{inst.name}' 不属于当前对象池，PrefabPath='{prefabPath}'（已拒绝入库）。");
+
+            otherPool.Recycle(inst);
+
+            Assert.AreEqual(1, ownerPool.GetActiveCount(prefabPath), "外部池拒收后，原池活跃计数不应被改动。");
+            Assert.AreEqual(0, otherPool.GetActiveCount(prefabPath), "外部池不能为未登记实例创建负数或污染计数。");
+            Assert.AreEqual(0, otherPool.GetIdleCount(prefabPath), "外部池不能把未登记实例放入 idle 库存。");
+
+            ownerPool.Recycle(inst);
+            Assert.AreEqual(1, ownerPool.GetIdleCount(prefabPath));
+            Assert.AreEqual(0, ownerPool.GetActiveCount(prefabPath));
+        }
+
+        [Test]
+        public void ClearReleasesCachedPrefabsThroughBoundedStoreClear()
+        {
+            var released = new List<string>();
+            PoolDependencies.LoadAssetAsync = (path, parent) => UniTask.FromResult(GameObject.CreatePrimitive(PrimitiveType.Cube));
+            PoolDependencies.ReleaseAssetByPath = path => released.Add(path);
+
+            var pool = new GameObjectPool(null, 64);
+            const string prefabPath = "cube";
+            var inst = pool.GetAsync(prefabPath).GetAwaiter().GetResult();
+            pool.Recycle(inst);
+
+            pool.Clear();
+
+            CollectionAssert.AreEqual(new[] { prefabPath }, released, "Clear should release each cached prefab exactly once.");
+            Assert.IsFalse(PoolDependencies.LoadGates.ContainsKey(prefabPath), "Clear should remove the prefab load gate.");
+        }
     }
 }

@@ -1,7 +1,7 @@
 ---
 name: kj-pool
 description: >
-  KJ Framework 对象池系统完整指南。涵盖 ObjectPool<T>（泛型对象池，lock 并发安全）、CollectionPool（List/HashSet/Queue/Stack/Dictionary 集合池）、PooledCollections（RAII struct 自动归还，[NonCopyable] 标记）、TypePool（类型池注册表）、GameObjectPool（Unity GameObject 池，PrefabPoolState 内聚状态，BoundedStore+LruPolicy Prefab 缓存，IInstanceRecyclePolicy 实例库策略，反向索引污染检测，主线程断言）、PoolLease<T>（using 模式）、PoolDependencies（静态委托注入桥接资源加载）、InstanceRecyclePolicy（CapacityInstancePolicy/PersistentInstancePolicy）。
+  KJ Framework 对象池系统完整指南。涵盖 ObjectPool<T>（泛型对象池，lock 并发安全 + _idleSet 防重复归还）、SingleThreadObjectPool<T>（内部无锁集合池后端，仅创建线程使用 + UNITY_ASSERTIONS 下防双归还 + 线程断言）、CollectionPool（List/HashSet/Queue/Stack/Dictionary 集合池，底层用 SingleThreadObjectPool）、PooledCollections（RAII struct 自动归还，[NonCopyable] 标记）、TypePool（类型池注册表，ConcurrentDictionary）、GameObjectPool（Unity GameObject 池，PrefabPoolState 内聚状态，BoundedStore+LruPolicy Prefab 缓存，SemaphoreSlim 并发门控，IInstanceRecyclePolicy 实例库策略，反向索引污染检测，主线程断言）、PoolLease<T>（using 模式）、PoolDependencies（静态委托注入桥接资源加载）、InstanceRecyclePolicy（CapacityInstancePolicy/PersistentInstancePolicy）。
   触发场景：创建/使用对象池、性能优化减少 GC 分配、管理 GameObject 频繁创建销毁、使用 using 模式自动归还、配置池容量和预热、常驻路径保护、实例回收策略定制。
   核心规则：Framework.Pool 不引用 Scripts；通过 PoolDependencies 静态委托桥接外部依赖；集合池通过 CollectionPool.Rent*() + using 使用；GameObject 池依赖 PoolInstanceTag 做污染检测 + _instanceToPath 反向索引；GameObjectPool 仅主线程调用；PooledX struct 禁止值拷贝。
 metadata:
@@ -16,14 +16,23 @@ metadata:
 ## 架构速查
 
 ```
-IPool<T>  ←──  ObjectPool<T>  ←──  PoolLease<T> (struct, IDisposable)
-                                                ↑
+IPool<T>  ←──  ObjectPool<T>               ←──  PoolLease<T> (struct, IDisposable)
+              ├── Stack<T> _idle                   ↑
+              ├── HashSet<T> _idleSet (防重复归还)
+              └── lock(_gate)
+
+SingleThreadObjectPool<T> (internal, 无锁)
+              ├── Stack<T> _idle
+              ├── UNITY_ASSERTIONS: HashSet<T> _idleSet + 线程断言
+              └── CollectionPool 内部使用
+
 CollectionPool ──→ PooledList<T> / PooledHashSet<T> / ...  (RAII struct wrappers, [NonCopyable])
 
 TypePool  ←──  ConcurrentDictionary<Type, object>  (类型→池注册表)
 
 GameObjectPool  ──→ PrefabPoolState (Idle/Instances/ActiveCount/IdleCount/IsPersistent/IsPrefabCached)
                  ├── BoundedStore<string, GameObject> + LruPolicy  (Prefab 引用缓存)
+                 ├── SemaphoreSlim per-prefab 并发门控 (PoolDependencies.LoadGates)
                  ├── IInstanceRecyclePolicy (CapacityInstancePolicy / PersistentInstancePolicy)
                  ├── _instanceToPath (反向索引: O(1) 污染检测 + 防双回收)
                  └── AssertMainThread() (运行时主线程断言)
@@ -31,7 +40,7 @@ GameObjectPool  ──→ PrefabPoolState (Idle/Instances/ActiveCount/IdleCount/
 
 ## 各组件使用指南
 
-### ObjectPool<T> — 泛型对象池
+### ObjectPool<T> — 泛型对象池（线程安全）
 
 ```csharp
 // 创建：factory 必传，reset/maxIdle/preload 可选
@@ -45,7 +54,8 @@ var pool = new ObjectPool<MyClass>(
 // Rent — 无空闲时自动 Create
 var item = pool.Rent();
 
-// Return — 调用 reset，超 maxIdle 时丢弃
+// Return — 调 reset（锁外），然后入栈（锁内）；超 maxIdle 时丢弃
+//         内置 _idleSet (ReferenceComparer) 防重复归还
 pool.Return(item);
 
 // RentLease — using 模式自动归还（推荐）
@@ -62,7 +72,22 @@ var stats = pool.GetStatistics();  // IdleCount / CreatedCount / RentCount / Ret
 **性能要点：**
 - `Stack<T>` 做 LIFO 空闲缓存（CPU cache 友好）
 - `lock(_gate)` 保护所有 mutation 操作
-- `Return` 先调 `reset`（锁外），再入栈（锁内）— 减少锁持有时间
+- `Return` 先调 `reset`（锁外），再入栈（锁内）— 减少锁持有时间；reset 抛异常时回滚 `_idleSet` 标记
+- `_idleSet` 使用 ReferenceComparer，在 Reset 前标记已归还，防止同对象重复入栈
+
+### SingleThreadObjectPool<T> — 内部集合池后端（无锁）
+
+```csharp
+// internal — 仅供 CollectionPool 内部使用
+// 无 lock：假设仅创建线程使用
+// UNITY_ASSERTIONS 构建下：
+//   - _idleSet 防重复归还（与 ObjectPool 一致）
+//   - AssertOwnerThread() 线程断言
+// 生产构建下零开销（防御代码完全 #if 掉）
+```
+
+- 每种集合类型（List<T>/HashSet<T>/Queue<T>/Stack<T>/Dictionary<TKey,TValue>）一个 static `SingleThreadObjectPool`，capacity=32
+- reset 动作为 `collection.Clear()`，不释放内部 capacity（避免下次重新分配）
 
 ### CollectionPool — 集合池
 
@@ -79,8 +104,8 @@ dict.Value["key"] = 100;
 ```
 
 **性能要点：**
-- 每种集合类型 5 个内部 static `ObjectPool`，capacity=32
-- reset 动作为 `collection.Clear()`，不释放内部 capacity（避免下次重新分配）
+- 底层使用 `SingleThreadObjectPool`（无锁），比 `ObjectPool` 更轻量
+- 内部 static pool，每种类型全局共享
 - `PooledCollections` 是 struct wrapper，零 GC 分配
 
 ### TypePool — 类型池注册表
@@ -109,7 +134,7 @@ var pool = new GameObjectPool(
     recyclePolicy: null           // 默认 CapacityInstancePolicy(maxIdlePerPrefab)
 );
 
-// 异步获取（自动加载 Prefab + SemaphoreSlim 并发保护 + 二次 TryGet）
+// 异步获取（SemaphoreSlim per-prefab 门控 + BoundedStore 缓存 + 二次 TryGet 防重复加载）
 var instance = await pool.GetAsync("Assets/Prefabs/Bullet.prefab", parent);
 
 // 回收（超 maxIdle 时 Destroy 而非入栈）
@@ -134,8 +159,11 @@ pool.Clear();
 - **反向索引**：`_instanceToPath`（Dictionary<GameObject, string>）提供 O(1) 污染检测 + 防双回收，借鉴 ETPro instPathCache 精神
 - **实例库策略化**：`IInstanceRecyclePolicy` 决定 Recycle 时保留还是 Destroy；默认 `CapacityInstancePolicy(maxIdlePerPrefab)`，可注入 `PersistentInstancePolicy` 保护常驻路径
 - **Prefab 缓存**：`BoundedStore<string, GameObject>` + `LruPolicy`，替换旧 `Cache` 硬编码 LRU
+- **并发门控**：`PoolDependencies.LoadGates`（ConcurrentDictionary<string, SemaphoreSlim>）per-prefab 门控 + 二次 TryGet，防止同一 Prefab 并发加载
 - **主线程断言**：`GameObjectPool` 构造时记录 `_mainThreadId`，所有公开方法入口 `AssertMainThread()` 抛 `InvalidOperationException`
-- **污染检测**：回收的实例必须有 `PoolInstanceTag` 组件（自动添加），`IsRecycled` 防重复回收，反向索引校验 `PrefabPath` 防跨路径混淆
+- **污染检测**：回收的实例必须有 `PoolInstanceTag` 组件（自动添加），`IsRecycled` 防重复回收，反向索引校验 `PrefabPath` 防跨路径混淆；错误归还时自动补足注册路径的活跃计数
+- **假 null 处理**：GetAsync 弹出 idle 实例时检测 Unity 假 null（被外部 Destroy 的对象），自动从注册表清出
+- **EditMode 兼容**：`DestroyInstance` 在 `UNITY_EDITOR` 下用 `DestroyImmediate`，避免 EditMode 测试中 `Object.Destroy` 的 Error 日志
 
 **容器模式：**
 - `ChangeParent` — 回收时移回 root（层级整洁，但有 Transform 变更开销）
@@ -149,8 +177,9 @@ pool.Clear();
 ### IInstanceRecyclePolicy — 实例回收策略
 
 ```csharp
-// 默认：容量策略，maxIdlePerPrefab 控制
+// 默认：容量策略
 var policy = new CapacityInstancePolicy(maxIdle: 20);
+// maxIdle <= 0 → 无上限，保留全部（与 ObjectPool capacity=0 语义一致）
 
 // 常驻装饰器：部分路径永远保留
 var persistentSet = new HashSet<string> { "Prefabs/Player", "Prefabs/UI_Button" };
@@ -166,6 +195,7 @@ PoolDependencies.LoadAssetAsync = (path, parent) => _assetSystem.LoadAssetAsync<
 PoolDependencies.ReleaseAssetByPath = path => _assetSystem.Release<GameObject>(path);
 
 // LoadGates: ConcurrentDictionary<string, SemaphoreSlim> — 防止同一 Prefab 并发加载
+// 门控在 Prefab 缓存清除时自动移除
 ```
 
 ## 最佳实践
@@ -177,6 +207,7 @@ PoolDependencies.ReleaseAssetByPath = path => _assetSystem.Release<GameObject>(p
 5. **GameObjectPool 仅主线程调用**: 有运行时断言保护，子线程调用会抛 InvalidOperationException
 6. **局部池必须 Clear**: 跟随 UI/场景的局部池销毁前调 `pool.Clear()` 释放实例和 Prefab 引用
 7. **常驻路径用 MarkPersistent**: 对不会卸载的常用 Prefab（如主角、UI 通用控件）标记常驻，避免被容量淘汰
+8. **ObjectPool 的 Return 在锁外调 reset**: 自定义 reset 回调避免长时间持锁
 
 ## 依赖图
 

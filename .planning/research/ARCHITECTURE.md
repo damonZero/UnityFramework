@@ -14,7 +14,7 @@
 > - `AppLifetimeScope` / `BootstrapContext` / `IBootstrapStage` / `BootLifetimeScope` 旧启动链已替换为 `Entry` + `BootUpdateRunner` + `ProjectStartup` + `ProjectLifetimeScope`。
 > - 稳定底层模块直接放 `Assets/Framework/`，不使用 `Assets/Framework/Package/`。
 > - §6 (资源管理) 的旧 Core 直接封装描述已被 `Framework.Asset` 下沉方案取代。本章节 §1 的整体架构方向仍有效。
-> - **构建打包管线** 不在本文档覆盖范围内，详见 `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md` 及代码 `Assets/Scripts/Boot.Editor/Build/`（S0-S9 十阶段 + `KJBuildPipeline` + `StageDependencyTracker` + `BuildStagePanel`）。
+> - **构建打包管线** 不在本文档覆盖范围内，详见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md` 及代码 `Assets/Scripts/Boot.Editor/Build/`（S0-S9 十阶段 + `KJBuildPipeline` + `StageDependencyTracker` + `BuildStagePanel`）。
 > - **对象池+缓存重构** 详见 `ProgressDoc/Review/对象池与缓存系统_代码审查_2026-07-08.md` 和 `ProgressDoc/Review/对象池与缓存系统_重构实施Review_2026-07-08.md`。
 
 ---

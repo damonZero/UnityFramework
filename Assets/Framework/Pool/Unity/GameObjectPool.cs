@@ -100,9 +100,11 @@ namespace Framework.Pool
                 await gate.WaitAsync(CancellationToken.None);
                 try
                 {
+                    await UniTask.SwitchToMainThread();
                     if (!_prefabCache.TryGet(prefabPath, out prefab))
                     {
                         prefab = await LoadPrefabAsync(prefabPath);
+                        await UniTask.SwitchToMainThread();
                         if (prefab == null)
                         {
                             return null;
@@ -115,9 +117,14 @@ namespace Framework.Pool
                 finally
                 {
                     gate.Release();
+                    if (!_prefabCache.TryGet(prefabPath, out _))
+                    {
+                        PoolDependencies.LoadGates.TryRemove(prefabPath, out _);
+                    }
                 }
             }
 
+            await UniTask.SwitchToMainThread();
             if (prefab == null)
             {
                 return null;
@@ -144,16 +151,26 @@ namespace Framework.Pool
                 return;
             }
 
+            var prefabPath = tag.PrefabPath;
+
+            // C-3 反向索引污染检测（ETPro instPathCache）：实例被错误归还到别的池/路径。
+            if (!_instanceToPath.TryGetValue(instance, out var registeredPath))
+            {
+                if (!tag.IsRecycled)
+                {
+                    Debug.LogError($"[GameObjectPool] 实例 '{instance.name}' 不属于当前对象池，PrefabPath='{prefabPath}'（已拒绝入库）。");
+                }
+
+                return;
+            }
+
             // 已回收 → 直接返回（配合 tag.IsRecycled 的 O(1) 防双回收）。
             if (tag.IsRecycled)
             {
                 return;
             }
 
-            var prefabPath = tag.PrefabPath;
-
-            // C-3 反向索引污染检测（ETPro instPathCache）：实例被错误归还到别的池/路径。
-            if (_instanceToPath.TryGetValue(instance, out var registeredPath) && registeredPath != prefabPath)
+            if (registeredPath != prefabPath)
             {
                 Debug.LogError($"[GameObjectPool] 实例被错误归还至路径 '{prefabPath}'，但其注册路径为 '{registeredPath}'（反向索引污染，已销毁不入库）。");
                 // 该实例在被错误归还时仍是 active（tag.IsRecycled==false），需补足注册路径的活跃计数，
@@ -213,6 +230,8 @@ namespace Framework.Pool
 
         public void Clear()
         {
+            AssertMainThread();
+
             using var pooledInstances = CollectionPool.RentList<GameObject>();
             var instanceSnapshot = pooledInstances.Value;
             foreach (var state in _states.Values)
@@ -229,22 +248,6 @@ namespace Framework.Pool
             foreach (var inst in instanceSnapshot)
             {
                 DestroyInstance(inst);
-            }
-
-            using var pooledPrefabPaths = CollectionPool.RentList<string>();
-            var prefabPaths = pooledPrefabPaths.Value;
-            foreach (var kv in _states)
-            {
-                if (kv.Value.IsPrefabCached)
-                {
-                    prefabPaths.Add(kv.Key);
-                }
-            }
-
-            foreach (var prefabPath in prefabPaths)
-            {
-                PoolDependencies.ReleaseAssetByPath?.Invoke(prefabPath);
-                PoolDependencies.LoadGates.TryRemove(prefabPath, out _);
             }
 
             _states.Clear();
@@ -354,6 +357,7 @@ namespace Framework.Pool
             }
 
             PoolDependencies.ReleaseAssetByPath?.Invoke(prefabPath);
+            PoolDependencies.LoadGates.TryRemove(prefabPath, out _);
         }
 
         private PrefabPoolState GetOrAddState(string prefabPath)

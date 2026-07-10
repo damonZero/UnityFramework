@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run total="94" passed="94" failed="0" skipped="0" inconclusive="0">
+  <test-case name="ArtifactEntry_Sha256_DifferentForDifferentContent" status="Passed">
+  </test-case>
+  <test-case name="ArtifactEntry_Sha256_SameForSameContent" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_Defaults_AreReasonable" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_GetMarkerDir_UnderOutputDir" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_GetOutputDir_AutoDerives" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_GetOutputDir_UsesCustomDir" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_GetPlayerPath_ReturnsCorrectExtension" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_GetReportPath_DefaultName" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_Platform_AllSupported" status="Passed">
+  </test-case>
+  <test-case name="BuildConfig_Version_IsSettable" status="Passed">
+  </test-case>
+  <test-case name="BuildFailedException_HasInnerException" status="Passed">
+  </test-case>
+  <test-case name="BuildFailedException_HasStageName" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_AddArtifact_ComputesMetadata" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_AddArtifact_MissingFile" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_AddStage_CreatesCorrectEntry" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_AddStage_MultipleStagesInOrder" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_BuildSummary_ComputesCorrectly" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_SmokeConclusion_IsNullIfNotSet" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_SmokeConclusion_RecordsMilestones" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_WriteJson_ProducesValidFile" status="Passed">
+  </test-case>
+  <test-case name="BuildReport_WriteMarkdown_ProducesValidFile" status="Passed">
+  </test-case>
+  <test-case name="Markers_ClearAllMarkers_RemovesAll" status="Passed">
+  </test-case>
+  <test-case name="Markers_IsStageDone_ReturnsFalseWhenNoMarker" status="Passed">
+  </test-case>
+  <test-case name="Markers_MarkAndCheck_Works" status="Passed">
+  </test-case>
+  <test-case name="SmokeConclusion_DefaultResult_IsNotScheduled" status="Passed">
+  </test-case>
+  <test-case name="SmokeResult_AllValues_AreDistinct" status="Passed">
+  </test-case>
+  <test-case name="StageResult_Duration_ShouldBeNonNegative" status="Passed">
+  </test-case>
+  <test-case name="StageResult_Invariants_CanBeTracked" status="Passed">
+  </test-case>
+  <test-case name="StageResult_Skipped_HasReason" status="Passed">
+  </test-case>
+  <test-case name="CapacityPolicyKeepsOnlyNEntries" status="Passed">
+  </test-case>
+  <test-case name="ClearInvokesOnEvictedForAllValues" status="Passed">
+  </test-case>
+  <test-case name="CompositePolicyFansOutToAllSubPolicies" status="Passed">
+  </test-case>
+  <test-case name="GetOrAddRecreatesExpiredTtlEntry" status="Passed">
+  </test-case>
+  <test-case name="GetOrAddSameKeyConcurrentRunsFactoryOnce" status="Passed">
+  </test-case>
+  <test-case name="LruPolicyEvictsLeastRecentlyUsed" status="Passed">
+  </test-case>
+  <test-case name="PutOverwriteInvokesOnEvictedForOldValue" status="Passed">
+  </test-case>
+  <test-case name="TryGetPurgesExpiredTtlEntry" status="Passed">
+  </test-case>
+  <test-case name="TtlPolicySelectsExpiredEntry" status="Passed">
+  </test-case>
+  <test-case name="EvictionCallbackIsInvokedOutsideLock" status="Passed">
+  </test-case>
+  <test-case name="GetOrAddDiscardsDuplicateOutsideLock" status="Passed">
+  </test-case>
+  <test-case name="GetOrAddEvictsOutsideLock" status="Passed">
+  </test-case>
+  <test-case name="GetOrAddFactoryRunsOutsideLock" status="Passed">
+  </test-case>
+  <test-case name="CallingFromBackgroundThreadThrows" status="Passed">
+  </test-case>
+  <test-case name="CapacityInstancePolicyControlsRetention" status="Passed">
+  </test-case>
+  <test-case name="ClearReleasesCachedPrefabsThroughBoundedStoreClear" status="Passed">
+  </test-case>
+  <test-case name="GetAsyncConsumingDestroyedInstanceDoesNotLeakNullRegistryEntry" status="Passed">
+  </test-case>
+  <test-case name="InstanceFromAnotherPoolIsRejectedAndDoesNotChangeCounts" status="Passed">
+  </test-case>
+  <test-case name="PersistentPathNeverEvictedByCapacity" status="Passed">
+  </test-case>
+  <test-case name="RecycleOverMaxIdleDestroysExcessInstances" status="Passed">
+  </test-case>
+  <test-case name="ReverseIndexPreventsDoubleRecycle" status="Passed">
+  </test-case>
+  <test-case name="WrongPathRecycleDoesNotLeakActiveCount" status="Passed">
+  </test-case>
+  <test-case name="AllTenHotUpdateAssembliesAreLoaded" status="Passed">
+  </test-case>
+  <test-case name="AssetConfig_PlayModeHasExpectedValues" status="Passed">
+  </test-case>
+  <test-case name="AssetRuntime_WrapFromExistingPackage_NullGuards" status="Passed">
+  </test-case>
+  <test-case name="AssetRuntime_WrapFromExistingPackage_SetsReady" status="Passed">
+  </test-case>
+  <test-case name="BootAssemblyEntry_ConstructorSetsProperties" status="Passed">
+  </test-case>
+  <test-case name="BootBridge_ExposesState_AndEmptyEarlyLogsWhenNull" status="Passed">
+  </test-case>
+  <test-case name="BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName" status="Passed">
+  </test-case>
+  <test-case name="BootMetadataEntry_ConstructorSetsProperties" status="Passed">
+  </test-case>
+  <test-case name="BootRemoteService_CustomUrlProviderOverrides" status="Passed">
+  </test-case>
+  <test-case name="BootRemoteService_DefaultUrlUsesBaseUrl" status="Passed">
+  </test-case>
+  <test-case name="BootStartupLog_RecordsSnapshotEntries" status="Passed">
+  </test-case>
+  <test-case name="BootStartupSettings_Defaults" status="Passed">
+  </test-case>
+  <test-case name="BootUpdateRunner_HasStaticStartTakingBootBridge" status="Passed">
+  </test-case>
+  <test-case name="HybridCLRSettings_ContainsAllTenHotUpdateAssemblies" status="Passed">
+  </test-case>
+  <test-case name="Launcher_DoesNotReferenceHotUpdateAssemblies" status="Passed">
+  </test-case>
+  <test-case name="CoreStartupFailureBlocksModelLoading" status="Passed">
+  </test-case>
+  <test-case name="LoadAllLoadsModelsOrderedByPriority" status="Passed">
+  </test-case>
+  <test-case name="ModelLoadFailureDoesNotBlockOtherModels" status="Passed">
+  </test-case>
+  <test-case name="UnloadAllUnloadsModelsInReverseOrder" status="Passed">
+  </test-case>
+  <test-case name="CollectionPoolRentListReturnsClearedListOnDispose" status="Passed">
+  </test-case>
+  <test-case name="CollectionPoolValueCopyDoubleDisposeDoesNotDuplicateIdleEntry" status="Passed">
+  </test-case>
+  <test-case name="ObjectPoolIgnoresDuplicateReturnOfSameInstance" status="Passed">
+  </test-case>
+  <test-case name="ObjectPoolMaxIdleDiscardsItemsOverCapacity" status="Passed">
+  </test-case>
+  <test-case name="ObjectPoolPreloadInstantiatesFactoryItems" status="Passed">
+  </test-case>
+  <test-case name="ObjectPoolRentLeaseAutoReturnsOnDispose" status="Passed">
+  </test-case>
+  <test-case name="ObjectPoolRentReturnsFactoryItemAndPushesToStackOnReturn" status="Passed">
+  </test-case>
+  <test-case name="TypePoolGetOrCreateLazilyRegistersPoolAndReturnsItems" status="Passed">
+  </test-case>
+  <test-case name="GameLog_BuffersBeforeSinkAndReplaysOnInstall" status="Passed">
+  </test-case>
+  <test-case name="RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries" status="Passed">
+  </test-case>
+  <test-case name="RuntimeLogManager_DoesNotReplaceExistingBridgeSinkWhenSessionAlreadyExists" status="Passed">
+  </test-case>
+  <test-case name="RuntimeLogSession_EscapesMessagesAndWritesExceptionFields" status="Passed">
+  </test-case>
+  <test-case name="RuntimeLogSession_RespectsMinimumLevel" status="Passed">
+  </test-case>
+  <test-case name="RuntimeLogSession_WritesJsonlAndLatestFiles" status="Passed">
+  </test-case>
+  <test-case name="InitAllSortsAndInitializesSystemsByPriority" status="Passed">
+  </test-case>
+  <test-case name="InitFailuresAreTrackedAndDoNotCrashEntireInitialization" status="Passed">
+  </test-case>
+  <test-case name="ShutdownAllExecutesInReverseOrderOfInitialization" status="Passed">
+  </test-case>
+  <test-case name="TickingDispatchesToTickableSystems" status="Passed">
+  </test-case>
+  <test-case name="CallProbeAssertSequenceAcceptsMatchingCalls" status="Passed">
+  </test-case>
+  <test-case name="ManualClockAdvanceUpdatesTimeAndDelta" status="Passed">
+  </test-case>
+  <test-case name="RecordingAssetSystemRecordsOnlySuccessfulLoads" status="Passed">
+  </test-case>
+  <test-case name="RecordingAssetSystemTracksMissingRequestsWithoutSuccessfulLoads" status="Passed">
+  </test-case>
+  <test-case name="RecordingAssetSystemTracksReleaseAndUnloadUnused" status="Passed">
+  </test-case>
+  <test-case name="RecordingPublisherCapturesPublishedEvents" status="Passed">
+  </test-case>
+</test-run>

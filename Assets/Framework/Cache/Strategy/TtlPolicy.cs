@@ -8,7 +8,7 @@ namespace Framework.Cache
     /// 注意：本策略仅对「已过期」项返回淘汰候选；若需硬性容量上限，请配合
     /// <see cref="CapacityPolicy{TKey}"/> 通过 <see cref="CompositePolicy{TKey}"/> 组合使用。
     /// </summary>
-    public sealed class TtlPolicy<TKey> : IStoreEvictionPolicy<TKey>
+    public sealed class TtlPolicy<TKey> : IStoreEvictionPolicy<TKey>, IStoreExpirationPolicy<TKey>
         where TKey : notnull
     {
         private readonly TimeSpan _ttl;
@@ -42,13 +42,21 @@ namespace Framework.Cache
 
         public void Clear() => _timestamps.Clear();
 
+        public bool IsExpired(TKey key)
+        {
+            if (!_timestamps.TryGetValue(key, out var timestamp))
+            {
+                return false;
+            }
+
+            return _clock() - timestamp >= _ttl.Ticks;
+        }
+
         public bool TrySelectEvictionCandidate(out TKey key)
         {
-            var now = _clock();
-            var threshold = _ttl.Ticks;
             foreach (var kv in _timestamps)
             {
-                if (now - kv.Value >= threshold)
+                if (IsExpired(kv.Key))
                 {
                     key = kv.Key;
                     return true;

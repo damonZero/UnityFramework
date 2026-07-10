@@ -38,28 +38,28 @@ namespace Framework.Pool
 
         internal static class ListPool<T>
         {
-            internal static readonly ObjectPool<List<T>> Shared = new(() => new List<T>(), list => list.Clear(), 32);
+            internal static readonly SingleThreadObjectPool<List<T>> Shared = new(() => new List<T>(), list => list.Clear(), 32);
         }
 
         internal static class HashSetPool<T>
         {
-            internal static readonly ObjectPool<HashSet<T>> Shared = new(() => new HashSet<T>(), set => set.Clear(), 32);
+            internal static readonly SingleThreadObjectPool<HashSet<T>> Shared = new(() => new HashSet<T>(), set => set.Clear(), 32);
         }
 
         internal static class QueuePool<T>
         {
-            internal static readonly ObjectPool<Queue<T>> Shared = new(() => new Queue<T>(), queue => queue.Clear(), 32);
+            internal static readonly SingleThreadObjectPool<Queue<T>> Shared = new(() => new Queue<T>(), queue => queue.Clear(), 32);
         }
 
         internal static class StackPool<T>
         {
-            internal static readonly ObjectPool<Stack<T>> Shared = new(() => new Stack<T>(), stack => stack.Clear(), 32);
+            internal static readonly SingleThreadObjectPool<Stack<T>> Shared = new(() => new Stack<T>(), stack => stack.Clear(), 32);
         }
 
         internal static class DictionaryPool<TKey, TValue>
             where TKey : notnull
         {
-            internal static readonly ObjectPool<Dictionary<TKey, TValue>> Shared = new(() => new Dictionary<TKey, TValue>(), dict => dict.Clear(), 32);
+            internal static readonly SingleThreadObjectPool<Dictionary<TKey, TValue>> Shared = new(() => new Dictionary<TKey, TValue>(), dict => dict.Clear(), 32);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Framework.Asset
             get
             {
                 TryComplete();
-                return _completed ? 1f : _operation?.Progress ?? 1f;
+                return _completed ? 1f : _operation?.Progress ?? 0f;
             }
         }
 
@@ -53,6 +53,28 @@ namespace Framework.Asset
             }
         }
 
+        /// <summary>
+        /// Creates a handle whose completion is driven externally via
+        /// <see cref="Complete"/> (used by the async initialize chain).
+        /// </summary>
+        internal static AssetInitializeHandle Pending()
+        {
+            return new AssetInitializeHandle(null, null);
+        }
+
+        /// <summary>
+        /// Marks a pending handle as finished. No-op if already completed.
+        /// </summary>
+        internal void Complete(bool success, string error)
+        {
+            if (_completed)
+                return;
+
+            _completed = true;
+            _isSucceeded = success;
+            _error = error;
+        }
+
         internal static AssetInitializeHandle Succeeded()
         {
             return new AssetInitializeHandle(null, null)
@@ -77,12 +99,10 @@ namespace Framework.Asset
             if (_completed)
                 return;
 
+            // A pending handle (no wrapped operation) is completed externally via
+            // Complete(); do not auto-succeed here.
             if (_operation == null)
-            {
-                _completed = true;
-                _isSucceeded = true;
                 return;
-            }
 
             if (!_operation.IsDone)
                 return;

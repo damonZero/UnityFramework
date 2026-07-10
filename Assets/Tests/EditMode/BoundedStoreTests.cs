@@ -99,6 +99,64 @@ namespace Tests.EditMode
             Assert.AreEqual(1, evicted);
         }
 
+        [Test]
+        public void ClearInvokesOnEvictedForAllValues()
+        {
+            var evicted = new List<(string Key, string Value)>();
+            var store = new BoundedStore<string, string>(0, new LruPolicy<string>(), (k, v) => evicted.Add((k, v)));
+
+            store.Put("a", "1");
+            store.Put("b", "2");
+            store.Clear();
+
+            Assert.AreEqual(0, store.Count);
+            CollectionAssert.AreEquivalent(
+                new[] { ("a", "1"), ("b", "2") },
+                evicted,
+                "Clear must release cached values through the same eviction callback as Remove/overwrite/capacity eviction.");
+        }
+
+        [Test]
+        public void TryGetPurgesExpiredTtlEntry()
+        {
+            long now = 0;
+            var evicted = new List<(string Key, string Value)>();
+            var store = new BoundedStore<string, string>(
+                0,
+                new TtlPolicy<string>(TimeSpan.FromTicks(10), refreshOnAccess: true, clock: () => now),
+                (k, v) => evicted.Add((k, v)));
+
+            store.Put("k", "v1");
+            now = 11;
+
+            Assert.IsFalse(store.TryGet("k", out _), "Expired entries must not be returned on read.");
+            Assert.AreEqual(0, store.Count, "Expired entries should be purged during read.");
+            Assert.AreEqual(1, evicted.Count);
+            Assert.AreEqual(("k", "v1"), evicted[0]);
+        }
+
+        [Test]
+        public void GetOrAddRecreatesExpiredTtlEntry()
+        {
+            long now = 0;
+            var evicted = new List<(string Key, string Value)>();
+            var store = new BoundedStore<string, string>(
+                0,
+                new TtlPolicy<string>(TimeSpan.FromTicks(10), refreshOnAccess: true, clock: () => now),
+                (k, v) => evicted.Add((k, v)));
+
+            store.Put("k", "old");
+            now = 11;
+
+            var value = store.GetOrAdd("k", _ => "new");
+
+            Assert.AreEqual("new", value);
+            Assert.IsTrue(store.TryGet("k", out var current));
+            Assert.AreEqual("new", current);
+            Assert.AreEqual(1, evicted.Count);
+            Assert.AreEqual(("k", "old"), evicted[0]);
+        }
+
         // Composite：子策略 OnAdded / OnRemoved 扇出。
         [Test]
         public void CompositePolicyFansOutToAllSubPolicies()

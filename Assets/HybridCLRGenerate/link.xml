@@ -55,6 +55,8 @@
     <type fullname="Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder" preserve="all" />
     <type fullname="Cysharp.Threading.Tasks.EnumeratorAsyncExtensions" preserve="all" />
     <type fullname="Cysharp.Threading.Tasks.PlayerLoopTiming" preserve="all" />
+    <type fullname="Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable" preserve="all" />
+    <type fullname="Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable/Awaiter" preserve="all" />
     <type fullname="Cysharp.Threading.Tasks.UniTask" preserve="all" />
     <type fullname="Cysharp.Threading.Tasks.UniTask/Awaiter" preserve="all" />
     <type fullname="Cysharp.Threading.Tasks.UniTaskExtensions" preserve="all" />
@@ -232,7 +234,6 @@
     <type fullname="System.Nullable`1" preserve="all" />
     <type fullname="System.Object" preserve="all" />
     <type fullname="System.ObjectDisposedException" preserve="all" />
-    <type fullname="System.ObsoleteAttribute" preserve="all" />
     <type fullname="System.ParamArrayAttribute" preserve="all" />
     <type fullname="System.ReadOnlySpan`1" preserve="all" />
     <type fullname="System.Reflection.Assembly" preserve="all" />

@@ -2,7 +2,7 @@
 
 > 文档性质：需求分析 + 架构设计 + 可执行实现方案
 > 创建日期：2026-07-06 · 版本：v2（合并 `DS_HybridCLR热更程序集范围扩展完整设计.md` 与本 agent 首稿，全部结论已对照真实代码核实）
-> 前置分析：`ProgressDoc/Discuss/HybridCLR热更程序集范围分析.md`
+> 前置分析：`ProgressDoc/Archive/资源系统/HybridCLR热更程序集范围分析.md`
 > 关联规范：`.planning/HOT_UPDATE_BOUNDARY.md`、`.planning/ROADMAP.md` HYB-03
 > 命名约定：本 agent 产物统一以 `Hy3_` 前缀命名；本文档为**唯一权威版本**，取代 `DS_*` 原稿与本 agent 首稿。
 >
@@ -603,8 +603,8 @@ Phase E — 配置 + 验证
 ### 附录 D：参考来源
 | 来源 | 内容 |
 |------|------|
-| `ProgressDoc/Discuss/HybridCLR热更程序集范围分析.md` | 前置讨论 |
-| `ProgressDoc/Discuss/DS_HybridCLR热更程序集范围扩展完整设计.md` | 原稿（本版已合并并修正） |
+| `ProgressDoc/Archive/资源系统/HybridCLR热更程序集范围分析.md` | 前置讨论 |
+| `ProgressDoc/Archive/资源系统/DS_HybridCLR热更程序集范围扩展完整设计.md` | 原稿（本版已合并并修正） |
 | `.planning/HOT_UPDATE_BOUNDARY.md` / `ROADMAP.md`(HYB-03) / `STATE.md` / `PROJECT.md` / `目录结构规范.md` | 规范 |
 | `ProjectSettings/HybridCLRSettings.asset` | 当前热更配置（核实） |
 | `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` | 构建工具（核实，含精确 switch） |

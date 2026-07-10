@@ -1,7 +1,7 @@
 ---
 name: kj-cache
 description: >
-  KJ Framework 缓存系统指南。涵盖 BoundedStore<TKey,TValue>（有界 KV 存储，lock 并发安全，single-flight GetOrAdd，Put/Remove/淘汰三路径统一的 onEvicted 回调）、IStoreEvictionPolicy<TKey>（可插拔淘汰策略：OnAdded/OnAccessed/OnRemoved 三方法）、LruPolicy<TKey>（O(1) LRU，LinkedList+Dictionary 双索引）、TtlPolicy<TKey>（TTL 过期淘汰，可刷新时钟）、CapacityPolicy<TKey>（FIFO 容量上限）、CompositePolicy<TKey>（策略组合扇出）。
+  KJ Framework 缓存系统指南。涵盖 BoundedStore<TKey,TValue>（有界 KV 存储，lock 并发安全，single-flight GetOrAdd，Put/Remove/Clear/淘汰统一 onEvicted 回调，读路径清理 TTL 过期项）、IStoreEvictionPolicy<TKey>（可插拔淘汰策略：OnAdded/OnAccessed/OnRemoved 三方法）、IStoreExpirationPolicy<TKey>（读路径过期判断）、LruPolicy<TKey>（O(1) LRU，LinkedList+Dictionary 双索引）、TtlPolicy<TKey>（TTL 过期淘汰，可刷新时钟）、CapacityPolicy<TKey>（FIFO 容量上限）、CompositePolicy<TKey>（策略组合扇出 + 过期判断）。
   触发场景：实现数据缓存、图片/资源缓存、LRU 淘汰、TTL 过期、缓存容量控制、工厂模式懒创建、需要 pluggable eviction policy 组合（如 LRU + TTL）。
   核心规则：Framework.Cache 零外部依赖；淘汰策略通过 IStoreEvictionPolicy 可插拔扩展；onEvicted 回调在锁外执行；GetOrAdd 同 key 并发 miss 仅一个线程执行 factory（single-flight）；Put 覆盖已有 key 时旧值走 Remove+Add 两步（满足 onEvicted + 策略感知值变化）。
 metadata:
@@ -19,6 +19,7 @@ metadata:
 ICache<TKey,TValue>  ←──  BoundedStore<TKey,TValue>
                             ├── Dictionary<TKey,TValue> + lock(_gate)
                             ├── IStoreEvictionPolicy<TKey> (可插拔)
+                            ├── IStoreExpirationPolicy<TKey> (可选：读路径过期判断)
                             │     ├── LruPolicy<TKey>       ← LinkedList + Dictionary 双索引, O(1)
                             │     ├── TtlPolicy<TKey>       ← 时间戳 + 可选访问刷新
                             │     ├── CapacityPolicy<TKey>  ← FIFO 有序，O(1)
@@ -49,12 +50,14 @@ store.Put("hero_icon", loadedTex);
 
 // Remove — 触发 onEvicted 回调
 store.Remove("hero_icon");
-store.Clear();
+store.Clear(); // Clear 也会触发 onEvicted
 ```
 
 **🚀 性能要点：**
 - `TryGet` 命中时 O(1)：Dictionary 查找 + 策略 OnAccessed（LRU 下为 LinkedList 移动节点到头部）
 - `Put` 覆盖已有 key：先 Remove 旧值（onEvicted + OnRemoved），再 Add 新值（OnAdded）→ 行为与容量淘汰一致
+- `Clear` 清空所有条目并在锁外逐个触发 onEvicted，适合释放 Texture/Handle 等资源
+- `TryGet` / `GetOrAdd` 遇到实现 `IStoreExpirationPolicy` 的过期项时，会先移除旧值并触发 onEvicted，再按 miss 处理
 - `GetOrAdd` single-flight：同 key 并发 miss 仅 owner 线程执行 factory，其余等待复用结果；factory 在锁外运行
 - `PutUnsafe` H1 守卫：淘汰循环不会选中「刚 Put 的 key」，保证 "Put 后 key 必存在"
 - `GetOrAdd` H2 修复：factory 抛异常时 Lazy 进入 faulted 态，finally 中清除 _inflight，防止 key 永久故障
@@ -82,6 +85,7 @@ var policy = new TtlPolicy<string>(
     clock: null              // 默认 DateTime.UtcNow.Ticks，可注入自定义时钟用于测试
 );
 // OnAdded 记录时间戳；OnAccessed 可选刷新
+// IsExpired: 供 BoundedStore 在 TryGet/GetOrAdd 读路径清理过期项
 // TrySelectEvictionCandidate: O(n) 扫描，返回任一超时 key；配合 CapacityPolicy 控制规模
 ```
 
@@ -101,7 +105,8 @@ var composite = new CompositePolicy<string>(
     new LruPolicy<string>(),
     new TtlPolicy<string>(TimeSpan.FromMinutes(10))
 );
-// 所有操作扇出到子策略；TrySelectEvictionCandidate 任一命中即淘汰
+// 所有操作扇出到子策略；TrySelectEvictionCandidate 任一命中即淘汰；
+// 子策略如实现 IStoreExpirationPolicy，CompositePolicy 会聚合 IsExpired 判断
 ```
 
 ### 扩展淘汰策略
@@ -112,6 +117,9 @@ var composite = new CompositePolicy<string>(
 - `OnRemoved(TKey)` — 条目被移除（Remove / 覆盖 / 容量淘汰）
 - `TrySelectEvictionCandidate(out TKey)` — 返回淘汰候选
 - `Clear()` — 清空内部状态
+
+若策略需要让 `BoundedStore.TryGet/GetOrAdd` 在读路径识别过期项，同时实现
+`IStoreExpirationPolicy<TKey>.IsExpired(TKey key)`。
 
 ## 最佳实践
 

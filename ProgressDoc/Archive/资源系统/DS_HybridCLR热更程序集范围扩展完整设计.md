@@ -4,7 +4,7 @@
 >
 > 文档性质：需求分析 + 架构设计 + 可执行实现方案
 > 创建日期：2026-07-06
-> 前置分析：`ProgressDoc/Discuss/HybridCLR热更程序集范围分析.md`
+> 前置分析：`ProgressDoc/Archive/资源系统/HybridCLR热更程序集范围分析.md`
 > 关联规范：`.planning/HOT_UPDATE_BOUNDARY.md`、`.planning/ROADMAP.md` HYB-03
 
 ---
@@ -1298,7 +1298,7 @@ namespace Framework.Aot
 
 | 来源 | 内容 |
 |------|------|
-| `ProgressDoc/Discuss/HybridCLR热更程序集范围分析.md` | 前置分析与讨论（2026-07-06） |
+| `ProgressDoc/Archive/资源系统/HybridCLR热更程序集范围分析.md` | 前置分析与讨论（2026-07-06） |
 | `.planning/HOT_UPDATE_BOUNDARY.md` | HYB-00 热更边界固化 |
 | `.planning/ROADMAP.md` | HYB-03 定义 + 依赖关系 |
 | `.planning/STATE.md` | 当前文件清单与验证记录 |

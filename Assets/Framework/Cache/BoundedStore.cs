@@ -52,17 +52,17 @@ namespace Framework.Cache
 
         public bool TryGet(TKey key, out TValue value)
         {
+            List<(TKey Key, TValue Value)>? evictions = null;
             lock (_gate)
             {
-                if (_values.TryGetValue(key, out value!))
+                if (TryGetLiveValueUnsafe(key, out value, ref evictions))
                 {
-                    _policy.OnAccessed(key);
                     return true;
                 }
-
-                value = default!;
-                return false;
             }
+
+            InvokeEvictions(evictions);
+            return false;
         }
 
         public TValue GetOrAdd(TKey key, Func<TKey, TValue> factory)
@@ -73,31 +73,36 @@ namespace Framework.Cache
             }
 
             // 快路径（命中直接返回，不进入 inflight 协议）。
+            List<(TKey Key, TValue Value)>? evictions = null;
             lock (_gate)
             {
-                if (_values.TryGetValue(key, out var existing))
+                if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
                 {
-                    _policy.OnAccessed(key);
                     return existing;
                 }
             }
+            InvokeEvictions(evictions);
 
             // single-flight：同一 key 仅一个 owner 执行 factory。
             Lazy<TValue> ownerLazy;
             bool isOwner;
+            bool foundExisting;
+            TValue existingValue;
+            evictions = null;
             lock (_inflightGate)
             {
                 // 二次检查（可能已被 Put / 另一 owner 提交）。
                 lock (_gate)
                 {
-                    if (_values.TryGetValue(key, out var existing))
-                    {
-                        _policy.OnAccessed(key);
-                        return existing;
-                    }
+                    foundExisting = TryGetLiveValueUnsafe(key, out existingValue!, ref evictions);
                 }
 
-                if (_inflight.TryGetValue(key, out var existingLazy))
+                if (foundExisting)
+                {
+                    ownerLazy = null!;
+                    isOwner = false;
+                }
+                else if (_inflight.TryGetValue(key, out var existingLazy))
                 {
                     ownerLazy = existingLazy;
                     isOwner = false;
@@ -109,36 +114,44 @@ namespace Framework.Cache
                     isOwner = true;
                 }
             }
+            InvokeEvictions(evictions);
+
+            if (foundExisting)
+            {
+                return existingValue!;
+            }
 
             if (!isOwner)
             {
                 // 等待 owner 计算完成，再读取最终落库值。
                 _ = ownerLazy.Value;
+                evictions = null;
                 lock (_gate)
                 {
-                    if (_values.TryGetValue(key, out var existing))
+                    if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
                     {
-                        _policy.OnAccessed(key);
                         return existing;
                     }
                 }
+                InvokeEvictions(evictions);
 
                 return ownerLazy.Value;
             }
 
             TValue finalValue;
-            List<(TKey Key, TValue Value)>? evictions = null;
+            evictions = null;
 
             try
             {
                 var computed = ownerLazy.Value;
                 lock (_gate)
                 {
-                    if (_values.TryGetValue(key, out var existing))
+                    if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
                     {
                         // 计算期间他人已写入（Put 或其它 owner 提交）→ 丢弃本线程计算结果。
                         finalValue = existing;
-                        evictions = new List<(TKey Key, TValue Value)> { (key, computed) };
+                        evictions ??= new List<(TKey Key, TValue Value)>();
+                        evictions.Add((key, computed));
                     }
                     else
                     {
@@ -200,11 +213,23 @@ namespace Framework.Cache
 
         public void Clear()
         {
+            List<(TKey Key, TValue Value)>? evictions = null;
             lock (_gate)
             {
+                if (_onEvicted != null && _values.Count > 0)
+                {
+                    evictions = new List<(TKey Key, TValue Value)>(_values.Count);
+                    foreach (var kv in _values)
+                    {
+                        evictions.Add((kv.Key, kv.Value));
+                    }
+                }
+
                 _values.Clear();
                 _policy.Clear();
             }
+
+            InvokeEvictions(evictions);
         }
 
         private void InvokeEvictions(List<(TKey Key, TValue Value)>? evictions)
@@ -258,6 +283,28 @@ namespace Framework.Cache
                     _policy.OnRemoved(evictKey);
                 }
             }
+        }
+
+        private bool TryGetLiveValueUnsafe(TKey key, out TValue value, ref List<(TKey Key, TValue Value)>? evictions)
+        {
+            if (!_values.TryGetValue(key, out value!))
+            {
+                value = default!;
+                return false;
+            }
+
+            if (_policy is IStoreExpirationPolicy<TKey> expirationPolicy && expirationPolicy.IsExpired(key))
+            {
+                _values.Remove(key);
+                _policy.OnRemoved(key);
+                evictions ??= new List<(TKey Key, TValue Value)>();
+                evictions.Add((key, value));
+                value = default!;
+                return false;
+            }
+
+            _policy.OnAccessed(key);
+            return true;
         }
     }
 }

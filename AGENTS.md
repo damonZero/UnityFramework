@@ -8,7 +8,7 @@ YooAsset, HybridCLR, and Luban.
 For the complete technical stack, read `.planning/PROJECT.md`.
 For directory structure rules, read `.planning/目录结构规范.md`.
 For AI-readable runtime logs and diagnostic workflow, read `.planning/AI_RUNTIME_LOGGING.md`.
-For build/packaging pipeline, read `ProgressDoc/Result/hybridclr_workflow.md` §4 and `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md`.
+For build/packaging pipeline, read `ProgressDoc/Result/hybridclr_workflow.md` §4 and `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`.
 
 ## Session Startup
 
@@ -110,7 +110,7 @@ the full Unity Player + YooAsset resource bundle + HybridCLR hot-update assets.
 - **Independent**: S5→S6 (AssetConfig change triggers all stages)
 - **Monitored paths**: S1/S2 watch `Assets/Scripts/**/*.cs`; S4 watches `Assets/GameRes/HotUpdate/**`; S5 watches `Assets/Resources/AssetConfig.asset`
 
-When modifying build pipeline code, update `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md`
+When modifying build pipeline code, update `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`
 and `ProgressDoc/Result/hybridclr_workflow.md` §4 to prevent documentation drift.
 
 The boot chain is split into an AOT `Launcher` shell and a hot-update `Boot`

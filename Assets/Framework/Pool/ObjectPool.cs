@@ -8,6 +8,7 @@ namespace Framework.Pool
         where T : class
     {
         private readonly Stack<T> _idle;
+        private readonly HashSet<T> _idleSet;
         private readonly Func<T> _factory;
         private readonly Action<T>? _reset;
         private readonly int _maxIdle;
@@ -23,10 +24,13 @@ namespace Framework.Pool
             _reset = reset;
             _maxIdle = Math.Max(0, maxIdle);
             _idle = new Stack<T>(_maxIdle > 0 ? _maxIdle : 4);
+            _idleSet = new HashSet<T>(ReferenceComparer.Instance);
 
             for (var i = 0; i < preload; i++)
             {
-                _idle.Push(Create());
+                var item = Create();
+                _idle.Push(item);
+                _idleSet.Add(item);
             }
         }
 
@@ -52,7 +56,9 @@ namespace Framework.Pool
                 _rentCount++;
                 if (_idle.Count > 0)
                 {
-                    return _idle.Pop();
+                    var item = _idle.Pop();
+                    _idleSet.Remove(item);
+                    return item;
                 }
             }
 
@@ -71,15 +77,47 @@ namespace Framework.Pool
                 return;
             }
 
-            _reset?.Invoke(item);
+            var shouldStore = false;
+            lock (_gate)
+            {
+                if (_idleSet.Contains(item))
+                {
+                    return;
+                }
+
+                _returnCount++;
+                if (_maxIdle <= 0 || _idleSet.Count < _maxIdle)
+                {
+                    _idleSet.Add(item);
+                    shouldStore = true;
+                }
+            }
+
+            try
+            {
+                _reset?.Invoke(item);
+            }
+            catch
+            {
+                if (shouldStore)
+                {
+                    lock (_gate)
+                    {
+                        _idleSet.Remove(item);
+                    }
+                }
+
+                throw;
+            }
+
+            if (!shouldStore)
+            {
+                return;
+            }
 
             lock (_gate)
             {
-                _returnCount++;
-                if (_maxIdle <= 0 || _idle.Count < _maxIdle)
-                {
-                    _idle.Push(item);
-                }
+                _idle.Push(item);
             }
         }
 
@@ -96,6 +134,15 @@ namespace Framework.Pool
             var item = _factory();
             Interlocked.Increment(ref _createdCount);
             return item;
+        }
+
+        private sealed class ReferenceComparer : IEqualityComparer<T>
+        {
+            public static readonly ReferenceComparer Instance = new();
+
+            public bool Equals(T x, T y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(T obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
         }
     }
 }

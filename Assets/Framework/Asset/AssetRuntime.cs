@@ -49,9 +49,7 @@ namespace Framework.Asset
 
             try
             {
-                var initOp = StartInitialize(config);
-                _initializeHandle = new AssetInitializeHandle(initOp, CompleteInitialize);
-                return _initializeHandle;
+                PrepareInitialize(config);
             }
             catch (Exception e)
             {
@@ -60,6 +58,11 @@ namespace Framework.Asset
                 CleanupAfterInitializeFailure();
                 return AssetInitializeHandle.Failed(LastError);
             }
+
+            var handle = AssetInitializeHandle.Pending();
+            _initializeHandle = handle;
+            RunInitializeAsync(handle).Forget();
+            return handle;
         }
 
         public bool Initialize(AssetConfig config)
@@ -149,7 +152,11 @@ namespace Framework.Asset
             IsReady = true;
         }
 
-        private InitializePackageOperation StartInitialize(AssetConfig config)
+        /// <summary>
+        /// Synchronous setup before the async initialize chain: tear down any prior
+        /// state, cache config, create the YooAsset package. Does NOT start loading.
+        /// </summary>
+        private void PrepareInitialize(AssetConfig config)
         {
             if (config == null)
                 throw new ArgumentNullException(nameof(config), "AssetConfig is missing. Create Assets/Resources/AssetConfig.asset before starting the asset runtime.");
@@ -172,25 +179,50 @@ namespace Framework.Asset
 
             YooAssets.Initialize();
             _defaultPackage = YooAssets.CreatePackage(GetPackageName(config));
-            return _defaultPackage.InitializePackageAsync(BuildOptions(config));
         }
 
-        private void CompleteInitialize(AssetInitializeHandle handle)
+        /// <summary>
+        /// Full YooAsset initialize chain: InitializePackage (file system) →
+        /// RequestPackageVersion → LoadPackageManifest (activates ActiveManifest).
+        /// The manifest step is mandatory; without it LoadAsset* throws
+        /// "Active package manifest not found".
+        /// </summary>
+        private async UniTaskVoid RunInitializeAsync(AssetInitializeHandle handle)
         {
-            _initializeHandle = null;
-
-            if (handle != null && handle.IsSucceeded)
+            try
             {
+                var initOp = _defaultPackage.InitializePackageAsync(BuildOptions(_config));
+                await initOp.ToUniTask();
+                if (initOp.Status != EOperationStatus.Succeeded)
+                    throw new InvalidOperationException(
+                        string.IsNullOrWhiteSpace(initOp.Error) ? "YooAsset package initialization failed." : initOp.Error);
+
+                var versionOp = _defaultPackage.RequestPackageVersionAsync();
+                await versionOp.ToUniTask();
+                if (versionOp.Status != EOperationStatus.Succeeded)
+                    throw new InvalidOperationException(
+                        string.IsNullOrWhiteSpace(versionOp.Error) ? "YooAsset request package version failed." : versionOp.Error);
+
+                var timeout = _config == null ? 60 : Math.Max(1, _config.DownloadTimeout);
+                var manifestOp = _defaultPackage.LoadPackageManifestAsync(
+                    new LoadPackageManifestOptions(versionOp.PackageVersion, timeout));
+                await manifestOp.ToUniTask();
+                if (manifestOp.Status != EOperationStatus.Succeeded)
+                    throw new InvalidOperationException(
+                        string.IsNullOrWhiteSpace(manifestOp.Error) ? "YooAsset load package manifest failed." : manifestOp.Error);
+
                 IsReady = true;
                 LastError = string.Empty;
-                return;
+                _initializeHandle = null;
+                handle.Complete(true, null);
             }
-
-            LastError = string.IsNullOrWhiteSpace(handle?.Error)
-                ? "Unknown YooAsset package initialization error."
-                : handle.Error;
-            GameLog.Error($"[AssetRuntime] Initialization failed: {LastError}");
-            CleanupAfterInitializeFailure();
+            catch (Exception e)
+            {
+                LastError = e.Message;
+                GameLog.Error($"[AssetRuntime] Initialization failed: {e}");
+                CleanupAfterInitializeFailure();
+                handle.Complete(false, LastError);
+            }
         }
 
         private void CleanupAfterInitializeFailure()

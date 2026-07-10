@@ -35,7 +35,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<GetAsync>d__10,object>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<GetAsync>d__9,object>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17,object>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<WarmupInternal>d__16>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Boot.BootUpdateRunner.<RunAsync>d__8>
@@ -48,7 +48,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<GetAsync>d__10,object>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<GetAsync>d__9,object>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17,object>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<WarmupInternal>d__16>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>
@@ -170,26 +170,32 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.Dictionary.Enumerator<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.Dictionary.Enumerator<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.Dictionary.Enumerator<object,int>
+	// System.Collections.Generic.Dictionary.Enumerator<object,long>
 	// System.Collections.Generic.Dictionary.Enumerator<object,object>
 	// System.Collections.Generic.Dictionary.KeyCollection.Enumerator<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.Dictionary.KeyCollection.Enumerator<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.Dictionary.KeyCollection.Enumerator<object,int>
+	// System.Collections.Generic.Dictionary.KeyCollection.Enumerator<object,long>
 	// System.Collections.Generic.Dictionary.KeyCollection.Enumerator<object,object>
 	// System.Collections.Generic.Dictionary.KeyCollection<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.Dictionary.KeyCollection<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.Dictionary.KeyCollection<object,int>
+	// System.Collections.Generic.Dictionary.KeyCollection<object,long>
 	// System.Collections.Generic.Dictionary.KeyCollection<object,object>
 	// System.Collections.Generic.Dictionary.ValueCollection.Enumerator<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.Dictionary.ValueCollection.Enumerator<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.Dictionary.ValueCollection.Enumerator<object,int>
+	// System.Collections.Generic.Dictionary.ValueCollection.Enumerator<object,long>
 	// System.Collections.Generic.Dictionary.ValueCollection.Enumerator<object,object>
 	// System.Collections.Generic.Dictionary.ValueCollection<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.Dictionary.ValueCollection<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.Dictionary.ValueCollection<object,int>
+	// System.Collections.Generic.Dictionary.ValueCollection<object,long>
 	// System.Collections.Generic.Dictionary.ValueCollection<object,object>
 	// System.Collections.Generic.Dictionary<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.Dictionary<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.Dictionary<object,int>
+	// System.Collections.Generic.Dictionary<object,long>
 	// System.Collections.Generic.Dictionary<object,object>
 	// System.Collections.Generic.EqualityComparer<Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.EqualityComparer<Framework.Asset.AssetRuntime.AssetCacheKey>
@@ -203,6 +209,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.EqualityComparer<System.ValueTuple<byte,object>>
 	// System.Collections.Generic.EqualityComparer<byte>
 	// System.Collections.Generic.EqualityComparer<int>
+	// System.Collections.Generic.EqualityComparer<long>
 	// System.Collections.Generic.EqualityComparer<object>
 	// System.Collections.Generic.HashSet.Enumerator<object>
 	// System.Collections.Generic.HashSet<object>
@@ -211,6 +218,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<Framework.Asset.AssetRuntime.AssetCacheKey,object>>
 	// System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<object,Cysharp.Threading.Tasks.UniTask>>
 	// System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<object,int>>
+	// System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<object,long>>
 	// System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<object,object>>
 	// System.Collections.Generic.ICollection<System.ValueTuple<object,object>>
 	// System.Collections.Generic.ICollection<object>
@@ -223,6 +231,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<Framework.Asset.AssetRuntime.AssetCacheKey,object>>
 	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<object,Cysharp.Threading.Tasks.UniTask>>
 	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<object,int>>
+	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<object,long>>
 	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<object,object>>
 	// System.Collections.Generic.IEnumerable<System.ValueTuple<object,object>>
 	// System.Collections.Generic.IEnumerable<object>
@@ -231,6 +240,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<Framework.Asset.AssetRuntime.AssetCacheKey,object>>
 	// System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<object,Cysharp.Threading.Tasks.UniTask>>
 	// System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<object,int>>
+	// System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<object,long>>
 	// System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<object,object>>
 	// System.Collections.Generic.IEnumerator<System.ValueTuple<object,object>>
 	// System.Collections.Generic.IEnumerator<object>
@@ -246,6 +256,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.KeyValuePair<Framework.Asset.AssetRuntime.AssetCacheKey,object>
 	// System.Collections.Generic.KeyValuePair<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Collections.Generic.KeyValuePair<object,int>
+	// System.Collections.Generic.KeyValuePair<object,long>
 	// System.Collections.Generic.KeyValuePair<object,object>
 	// System.Collections.Generic.LinkedList.Enumerator<object>
 	// System.Collections.Generic.LinkedList<object>
@@ -278,6 +289,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.ObjectEqualityComparer<System.ValueTuple<byte,object>>
 	// System.Collections.Generic.ObjectEqualityComparer<byte>
 	// System.Collections.Generic.ObjectEqualityComparer<int>
+	// System.Collections.Generic.ObjectEqualityComparer<long>
 	// System.Collections.Generic.ObjectEqualityComparer<object>
 	// System.Collections.Generic.Queue.Enumerator<Framework.Log.GameLogEntry>
 	// System.Collections.Generic.Queue.Enumerator<object>
@@ -324,6 +336,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Func<System.ValueTuple<byte,System.ValueTuple<byte,object>>>
 	// System.Func<System.ValueTuple<byte,object>>
 	// System.Func<int>
+	// System.Func<long>
 	// System.Func<object,Cysharp.Threading.Tasks.UniTask>
 	// System.Func<object,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,object>>>>>>>>
 	// System.Func<object,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,object>>>>>>>
@@ -339,6 +352,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Func<object,object>
 	// System.Func<object>
 	// System.IEquatable<Framework.Asset.AssetRuntime.AssetCacheKey>
+	// System.Lazy<object>
 	// System.Linq.Enumerable.Iterator<object>
 	// System.Linq.Enumerable.WhereArrayIterator<object>
 	// System.Linq.Enumerable.WhereEnumerableIterator<object>
@@ -555,14 +569,15 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<WarmupInternal>d__16>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<WarmupInternal>d__16&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.YieldAwaitable.Awaiter,Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10>(Cysharp.Threading.Tasks.YieldAwaitable.Awaiter&,Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable.Awaiter,Framework.Pool.GameObjectPool.<GetAsync>d__9>(Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable.Awaiter&,Framework.Pool.GameObjectPool.<GetAsync>d__9&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Core.PoolService.<<Init>b__5_0>d>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Core.PoolService.<<Init>b__5_0>d&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Asset.AssetRuntime.<InstantiateAsync>d__34>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Asset.AssetRuntime.<InstantiateAsync>d__34&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<GetAsync>d__10>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<GetAsync>d__10&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<GetAsync>d__9>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<GetAsync>d__9&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.YieldAwaitable.Awaiter,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35>(Cysharp.Threading.Tasks.YieldAwaitable.Awaiter&,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,Framework.Pool.GameObjectPool.<GetAsync>d__10>(System.Runtime.CompilerServices.TaskAwaiter&,Framework.Pool.GameObjectPool.<GetAsync>d__10&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,Framework.Pool.GameObjectPool.<GetAsync>d__9>(System.Runtime.CompilerServices.TaskAwaiter&,Framework.Pool.GameObjectPool.<GetAsync>d__9&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter<object>,Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>>(System.Runtime.CompilerServices.TaskAwaiter<object>&,Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Boot.BootUpdateRunner.<RunAsync>d__8>(Boot.BootUpdateRunner.<RunAsync>d__8&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10>(Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10&)
@@ -575,7 +590,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>>(Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>>(Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35>(Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<GetAsync>d__10>(Framework.Pool.GameObjectPool.<GetAsync>d__10&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<GetAsync>d__9>(Framework.Pool.GameObjectPool.<GetAsync>d__9&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17>(Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.Start<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>(Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>&)

@@ -91,6 +91,26 @@ namespace Boot
             await operation.ToUniTask();
             if (operation.Status != EOperationStatus.Succeeded)
                 throw new InvalidOperationException($"[BootLoader] YooAsset package initialization failed: {operation.Error}");
+
+            // InitializePackageAsync only sets up the file system; it does NOT load or
+            // activate the package manifest. Without an active manifest, LoadAssetSync
+            // throws "Active package manifest not found" (which broke the whole boot
+            // chain: AOT metadata + hot-update DLLs failed to load on device).
+            // Request the version, then load the manifest to populate
+            // FileSystemHost.ActiveManifest before any asset load.
+            var versionOp = package.RequestPackageVersionAsync();
+            await versionOp.ToUniTask();
+            if (versionOp.Status != EOperationStatus.Succeeded)
+                throw new InvalidOperationException($"[BootLoader] YooAsset request package version failed: {versionOp.Error}");
+
+            var timeout = config.DownloadTimeout > 0 ? config.DownloadTimeout : 60;
+            var manifestOp = package.LoadPackageManifestAsync(
+                new LoadPackageManifestOptions(versionOp.PackageVersion, timeout));
+            await manifestOp.ToUniTask();
+            if (manifestOp.Status != EOperationStatus.Succeeded)
+                throw new InvalidOperationException($"[BootLoader] YooAsset load package manifest failed: {manifestOp.Error}");
+
+            BootStartupLog.Info($"[BootLoader] YooAsset ready: package={packageName}, version={versionOp.PackageVersion}");
             return package;
         }
 

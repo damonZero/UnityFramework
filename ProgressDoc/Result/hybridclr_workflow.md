@@ -75,7 +75,7 @@ HybridCLR 编译后产生的临时文件默认位于项目根目录：
 
 ---
 
-## 4. 构建打包管线（新增 — 2026-07-08）
+## 4. 构建打包管线（v1 已落地，v2 设计中）
 
 以上 `KJ/HybridCLR/*` 菜单为**开发内循环**（Editor Play），不产出可运行的 Player 包。真正的"构建→打包→冒烟"走以下菜单：
 
@@ -104,4 +104,18 @@ adb logcat -s Unity:V YooAsset:V Framework:V Boot:V  # 监听日志
 
 ### 4.4 相关文档
 
-详见 `ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md`（设计文档 + 实施记录）。
+详见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`（设计文档 + 实施记录）。
+
+v2 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPipelineV2_开发验证计划.md`。
+
+### 4.5 v2 工业级演进方向
+
+当前 v1 管线已具备 S0-S9 基础链路，但后续商业化打包应按设计文档附录 E/F 演进为 Build Pipeline v2：
+
+- **BuildProfile 配置驱动**：Dev / Profiling / Audit / Formal / QA / Pre 按环境区分 Development Build、日志策略、GM/Debug UI、RuntimeLog、签名、SmokeRequired、输出目录。
+- **阶段插件化**：用 `BuildContext` / `BuildStage` / `BuildPlan` / `BuildPipelineRunner` 替代单一大编排器，保留可恢复、可跳过、可解释的 Stage 执行模型。
+- **产物归档**：输出到 `BuildBackup/{Environment}/{Version}/{BuildNo}/`，包含 artifacts、logs、reports、state。
+- **Odin Dashboard**：Profile 编辑、预检、构建、Stage Monitor、报告查看、日志打开、失败诊断统一在 `KJ -> Build -> Dashboard`。
+- **AI 可接管报告**：构建失败时生成 `issues.json` 与 `ai_handoff.json`，包含错误码、阶段、证据、可能原因、建议修复和相关文件。
+- **Smoke 与日志系统强化**：Runtime smoke 必须收集 `boot.log`、`latest.jsonl`、`latest.session.json`；Formal/Audit 不允许因缺 adb/缺设备而静默通过。
+- **实现规格已补齐**：附录 F 定义 `IBuildStage`、`BuildContext`、`BuildProfile`、`BuildPlan`/fingerprint、事务系统、报告 schema、错误码、Odin 交互、CI 退出码、测试清单和首轮落地顺序。
