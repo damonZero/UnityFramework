@@ -53,7 +53,9 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<WarmupInternal>d__16>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid.<>c<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid.<>c<Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid<Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>
 	// Cysharp.Threading.Tasks.CompilerServices.IStateMachineRunnerPromise<object>
 	// Cysharp.Threading.Tasks.ITaskPoolNode<object>
 	// Cysharp.Threading.Tasks.IUniTaskSource<System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,object>>>>>>>>>>
@@ -593,7 +595,9 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<GetAsync>d__9>(Framework.Pool.GameObjectPool.<GetAsync>d__9&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17>(Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29&)
 		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.Start<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>(Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.Start<Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>(Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29&)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<Core.Asset.AssetSystemLog.ConfigNotFoundState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ConfigNotFoundState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ConfigNotFoundState,System.Exception,string>)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<Core.Asset.AssetSystemLog.InitializeFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.InitializeFailedState,System.Exception,System.Func<Core.Asset.AssetSystemLog.InitializeFailedState,System.Exception,string>)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<Core.Asset.AssetSystemLog.ReadyState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ReadyState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ReadyState,System.Exception,string>)

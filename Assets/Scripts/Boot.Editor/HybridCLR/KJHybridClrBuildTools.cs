@@ -27,8 +27,7 @@ namespace Boot.Editor.HybridCLR
         private const string HotUpdateTag = "hotupdate";
         private const string BootScenePath = "Assets/GameRes/Scene/Boot/Main.unity";
 
-        [MenuItem(MenuRoot + "Generate All And Sync", priority = 10)]
-        public static void GenerateAllAndSync()
+        private static void GenerateAllAndSync()
         {
             InstallHybridClrRuntimeIfNeeded();
             EnsureBootSceneInBuildSettings();
@@ -87,15 +86,7 @@ namespace Boot.Editor.HybridCLR
             SyncExistingOutputs();
         }
 
-        [MenuItem(MenuRoot + "Compile Dlls And Sync", priority = 12)]
-        public static void CompileDllsAndSync()
-        {
-            InstallHybridClrRuntimeIfNeeded();
-            CompileDllCommand.CompileDll(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.development);
-            SyncExistingOutputs();
-        }
-
-        [MenuItem(MenuRoot + "Install HybridCLR Runtime", priority = 1)]
+        [MenuItem(MenuRoot + "Maintenance/Install HybridCLR Runtime", priority = 1)]
         public static void InstallHybridClrRuntime()
         {
             var installer = new InstallerController();
@@ -106,8 +97,7 @@ namespace Boot.Editor.HybridCLR
             Debug.Log("[KJHybridClrBuildTools] HybridCLR runtime is installed.");
         }
 
-        [MenuItem(MenuRoot + "Sync Existing Outputs", priority = 13)]
-        public static void SyncExistingOutputs()
+        private static void SyncExistingOutputs()
         {
             var target = EditorUserBuildSettings.activeBuildTarget;
             var settings = SettingsUtil.HybridCLRSettings;
@@ -125,8 +115,7 @@ namespace Boot.Editor.HybridCLR
                 $"[KJHybridClrBuildTools] Synced {hotUpdateEntries.Count} hot-update assemblies and {metadataEntries.Count} AOT metadata assemblies for {target}.");
         }
 
-        [MenuItem(MenuRoot + "Apply To Open Entry", priority = 20)]
-        public static void ApplyToOpenEntry()
+        private static void ApplyToOpenEntry()
         {
             var entry = UnityEngine.Object.FindObjectOfType<Entry>(true);
             if (entry == null)
@@ -156,7 +145,7 @@ namespace Boot.Editor.HybridCLR
             Debug.Log($"[KJHybridClrBuildTools] Applied HybridCLR startup entries to {entry.name}.");
         }
 
-        [MenuItem(MenuRoot + "Prepare Boot Scene", priority = 21)]
+        [MenuItem(MenuRoot + "Maintenance/Prepare Boot Scene", priority = 20)]
         public static void PrepareBootScene()
         {
             OpenBootScene();
@@ -171,7 +160,7 @@ namespace Boot.Editor.HybridCLR
             Debug.Log($"[KJHybridClrBuildTools] Prepared boot scene and build settings: {BootScenePath}.");
         }
 
-        [MenuItem(MenuRoot + "Validate Outputs", priority = 30)]
+        [MenuItem(MenuRoot + "Maintenance/Validate Outputs", priority = 30)]
         public static void ValidateOutputs()
         {
             var target = EditorUserBuildSettings.activeBuildTarget;
@@ -231,7 +220,7 @@ namespace Boot.Editor.HybridCLR
                 {
                     var sourcePath = Path.Combine(sourceDir, name + ".dll");
                     if (requireFiles && !File.Exists(ToProjectPath(sourcePath)))
-                        throw new FileNotFoundException($"Hot-update DLL not found. Run '{MenuRoot}Compile Dlls And Sync' first.", sourcePath);
+                        throw new FileNotFoundException($"Hot-update DLL not found. Run '{MenuRoot}Generate Runtime Assets And Sync' first.", sourcePath);
 
                     var fileName = $"Dlls/{name}.dll.bytes";
                     var assetPath = $"{DllAssetFolder}/{name}.dll.bytes";
