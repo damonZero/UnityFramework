@@ -3,7 +3,10 @@
     "rootNamespace": "Boot.Editor.Build.Tests",
     "references": [
         "Boot.Build.Editor",
+        "Aop",
         "Framework.BuildPipeline",
+        "Log",
+        "RuntimeLog",
         "Boot",
         "Boot.Editor",
         "AssetShared",
