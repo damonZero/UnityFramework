@@ -42,13 +42,13 @@ namespace Boot.Editor.Build
             var buildTarget = profile.Platform;
             var targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
 
-            Debug.Log($"[P6] BuildPlayer: Building for {buildTarget}...");
+            BuildLogger.Info($"[P6] BuildPlayer: Building for {buildTarget}...");
 
             // 1. 强制 IL2CPP
             var currentBackend = PlayerSettings.GetScriptingBackend(targetGroup);
             if (currentBackend != ScriptingImplementation.IL2CPP)
             {
-                Debug.Log($"[P6] Switching ScriptingBackend to IL2CPP");
+                BuildLogger.Info($"[P6] Switching ScriptingBackend to IL2CPP");
                 context.Transaction.SnapshotScriptingBackend(targetGroup);
                 PlayerSettings.SetScriptingBackend(targetGroup, ScriptingImplementation.IL2CPP);
             }
@@ -107,8 +107,8 @@ namespace Boot.Editor.Build
                     : BuildOptions.None,
             };
 
-            Debug.Log($"[P6] Output: {playerOutputPath}");
-            Debug.Log($"[P6] Scenes: {options.scenes.Length}, Development: {isDev}");
+            BuildLogger.Info($"[P6] Output: {playerOutputPath}");
+            BuildLogger.Info($"[P6] Scenes: {options.scenes.Length}, Development: {isDev}");
 
             var buildReport = BuildTelemetry.Measure(
                 "P6.BuildPlayer",
@@ -133,13 +133,13 @@ namespace Boot.Editor.Build
             }
             context.AddArtifact(playerOutputPath, $"Player ({buildTarget})", playerSize);
 
-            Debug.Log($"[P6] BuildPlayer: DONE ({playerSize / 1024 / 1024} MB)");
+            BuildLogger.Info($"[P6] BuildPlayer: DONE ({playerSize / 1024 / 1024} MB)");
         }
 
         public override void Verify(BuildContext context)
         {
             base.Verify(context);
-            Debug.Log("[P6] ✓ Player artifact verified");
+            BuildLogger.Info("[P6] ✓ Player artifact verified");
         }
 
         private static string[] GetEnabledScenes()

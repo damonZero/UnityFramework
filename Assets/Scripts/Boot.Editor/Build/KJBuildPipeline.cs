@@ -61,8 +61,62 @@ namespace Boot.Editor.Build
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[KJBuildPipeline] Command line build failed: {ex}");
+                BuildLogger.Error($"[KJBuildPipeline] Command line build failed: {ex}");
                 EditorApplication.Exit(1);
+            }
+        }
+
+        /// <summary>
+        /// CI entry: P2 + Host baseline. Runs HybridCLR GenerateAll (MethodBridge/link.xml/AOTGenericReferences),
+        /// then reuses YooAsset artifacts for Host Player build.
+        /// </summary>
+        public static void BuildP2ThenHostBaseline()
+        {
+            BuildProfile profile = null;
+            BuildContext context = null;
+            try
+            {
+                profile = LoadProfileOrThrow(GetArg("profile"));
+                context = new BuildContext
+                {
+                    Profile = profile,
+                    Paths = new BuildPaths(profile),
+                    Transaction = new BuildTransaction(),
+                };
+                context.Paths.EnsureDirectories();
+
+                BuildLogger.Info("[KJBuildPipeline] P2: Generating HybridCLR (MethodBridge/link.xml/AOT)");
+                new P2_GenerateStage().Execute(context);
+
+                var p3 = new P3_HybridCLRStage();
+                p3.Execute(context);
+                p3.Verify(context);
+
+                var p4 = new P4_BuildAssetStage();
+                p4.Execute(context);
+                p4.Verify(context);
+
+                var config = new P5_ApplyConfigStage();
+                config.Execute(context);
+                config.Verify(context);
+
+                var player = new P6_BuildPlayerStage();
+                player.Execute(context);
+                player.Verify(context);
+
+                new P7_VerifyStage().Execute(context);
+                BuildLogger.Info("[KJBuildPipeline] P2-Host baseline Player build succeeded.");
+                EditorApplication.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                BuildLogger.Error($"[KJBuildPipeline] P2-Host baseline build failed: {ex}");
+                EditorApplication.Exit(1);
+            }
+            finally
+            {
+                try { context?.Transaction?.Rollback(); }
+                catch (Exception rollbackEx) { BuildLogger.Error($"[KJBuildPipeline] Rollback failed: {rollbackEx.Message}"); }
             }
         }
 
@@ -93,18 +147,18 @@ namespace Boot.Editor.Build
                 player.Execute(context);
                 player.Verify(context);
                 new P7_VerifyStage().Execute(context);
-                Debug.Log("[KJBuildPipeline] Host baseline Player build succeeded without P2/MethodBridge.");
+                BuildLogger.Info("[KJBuildPipeline] Host baseline Player build succeeded without P2/MethodBridge.");
                 EditorApplication.Exit(0);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[KJBuildPipeline] Host baseline build failed: {ex}");
+                BuildLogger.Error($"[KJBuildPipeline] Host baseline build failed: {ex}");
                 EditorApplication.Exit(1);
             }
             finally
             {
                 try { context?.Transaction?.Rollback(); }
-                catch (Exception rollbackEx) { Debug.LogError($"[KJBuildPipeline] Rollback failed: {rollbackEx.Message}"); }
+                catch (Exception rollbackEx) { BuildLogger.Error($"[KJBuildPipeline] Rollback failed: {rollbackEx.Message}"); }
             }
         }
 

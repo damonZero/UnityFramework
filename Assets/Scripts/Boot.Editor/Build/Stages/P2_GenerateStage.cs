@@ -39,7 +39,7 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            Debug.Log("[P2] Generate: PrebuildCommand.GenerateAll()...");
+            BuildLogger.Info("[P2] Generate: PrebuildCommand.GenerateAll()...");
 
             // 调用现有 HybridCLR 生成逻辑
             BuildTelemetry.Measure(
@@ -55,13 +55,13 @@ namespace Boot.Editor.Build
                     "link.xml was not generated or is empty");
             }
 
-            Debug.Log("[P2] Generate: DONE");
+            BuildLogger.Info("[P2] Generate: DONE");
         }
 
         public override void Verify(BuildContext context)
         {
             base.Verify(context);
-            Debug.Log("[P2] ✓ link.xml present and non-empty");
+            BuildLogger.Info("[P2] ✓ link.xml present and non-empty");
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            Debug.Log("[P0] Plan: Generating build plan...");
+            BuildLogger.Info("[P0] Plan: Generating build plan...");
 
             var profile = context.Profile;
             if (profile == null)
@@ -47,7 +47,7 @@ namespace Boot.Editor.Build
             if (depErrors.Count > 0)
             {
                 foreach (string err in depErrors)
-                    Debug.LogError($"[P0] Dependency error: {err}");
+                    BuildLogger.Error($"[P0] Dependency error: {err}");
                 throw new InvalidOperationException(
                     $"Stage dependency validation failed ({depErrors.Count} errors)");
             }
@@ -55,9 +55,9 @@ namespace Boot.Editor.Build
             // 确保输出目录
             context.Paths.EnsureDirectories();
 
-            Debug.Log($"[P0] Plan complete. Output: {context.Paths.ArchiveRoot}");
-            Debug.Log($"[P0] Reports: {context.Paths.ReportsDir}");
-            Debug.Log($"[P0] Logs: {context.Paths.LogsDir}");
+            BuildLogger.Info($"[P0] Plan complete. Output: {context.Paths.ArchiveRoot}");
+            BuildLogger.Info($"[P0] Reports: {context.Paths.ReportsDir}");
+            BuildLogger.Info($"[P0] Logs: {context.Paths.LogsDir}");
         }
 
         public override void Verify(BuildContext context)

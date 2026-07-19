@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Framework.BuildPipeline.Plan;
 using UnityEditor;
 using UnityEngine;
@@ -40,14 +41,14 @@ namespace Boot.Editor.Build
 
             if (!profile.SmokeEnabled)
             {
-                Debug.Log("[P8] Smoke disabled in config, skipping");
+                BuildLogger.Info("[P8] Smoke disabled in config, skipping");
                 return;
             }
 
             bool smokeRequired = profile.IsSmokeMandatory;
 
             var buildTarget = profile.Platform;
-            Debug.Log($"[P8] Smoke: Testing on {buildTarget} (required={smokeRequired})...");
+            BuildLogger.Info($"[P8] Smoke: Testing on {buildTarget} (required={smokeRequired})...");
 
             if (buildTarget == BuildTarget.Android)
             {
@@ -67,7 +68,7 @@ namespace Boot.Editor.Build
 
             if (Directory.Exists(playerPath))
             {
-                Debug.LogWarning("[P8] Export Project — cannot execute, skipping smoke");
+                BuildLogger.Warn("[P8] Export Project — cannot execute, skipping smoke");
                 return;
             }
             if (!File.Exists(playerPath))
@@ -86,7 +87,7 @@ namespace Boot.Editor.Build
             }
 
             int timeout = profile.SmokeTimeoutSec;
-            Debug.Log($"[P8] Starting: {playerPath}, timeout={timeout}s");
+            BuildLogger.Info($"[P8] Starting: {playerPath}, timeout={timeout}s");
 
             try
             {
@@ -107,16 +108,16 @@ namespace Boot.Editor.Build
                 if (!finished)
                 {
                     process.Kill();
-                    Debug.LogWarning($"[P8] Player timed out after {timeout}s");
+                    BuildLogger.Warn($"[P8] Player timed out after {timeout}s");
                 }
                 else
                 {
-                    Debug.Log($"[P8] Player exited with code: {process.ExitCode}");
+                    BuildLogger.Info($"[P8] Player exited with code: {process.ExitCode}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[P8] Process error: {ex.Message}");
+                BuildLogger.Warn($"[P8] Process error: {ex.Message}");
             }
 
             // 读取日志并判定
@@ -129,7 +130,7 @@ namespace Boot.Editor.Build
                 throw new BuildFailedException(Id, $"Smoke FAILED: {detail}");
             }
 
-            Debug.Log($"[P8] Smoke PASSED: {result.FoundMilestones.Count}/{result.RequiredCount} milestones");
+            BuildLogger.Info($"[P8] Smoke PASSED: {result.FoundMilestones.Count}/{result.RequiredCount} milestones");
         }
 
         // ===== Android Smoke =====
@@ -141,7 +142,7 @@ namespace Boot.Editor.Build
             {
                 if (profile.IsSmokeMandatory)
                     throw new BuildFailedException(Id, "ADB not found but smoke is mandatory");
-                Debug.LogWarning("[P8] Smoke: adb not found, optional Android smoke skipped");
+                BuildLogger.Warn("[P8] Smoke: adb not found, optional Android smoke skipped");
                 return;
             }
 
@@ -150,7 +151,7 @@ namespace Boot.Editor.Build
             {
                 if (profile.IsSmokeMandatory)
                     throw new BuildFailedException(Id, "No online Android device but smoke is mandatory");
-                Debug.LogWarning("[P8] Smoke: no online Android device, optional Android smoke skipped");
+                BuildLogger.Warn("[P8] Smoke: no online Android device, optional Android smoke skipped");
                 return;
             }
 
@@ -185,13 +186,13 @@ namespace Boot.Editor.Build
                 System.Threading.Thread.Sleep(pollMs);
                 waitedMs += pollMs;
                 RunAdb(adb, device,
-                    $"pull /sdcard/Android/data/{packageId}/files/Logs/Runtime \"{localLogDir}\"", 30);
+                    $"pull /sdcard/Android/data/{packageId}/files/Logs/Runtime/. \"{localLogDir}\"", 30);
                 if (File.Exists(Path.Combine(localLogDir, "boot.log")))
                 {
                     booted = true;
                     System.Threading.Thread.Sleep(3000);
                     RunAdb(adb, device,
-                        $"pull /sdcard/Android/data/{packageId}/files/Logs/Runtime \"{localLogDir}\"", 30);
+                        $"pull /sdcard/Android/data/{packageId}/files/Logs/Runtime/. \"{localLogDir}\"", 30);
                     break;
                 }
             }
@@ -208,7 +209,7 @@ namespace Boot.Editor.Build
             if (!result.Passed)
                 throw new BuildFailedException(Id, $"Android smoke FAILED: {result.FailureReason}");
 
-            Debug.Log($"[P8] Android smoke PASSED: {result.FoundMilestones.Count}/{result.RequiredCount} milestones");
+            BuildLogger.Info($"[P8] Android smoke PASSED: {result.FoundMilestones.Count}/{result.RequiredCount} milestones");
         }
 
         private static string GetPersistentDataPath()
@@ -265,9 +266,9 @@ namespace Boot.Editor.Build
             return null;
         }
 
-        private static string ResolveDevice(string adb, string preferredSerial)
+        private static HashSet<string> ListOnlineDevices(string adb)
         {
-            if (!string.IsNullOrEmpty(preferredSerial)) return preferredSerial;
+            var online = new HashSet<string>();
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = adb, Arguments = "devices",
@@ -275,16 +276,33 @@ namespace Boot.Editor.Build
                 RedirectStandardError = true, CreateNoWindow = true,
             };
             using var p = System.Diagnostics.Process.Start(psi);
-            if (p == null) return null;
+            if (p == null) return online;
             string output = p.StandardOutput.ReadToEnd();
             p.WaitForExit();
             foreach (string raw in output.Split('\n'))
             {
                 string line = raw.Trim();
                 if (line.StartsWith("List") || line.Length == 0) continue;
-                if (line.EndsWith("device")) return line.Split('\t')[0].Trim();
+                if (line.EndsWith("device"))
+                    online.Add(line.Split('\t')[0].Trim());
             }
-            return null;
+            return online;
+        }
+
+        private static string ResolveDevice(string adb, string preferredSerial)
+        {
+            // 指定了设备号 → 先验证是否在线
+            if (!string.IsNullOrEmpty(preferredSerial))
+            {
+                var online = ListOnlineDevices(adb);
+                if (online.Contains(preferredSerial))
+                    return preferredSerial;
+                BuildLogger.Warn($"[P8] 指定设备 '{preferredSerial}' 不在线，自动检测...");
+            }
+
+            // 自动检测第一个在线设备
+            var allOnline = ListOnlineDevices(adb);
+            return allOnline.FirstOrDefault();
         }
 
         private static int RunAdb(string adb, string device, string args, int timeoutSec)

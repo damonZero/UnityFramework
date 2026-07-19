@@ -44,7 +44,7 @@ namespace Boot.Editor.Build
             string packageName = profile.PackageName;
             var buildTarget = profile.Platform;
 
-            Debug.Log($"[P4] BuildAsset: Building YooAsset package '{packageName}' for {buildTarget}");
+            BuildLogger.Info($"[P4] BuildAsset: Building YooAsset package '{packageName}' for {buildTarget}");
 
             // 1. 清理旧 StreamingAssets 包
             string streamingAssetsPath = GetStreamingAssetsPackagePath(packageName);
@@ -89,7 +89,7 @@ namespace Boot.Editor.Build
                     $"YooAsset build failed: {buildResult.ErrorInfo}");
             }
 
-            Debug.Log("[P4] BuildAsset: DONE");
+            BuildLogger.Info("[P4] BuildAsset: DONE");
         }
 
         public override void Verify(BuildContext context)
@@ -103,7 +103,7 @@ namespace Boot.Editor.Build
             if (!File.Exists(versionFile))
                 throw new InvalidOperationException($"Package version file not found: {versionFile}");
 
-            Debug.Log("[P4] ✓ YooAsset package verified");
+            BuildLogger.Info("[P4] ✓ YooAsset package verified");
         }
 
         internal static string GetStreamingAssetsPackagePath(string packageName)

@@ -29,7 +29,7 @@ namespace Boot.Editor.Build
         {
             var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
             var buildTarget = profile.Platform;
-            Debug.Log("[P7] Verify: Checking artifacts...");
+            BuildLogger.Info("[P7] Verify: Checking artifacts...");
 
             // 1. Player 文件存在
             string playerPath = profile.GetPlayerPath();
@@ -39,12 +39,12 @@ namespace Boot.Editor.Build
                 var fi = new FileInfo(playerPath);
                 if (fi.Length == 0)
                     throw new BuildFailedException(Id, $"Player file is empty: {playerPath}");
-                Debug.Log($"[P7] ✓ Player: {playerPath} ({fi.Length / 1024 / 1024} MB)");
+                BuildLogger.Info($"[P7] ✓ Player: {playerPath} ({fi.Length / 1024 / 1024} MB)");
             }
             else if (Directory.Exists(playerPath))
             {
                 int fileCount = Directory.GetFiles(playerPath, "*", SearchOption.AllDirectories).Length;
-                Debug.Log($"[P7] ✓ Player (Export Project): {playerPath} ({fileCount} files)");
+                BuildLogger.Info($"[P7] ✓ Player (Export Project): {playerPath} ({fileCount} files)");
             }
             else
             {
@@ -61,11 +61,11 @@ namespace Boot.Editor.Build
                 if (!File.Exists(versionFile))
                     throw new BuildFailedException(Id,
                         $"Package version file missing: {versionFile}");
-                Debug.Log($"[P7] ✓ StreamingAssets package: {streamingAssetsPackage}");
+                BuildLogger.Info($"[P7] ✓ StreamingAssets package: {streamingAssetsPackage}");
             }
             else
             {
-                Debug.LogWarning($"[P7] StreamingAssets package not found: {streamingAssetsPackage}");
+                BuildLogger.Warn($"[P7] StreamingAssets package not found: {streamingAssetsPackage}");
             }
 
             // 3. DLL / AOT metadata 数量
@@ -75,7 +75,7 @@ namespace Boot.Editor.Build
                 ? Directory.GetFiles(dllDir, "*.bytes").Length : 0;
             int metadataCount = Directory.Exists(metadataDir)
                 ? Directory.GetFiles(metadataDir, "*.bytes").Length : 0;
-            Debug.Log($"[P7] HotUpdate DLLs: {dllCount}, AOT Metadata: {metadataCount}");
+            BuildLogger.Info($"[P7] HotUpdate DLLs: {dllCount}, AOT Metadata: {metadataCount}");
 
             if (dllCount == 0)
                 throw new BuildFailedException(Id,
@@ -90,7 +90,7 @@ namespace Boot.Editor.Build
                 FormalLeakageVerifier.Verify(context, buildTarget);
             }
 
-            Debug.Log("[P7] Verify: ALL CHECKS PASSED");
+            BuildLogger.Info("[P7] Verify: ALL CHECKS PASSED");
         }
     }
 }

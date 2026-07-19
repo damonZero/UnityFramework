@@ -3,6 +3,7 @@
     "rootNamespace": "Boot.Editor",
     "references": [
         "Boot",
+        "Log",
         "Asset",
         "Framework.BuildPipeline",
         "Framework.Asset.Editor",

@@ -118,7 +118,7 @@ namespace Boot.Editor.Build
         {
             string fullPath = Path.GetFullPath(path);
             _snapshots.Add(new FileSnapshot(fullPath));
-            Debug.Log($"[Transaction] Snapshot file: {path}");
+            BuildLogger.Info($"[Transaction] Snapshot file: {path}");
         }
 
         /// <summary>快照 PlayerSettings 字符串类设置</summary>
@@ -126,7 +126,7 @@ namespace Boot.Editor.Build
         {
             string original = getter();
             _snapshots.Add(new TextSettingSnapshot(key, original, setter));
-            Debug.Log($"[Transaction] Snapshot setting: {key} = '{original}'");
+            BuildLogger.Info($"[Transaction] Snapshot setting: {key} = '{original}'");
         }
 
         /// <summary>快照 PlayerSettings bool 类设置</summary>
@@ -134,7 +134,7 @@ namespace Boot.Editor.Build
         {
             bool original = getter();
             _snapshots.Add(new BoolSettingSnapshot(key, original, setter));
-            Debug.Log($"[Transaction] Snapshot setting: {key} = {original}");
+            BuildLogger.Info($"[Transaction] Snapshot setting: {key} = {original}");
         }
 
         /// <summary>提交事务（标记为完成，放弃 rollback 能力）</summary>
@@ -142,7 +142,7 @@ namespace Boot.Editor.Build
         {
             _committed = true;
             _snapshots.Clear();
-            Debug.Log("[Transaction] Committed");
+            BuildLogger.Info("[Transaction] Committed");
         }
 
         /// <summary>回滚所有快照过的变更</summary>
@@ -150,19 +150,19 @@ namespace Boot.Editor.Build
         {
             if (_committed)
             {
-                Debug.Log("[Transaction] Already committed, rollback skipped");
+                BuildLogger.Info("[Transaction] Already committed, rollback skipped");
                 return;
             }
 
             if (_rolledBack)
             {
-                Debug.Log("[Transaction] Already rolled back, skipping");
+                BuildLogger.Info("[Transaction] Already rolled back, skipping");
                 return;
             }
 
             _rolledBack = true;
 
-            Debug.Log($"[Transaction] Rolling back {_snapshots.Count} snapshot(s)...");
+            BuildLogger.Info($"[Transaction] Rolling back {_snapshots.Count} snapshot(s)...");
 
             // 反向恢复（最后改的先恢复）
             for (int i = _snapshots.Count - 1; i >= 0; i--)
@@ -170,16 +170,16 @@ namespace Boot.Editor.Build
                 try
                 {
                     _snapshots[i].Restore();
-                    Debug.Log($"[Transaction] Restored: {_snapshots[i].Description}");
+                    BuildLogger.Info($"[Transaction] Restored: {_snapshots[i].Description}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[Transaction] Failed to restore {_snapshots[i].Description}: {ex.Message}");
+                    BuildLogger.Error($"[Transaction] Failed to restore {_snapshots[i].Description}: {ex.Message}");
                 }
             }
 
             _snapshots.Clear();
-            Debug.Log("[Transaction] Rollback complete");
+            BuildLogger.Info("[Transaction] Rollback complete");
         }
 
         /// <summary>回滚并输出差异报告</summary>
@@ -226,7 +226,7 @@ namespace Boot.Editor.Build
         {
             var original = PlayerSettings.GetScriptingBackend(targetGroup);
             _snapshots.Add(new ScriptingBackendSnapshot(targetGroup, original));
-            Debug.Log($"[Transaction] Snapshot setting: ScriptingBackend.{targetGroup} = {original}");
+            BuildLogger.Info($"[Transaction] Snapshot setting: ScriptingBackend.{targetGroup} = {original}");
         }
     }
 }

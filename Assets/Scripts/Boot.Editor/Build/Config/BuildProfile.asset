@@ -37,7 +37,7 @@ MonoBehaviour:
   EnableDebugUi: 0
   SmokeEnabled: 1
   SmokeRequired: 0
-  SmokeDeviceSerial: 127.0.0.1:7555
+  SmokeDeviceSerial:
   SmokeTimeoutSec: 120
   OutputRoot: 
   KeepLastBuildCount: 5

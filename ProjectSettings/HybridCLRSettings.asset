@@ -46,6 +46,7 @@ MonoBehaviour:
   - ZLinq
   - ZLogger
   - Microsoft.Extensions.Logging.Abstractions
+  - Microsoft.Extensions.Logging
   outputLinkFile: HybridCLRGenerate/link.xml
   outputAOTGenericReferenceFile: HybridCLRGenerate/AOTGenericReferences.cs
   maxGenericReferenceIteration: 10

@@ -45,7 +45,7 @@ namespace Boot.Editor.Build
             if (depErrors.Count > 0)
             {
                 foreach (string e in depErrors)
-                    Debug.LogError($"[BuildPipelineRunner] Dependency error: {e}");
+                    BuildLogger.Error($"[BuildPipelineRunner] Dependency error: {e}");
                 throw new InvalidOperationException(
                     $"BuildStage dependency validation failed: {depErrors.Count} errors");
             }
@@ -57,7 +57,7 @@ namespace Boot.Editor.Build
             _ctx.Paths.EnsureDirectories();
             WriteBuildPlan();
 
-            Debug.Log($"[BuildPipelineRunner] Build starting: RunId={_ctx.RunId}, Profile={_ctx.Profile.ProfileName}, Platform={_ctx.Profile.Platform}");
+            BuildLogger.Info($"[BuildPipelineRunner] Build starting: RunId={_ctx.RunId}, Profile={_ctx.Profile.ProfileName}, Platform={_ctx.Profile.Platform}");
 
             try
             {
@@ -65,7 +65,7 @@ namespace Boot.Editor.Build
                 {
                     if (_ctx.IsCancellationRequested)
                     {
-                        Debug.LogWarning("[BuildPipelineRunner] Build cancelled by user");
+                        BuildLogger.Warn("[BuildPipelineRunner] Build cancelled by user");
                         _allPassed = false;
                         break;
                     }
@@ -76,7 +76,7 @@ namespace Boot.Editor.Build
                     if (!result.Passed && stage.Policy.HasFlag(BuildStagePolicy.Required))
                     {
                         _allPassed = false;
-                        Debug.LogError($"[BuildPipelineRunner] Required stage failed: {stage.Id}, aborting");
+                        BuildLogger.Error($"[BuildPipelineRunner] Required stage failed: {stage.Id}, aborting");
                         break;
                     }
 
@@ -87,12 +87,12 @@ namespace Boot.Editor.Build
             catch (Exception ex)
             {
                 _allPassed = false;
-                Debug.LogError($"[BuildPipelineRunner] Unexpected error: {ex}");
+                BuildLogger.Error($"[BuildPipelineRunner] Unexpected error: {ex}");
             }
             finally
             {
                 try { _ctx.Transaction.Rollback(); }
-                catch (Exception ex) { Debug.LogError($"[BuildPipelineRunner] Rollback failed: {ex.Message}"); }
+                catch (Exception ex) { BuildLogger.Error($"[BuildPipelineRunner] Rollback failed: {ex.Message}"); }
             }
 
             var report = BuildReport(
@@ -102,7 +102,7 @@ namespace Boot.Editor.Build
             report.EnvironmentSnapshot = snapshot;
             WriteReports(report);
             VerifyReportFiles();
-            Debug.Log($"[BuildTelemetry] Captured {report.PerformanceSpans.Count} spans, " +
+            BuildLogger.Info($"[BuildTelemetry] Captured {report.PerformanceSpans.Count} spans, " +
                       $"dropped={report.PerformanceDroppedCount}, collectorFailures={report.PerformanceCollectorFailureCount}");
             return report;
         }
@@ -111,7 +111,7 @@ namespace Boot.Editor.Build
 
         private StageExecutionResult ExecuteStage(IBuildStage stage, bool planSaysSkip)
         {
-            Debug.Log($"[BuildPipelineRunner] === {stage.Id}: {stage.DisplayName} ===");
+            BuildLogger.Info($"[BuildPipelineRunner] === {stage.Id}: {stage.DisplayName} ===");
             long startedTimestamp = Stopwatch.GetTimestamp();
 
             var result = new StageExecutionResult
@@ -147,7 +147,7 @@ namespace Boot.Editor.Build
 
                 WriteStageFingerprint(stage);
                 result.Status = StageStatus.Passed;
-                Debug.Log($"[BuildPipelineRunner] {stage.Id} PASSED");
+                BuildLogger.Info($"[BuildPipelineRunner] {stage.Id} PASSED");
             }
             catch (Exception ex)
             {
@@ -230,7 +230,7 @@ namespace Boot.Editor.Build
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[BuildPipelineRunner] Failed to write build plan: {ex.Message}");
+                BuildLogger.Warn($"[BuildPipelineRunner] Failed to write build plan: {ex.Message}");
             }
         }
 
@@ -257,7 +257,7 @@ namespace Boot.Editor.Build
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[BuildPipelineRunner] Failed to write fingerprint: {ex.Message}");
+                BuildLogger.Warn($"[BuildPipelineRunner] Failed to write fingerprint: {ex.Message}");
             }
         }
 
@@ -435,13 +435,13 @@ namespace Boot.Editor.Build
                 File.WriteAllText(Path.Combine(paths.ReportsDir, "build_report.json"),
                     JsonUtility.ToJson(report, true));
             }
-            catch (Exception ex) { Debug.LogError($"[BuildReportWriter] JSON: {ex.Message}"); }
+            catch (Exception ex) { BuildLogger.Error($"[BuildReportWriter] JSON: {ex.Message}"); }
 
             try { WriteMarkdown(report, Path.Combine(paths.ReportsDir, "build_report.md")); }
-            catch (Exception ex) { Debug.LogError($"[BuildReportWriter] MD: {ex.Message}"); }
+            catch (Exception ex) { BuildLogger.Error($"[BuildReportWriter] MD: {ex.Message}"); }
 
             try { WriteHandoff(report, Path.Combine(paths.ReportsDir, "ai_handoff.json")); }
-            catch (Exception ex) { Debug.LogError($"[BuildReportWriter] Handoff: {ex.Message}"); }
+            catch (Exception ex) { BuildLogger.Error($"[BuildReportWriter] Handoff: {ex.Message}"); }
         }
 
         private static void WriteMarkdown(BuildReportData report, string path)

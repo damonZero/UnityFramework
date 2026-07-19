@@ -138,7 +138,7 @@ namespace Boot
                     {
                         BuiltinFileSystemParameters =
                             FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(),
-                        CacheFileSystemParameters = BuildSandboxParameters(config, packageName)
+                        CacheFileSystemParameters = BuildSandboxParameters(config)
                     };
                 default:
                     throw new ArgumentOutOfRangeException(nameof(config.Mode), config.Mode, null);
@@ -154,13 +154,13 @@ namespace Boot
                 "[BootLoader] AssetConfig.EditorSimulatePackageRoot is empty. Run KJ/HybridCLR/Prepare YooAsset Editor Simulate Package (or Prepare Runtime Assets And Boot) before entering Play Mode.");
         }
 
-        private FileSystemParameters BuildSandboxParameters(AssetConfig config, string packageName)
+        private static FileSystemParameters BuildSandboxParameters(AssetConfig config)
         {
             var cdnBaseUrl = string.IsNullOrWhiteSpace(config.CdnBaseUrl)
                 ? "http://127.0.0.1:8080/CDN"
                 : config.CdnBaseUrl;
             var parameters = FileSystemParameters.CreateDefaultSandboxFileSystemParameters(
-                new BootRemoteService(cdnBaseUrl), packageName);
+                new BootRemoteService(cdnBaseUrl));
             parameters.AddParameter(EFileSystemParameter.DownloadMaxConcurrency, config.DownloadMaxConcurrency);
             parameters.AddParameter(EFileSystemParameter.DownloadWatchdogTimeout, config.DownloadTimeout);
             return parameters;

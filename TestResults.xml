@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test-run total="91" passed="91" failed="0" skipped="0" inconclusive="0">
+<test-run total="94" passed="94" failed="0" skipped="0" inconclusive="0">
+  <test-case name="AndroidSmoke_SanitizesNetworkAdbSerialForWindowsPath" status="Passed">
+  </test-case>
   <test-case name="AopRuntime_BeginSession_RejectsNullCollector" status="Passed">
   </test-case>
   <test-case name="AopRuntime_BeginSession_RejectsNullRunId" status="Passed">
@@ -24,6 +26,8 @@
   </test-case>
   <test-case name="AopSpan_TripleNested_RecordsCorrectHierarchy" status="Passed">
   </test-case>
+  <test-case name="AotMetadata_CoversGeneratedPatchedAssemblyList" status="Passed">
+  </test-case>
   <test-case name="BuildPaths_DerivesExpectedDirectories" status="Passed">
   </test-case>
   <test-case name="BuildProfile_ComputeProfileHash_ChangesWhenBuildInputsChange" status="Passed">
@@ -41,6 +45,8 @@
   <test-case name="BuildStageRegistry_RegistersP0ToP9InOrder" status="Passed">
   </test-case>
   <test-case name="BuildTransaction_Rollback_IsIdempotent" status="Passed">
+  </test-case>
+  <test-case name="HotUpdateAssemblies_AreConfiguredInDependencyOrder" status="Passed">
   </test-case>
   <test-case name="InMemoryAopCollector_DropsEventsBeyondCapacity" status="Passed">
   </test-case>

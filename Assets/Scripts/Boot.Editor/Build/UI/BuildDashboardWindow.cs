@@ -2,32 +2,38 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Boot.Editor.HybridCLR;
 using Framework.BuildPipeline.Diagnostics;
+using HybridCLR.Editor.Commands;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
+using YooAsset;
+using YooAsset.Editor;
 
 namespace Boot.Editor.Build
 {
     /// <summary>
-    /// BuildProfile-driven one-click build entry and result dashboard.
+    /// 构建面板 — BuildProfile 驱动的一键打包 + 热更补丁发布。
     /// </summary>
     public sealed class BuildDashboardWindow : OdinMenuEditorWindow
     {
         private const string SelectedProfileKey = "KJ.BuildDashboard.SelectedProfile";
+        private const string HotUpdateVersionKey = "KJ.BuildDashboard.HotUpdateVersion";
 
         private readonly List<BuildProfile> _profiles = new List<BuildProfile>();
         private BuildProfile _profile;
         private BuildReportData _lastReport;
         private string _lastError;
         private bool _isBuilding;
+        private bool _isPublishing;
 
         public static void Open()
         {
             var window = GetWindow<BuildDashboardWindow>();
-            window.titleContent = new GUIContent("KJ Build");
-            window.minSize = new Vector2(760, 560);
+            window.titleContent = new GUIContent("KJ 构建");
+            window.minSize = new Vector2(780, 620);
             window.Show();
         }
 
@@ -44,10 +50,10 @@ namespace Boot.Editor.Build
         {
             var tree = new OdinMenuTree();
             tree.Config.DrawSearchToolbar = false;
-            tree.Add("Build", new BuildView(this));
-            tree.Add("Profile", new ProfileView(this));
-            tree.Add("Stages", new StageView());
-            tree.Add("Results", new ResultsView(this));
+            tree.Add("构建", new BuildView(this));
+            tree.Add("配置", new BuildView.ProfileView(this));
+            tree.Add("阶段", new BuildView.StageView());
+            tree.Add("结果", new BuildView.ResultsView(this));
             return tree;
         }
 
@@ -104,10 +110,10 @@ namespace Boot.Editor.Build
             else
             {
                 path = EditorUtility.SaveFilePanelInProject(
-                    "Create Build Profile",
+                    "新建构建配置",
                     "BuildProfile",
                     "asset",
-                    "Choose a location for the new BuildProfile.",
+                    "选择构建配置存放位置",
                     "Assets/Scripts/Boot.Editor/Build/Config");
             }
 
@@ -146,10 +152,14 @@ namespace Boot.Editor.Build
         private static string GetProfileLabel(BuildProfile profile)
         {
             if (profile == null)
-                return "<Missing>";
+                return "<缺失>";
 
             string name = string.IsNullOrWhiteSpace(profile.ProfileName) ? profile.name : profile.ProfileName;
-            return $"{name}  [{profile.Environment} / {profile.Platform}]";
+            string platform = profile.Platform == BuildTarget.Android ? "Android" :
+                profile.Platform == BuildTarget.StandaloneWindows64 ? "Win64" :
+                profile.Platform == BuildTarget.iOS ? "iOS" :
+                profile.Platform.ToString();
+            return $"{name}  [{profile.Environment} / {platform}]";
         }
 
         private List<BuildIssue> ValidateProfile()
@@ -160,6 +170,7 @@ namespace Boot.Editor.Build
         private bool CanBuild()
         {
             return !_isBuilding
+                   && !_isPublishing
                    && _profile != null
                    && !EditorApplication.isCompiling
                    && !EditorApplication.isPlayingOrWillChangePlaymode
@@ -168,12 +179,22 @@ namespace Boot.Editor.Build
                        issue.Severity != BuildIssueSeverity.Error && !issue.IsBlocking);
         }
 
+        private bool CanPublish()
+        {
+            return !_isBuilding
+                   && !_isPublishing
+                   && _profile != null
+                   && !EditorApplication.isCompiling
+                   && !EditorApplication.isPlayingOrWillChangePlaymode
+                   && !UnityEditor.BuildPipeline.isBuildingPlayer;
+        }
+
         private void RunBuild()
         {
             if (!CanBuild())
             {
-                EditorUtility.DisplayDialog("Build unavailable",
-                    GetBuildBlockReason(), "OK");
+                EditorUtility.DisplayDialog("无法构建",
+                    GetBuildBlockReason(), "确定");
                 return;
             }
 
@@ -185,20 +206,20 @@ namespace Boot.Editor.Build
             try
             {
                 AssetDatabase.SaveAssets();
-                Debug.Log($"[BuildDashboard] One-click build started: {GetProfileLabel(_profile)}");
+                BuildLogger.Info($"[BuildDashboard] 一键打包开始: {GetProfileLabel(_profile)}");
                 _lastReport = KJBuildPipeline.Build(_profile);
 
-                string result = _lastReport.AllPassed ? "succeeded" : "failed";
-                Debug.Log($"[BuildDashboard] Build {result}: {GetProfileLabel(_profile)}");
+                string result = _lastReport.AllPassed ? "成功" : "失败";
+                BuildLogger.Info($"[BuildDashboard] 打包{result}: {GetProfileLabel(_profile)}");
                 EditorUtility.DisplayDialog(
-                    _lastReport.AllPassed ? "Build succeeded" : "Build failed",
-                    GetResultMessage(_lastReport), "OK");
+                    _lastReport.AllPassed ? "打包成功" : "打包失败",
+                    GetResultMessage(_lastReport), "确定");
             }
             catch (Exception ex)
             {
                 _lastError = ex.ToString();
-                Debug.LogError($"[BuildDashboard] Build failed before completion: {ex}");
-                EditorUtility.DisplayDialog("Build failed", ex.Message, "OK");
+                BuildLogger.Error($"[BuildDashboard] 打包异常终止: {ex}");
+                EditorUtility.DisplayDialog("打包失败", ex.Message, "确定");
             }
             finally
             {
@@ -208,21 +229,65 @@ namespace Boot.Editor.Build
             }
         }
 
+        private void RunPublish(string version)
+        {
+            if (!CanPublish())
+            {
+                EditorUtility.DisplayDialog("无法发布",
+                    _isBuilding || _isPublishing ? "已有构建或发布正在执行" : "请检查构建配置", "确定");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                EditorUtility.DisplayDialog("版本号不能为空", "请输入热更版本号（如 1.0.1）", "确定");
+                return;
+            }
+
+            _isPublishing = true;
+            _lastError = null;
+            Repaint();
+
+            try
+            {
+                AssetDatabase.SaveAssets();
+                BuildLogger.Info($"[BuildDashboard] 发布热更 {version}: {GetProfileLabel(_profile)}");
+                HostUpdatePublisher.Publish(version);
+                EditorPrefs.SetString(HotUpdateVersionKey, version);
+
+                BuildLogger.Info($"[BuildDashboard] 热更 {version} 发布完成");
+                EditorUtility.DisplayDialog("发布成功",
+                    $"热更补丁 {version} 已发布到 CDN 目录:\n{HostUpdatePublisher.ServerRoot}", "确定");
+            }
+            catch (Exception ex)
+            {
+                _lastError = ex.ToString();
+                BuildLogger.Error($"[BuildDashboard] 热更发布失败: {ex}");
+                EditorUtility.DisplayDialog("发布失败", ex.Message, "确定");
+            }
+            finally
+            {
+                _isPublishing = false;
+                ForceMenuTreeRebuild();
+                Repaint();
+            }
+        }
+
         private string GetBuildBlockReason()
         {
             if (_profile == null)
-                return "No BuildProfile was found. Create or restore a profile first.";
+                return "未找到构建配置，请先创建或恢复配置。";
             if (EditorApplication.isCompiling)
-                return "Unity is compiling scripts.";
+                return "Unity 正在编译脚本，请稍候。";
             if (EditorApplication.isPlayingOrWillChangePlaymode)
-                return "Exit Play Mode before building.";
+                return "请先退出运行模式再构建。";
             if (_isBuilding || UnityEditor.BuildPipeline.isBuildingPlayer)
-                return "A build is already running.";
+                return "已有构建正在执行中。";
 
             var blocking = ValidateProfile().FirstOrDefault(issue =>
                 issue.Severity == BuildIssueSeverity.Error || issue.IsBlocking);
             return blocking == null
-                ? "The build is temporarily unavailable."
+                ? "构建暂时不可用。"
                 : $"[{blocking.Code}] {blocking.Message}";
         }
 
@@ -242,7 +307,7 @@ namespace Boot.Editor.Build
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[BuildDashboard] Cannot read latest report: {ex.Message}");
+                BuildLogger.Warn($"[BuildDashboard] 无法读取最近报告: {ex.Message}");
             }
         }
 
@@ -251,11 +316,11 @@ namespace Boot.Editor.Build
             string profileName = report == null ? string.Empty : report.ProfileName;
             var failed = report?.StageResults?.FirstOrDefault(stage => stage.Status == StageStatus.Failed);
             if (report != null && report.AllPassed)
-                return $"Profile: {report.ProfileName}\nDuration: {FormatDuration(report.TotalDurationMs)}";
+                return $"配置: {report.ProfileName}\n总耗时: {FormatDuration(report.TotalDurationMs)}";
 
             return failed == null
-                ? $"Profile: {profileName}\nSee the Results tab and build report for details."
-                : $"Stage: {failed.StageId} - {failed.DisplayName}\n{failed.ErrorMessage}";
+                ? "配置: " + profileName + "\n请查看「结果」页和构建报告了解详情。"
+                : $"失败阶段: {failed.StageId} - {failed.DisplayName}\n{failed.ErrorMessage}";
         }
 
         private static string GetLatestFile(string root, string fileName)
@@ -273,7 +338,7 @@ namespace Boot.Editor.Build
             if (!string.IsNullOrWhiteSpace(path) && (File.Exists(path) || Directory.Exists(path)))
                 EditorUtility.RevealInFinder(Path.GetFullPath(path));
             else
-                Debug.LogWarning(missingMessage);
+                BuildLogger.Warn(missingMessage);
         }
 
         private static string FormatDuration(long milliseconds)
@@ -285,38 +350,44 @@ namespace Boot.Editor.Build
         }
 
         [HideReferenceObjectPicker]
-        private sealed class BuildView
+        public sealed class BuildView
         {
             private readonly BuildDashboardWindow _window;
+            private string _hotUpdateVersion;
+            private bool _installAfterBuild;
+            private string _selectedSmokeDevice;
 
             public BuildView(BuildDashboardWindow window)
             {
                 _window = window;
+                _hotUpdateVersion = EditorPrefs.GetString(HotUpdateVersionKey, "1.0.1");
             }
 
-            [Title("One-click Build")]
+            // ===== 一键打包 =====
+
+            [Title("一键打包")]
             [ShowInInspector, ValueDropdown(nameof(ProfileOptions))]
-            [LabelText("Profile")]
+            [LabelText("构建配置")]
             public BuildProfile ActiveProfile
             {
                 get => _window._profile;
                 set => _window.SelectProfile(value);
             }
 
-            [ShowInInspector, ReadOnly, LabelText("Target")]
+            [ShowInInspector, ReadOnly, LabelText("目标平台")]
             public string Target => _window._profile == null
                 ? "-"
                 : $"{_window._profile.Environment} / {_window._profile.Platform}";
 
-            [ShowInInspector, ReadOnly, LabelText("Version")]
+            [ShowInInspector, ReadOnly, LabelText("版本")]
             public string Version => _window._profile == null
                 ? "-"
-                : $"{_window._profile.VersionName} ({_window._profile.VersionCode})";
+                : $"{_window._profile.VersionName} (build {_window._profile.VersionCode})";
 
-            [ShowInInspector, ReadOnly, LabelText("Player")]
+            [ShowInInspector, ReadOnly, LabelText("产物路径")]
             public string PlayerPath => _window._profile?.GetPlayerPath() ?? "-";
 
-            [ShowInInspector, ReadOnly, LabelText("Validation")]
+            [ShowInInspector, ReadOnly, LabelText("校验状态")]
             public string ValidationSummary
             {
                 get
@@ -326,40 +397,230 @@ namespace Boot.Editor.Build
                         issue.Severity == BuildIssueSeverity.Error || issue.IsBlocking);
                     int warnings = issues.Count(issue => issue.Severity == BuildIssueSeverity.Warning);
                     return errors == 0
-                        ? warnings == 0 ? "Ready" : $"Ready with {warnings} warning(s)"
-                        : $"Blocked by {errors} error(s)";
+                        ? warnings == 0 ? "✓ 就绪" : $"⚠ 就绪（{warnings} 个警告）"
+                        : $"✗ 被 {errors} 个错误阻止";
                 }
             }
 
-            [Button("One-click Build", ButtonSizes.Large), GUIColor(0.20f, 0.72f, 0.38f)]
-            [EnableIf(nameof(BuildEnabled))]
-            public void OneClickBuild() => _window.RunBuild();
+            [Title("安装与冒烟（Android）")]
+            [ShowInInspector, LabelText("打包后安装到设备")]
+            [Tooltip("勾选后，一键打包完成后会自动安装 APK 到选中设备并执行冒烟验证。")]
+            public bool InstallAfterBuild
+            {
+                get => _installAfterBuild;
+                set => _installAfterBuild = value;
+            }
 
-            [Button("Refresh")]
+            [ShowInInspector, ValueDropdown(nameof(SmokeDeviceOptions))]
+            [LabelText("目标设备")]
+            [EnableIf(nameof(InstallAfterBuild))]
+            [Tooltip("选择要安装的设备。列表来自 ADB devices，也可手动输入设备序列号。")]
+            public string SelectedSmokeDevice
+            {
+                get
+                {
+                    if (string.IsNullOrEmpty(_selectedSmokeDevice))
+                        _selectedSmokeDevice = FindFirstOnlineDevice();
+                    return _selectedSmokeDevice;
+                }
+                set => _selectedSmokeDevice = value;
+            }
+
+            [Button("刷新设备列表"), GUIColor(0.5f, 0.5f, 0.5f)]
+            [EnableIf(nameof(InstallAfterBuild))]
+            public void RefreshDevices() => _selectedSmokeDevice = FindFirstOnlineDevice();
+
+            [Button("一键打包", ButtonSizes.Large), GUIColor(0.20f, 0.72f, 0.38f)]
+            [EnableIf(nameof(BuildEnabled))]
+            public void OneClickBuild()
+            {
+                // 勾了安装 → 写给 Profile，P8 冒烟自动安装运行
+                if (_installAfterBuild && _window._profile != null)
+                {
+                    _window._profile.SmokeEnabled = true;
+                    _window._profile.SmokeDeviceSerial = SelectedSmokeDevice;
+                }
+                else if (_window._profile != null)
+                {
+                    _window._profile.SmokeEnabled = false;
+                }
+                _window.RunBuild();
+            }
+
+            [Button("刷新"), GUIColor(0.5f, 0.5f, 0.5f)]
             public void Refresh()
             {
                 _window.RefreshProfiles();
                 _window.ForceMenuTreeRebuild();
             }
 
-            [Title("Validation")]
+            // ===== 热更补丁 =====
+
+            [Title("发布热更补丁")]
+            [ShowInInspector]
+            [LabelText("热更版本号")]
+            public string HotUpdateVersion
+            {
+                get => _hotUpdateVersion;
+                set
+                {
+                    _hotUpdateVersion = value;
+                    EditorPrefs.SetString(HotUpdateVersionKey, value);
+                }
+            }
+
+            [ShowInInspector, LabelText("发布后安装到设备")]
+            [Tooltip("勾选后，发布完成后会自动安装 APK 到选中设备。")]
+            public bool InstallAfterPublish { get; set; }
+
+            [ShowInInspector, ValueDropdown(nameof(SmokeDeviceOptions))]
+            [LabelText("目标设备")]
+            [EnableIf(nameof(InstallAfterPublish))]
+            public string PublishDevice { get; set; }
+
+            [Button("发布热更补丁", ButtonSizes.Large), GUIColor(0.22f, 0.55f, 0.91f)]
+            [EnableIf(nameof(PublishEnabled))]
+            public void PublishHotUpdate()
+            {
+                _window.RunPublish(_hotUpdateVersion);
+
+                // 发布完成后安装到设备
+                if (InstallAfterPublish)
+                {
+                    string device = string.IsNullOrEmpty(PublishDevice)
+                        ? FindFirstOnlineDevice() : PublishDevice;
+                    if (!string.IsNullOrEmpty(device) && _window._profile != null)
+                    {
+                        InstallApkToDevice(device, _window._profile.GetPlayerPath());
+                    }
+                }
+            }
+
+            // ===== 校验详情 =====
+
+            [Title("校验详情")]
             [ShowInInspector, TableList(IsReadOnly = true, AlwaysExpanded = true)]
             public List<IssueEntry> Issues => _window.ValidateProfile()
                 .Select(IssueEntry.FromIssue)
                 .ToList();
 
-            [ShowInInspector, ReadOnly, MultiLineProperty(4), LabelText("Last Error")]
+            [ShowInInspector, ReadOnly, MultiLineProperty(4), LabelText("最近错误")]
             [ShowIf(nameof(HasLastError))]
             public string LastError => _window._lastError;
 
             private bool BuildEnabled => _window.CanBuild();
+            private bool PublishEnabled => _window.CanPublish();
             private bool HasLastError => !string.IsNullOrWhiteSpace(_window._lastError);
             private IEnumerable<ValueDropdownItem<BuildProfile>> ProfileOptions =>
                 _window.GetProfileOptions();
-        }
+
+            private ValueDropdownList<string> SmokeDeviceOptions
+            {
+                get
+                {
+                    var list = new ValueDropdownList<string>();
+                    var devices = ListOnlineDevices();
+                    if (devices.Count == 0)
+                        list.Add("(未检测到设备)", "");
+                    foreach (string d in devices)
+                        list.Add(d, d);
+                    if (!string.IsNullOrEmpty(_selectedSmokeDevice) && !devices.Contains(_selectedSmokeDevice))
+                        list.Add(_selectedSmokeDevice + " (手动输入)", _selectedSmokeDevice);
+                    return list;
+                }
+            }
+
+            private static List<string> ListOnlineDevices()
+            {
+                var devices = new List<string>();
+                string adb = FindAdbPath();
+                if (adb == null) return devices;
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = adb, Arguments = "devices",
+                        UseShellExecute = false, RedirectStandardOutput = true,
+                        RedirectStandardError = true, CreateNoWindow = true,
+                    };
+                    using var p = System.Diagnostics.Process.Start(psi);
+                    if (p == null) return devices;
+                    string output = p.StandardOutput.ReadToEnd();
+                    p.WaitForExit();
+                    foreach (string raw in output.Split('\n'))
+                    {
+                        string line = raw.Trim();
+                        if (line.StartsWith("List") || line.Length == 0) continue;
+                        if (line.EndsWith("device"))
+                            devices.Add(line.Split('\t')[0].Trim());
+                    }
+                }
+                catch { /* ADB 不可用时忽略 */ }
+                return devices;
+            }
+
+            private static string FindFirstOnlineDevice()
+            {
+                var devices = ListOnlineDevices();
+                return devices.FirstOrDefault() ?? "";
+            }
+
+            private static string FindAdbPath()
+            {
+                foreach (string env in new[] { "ANDROID_SDK_ROOT", "ANDROID_HOME" })
+                {
+                    string sdk = Environment.GetEnvironmentVariable(env);
+                    if (!string.IsNullOrEmpty(sdk))
+                    {
+                        string p = Path.Combine(sdk, "platform-tools", "adb.exe");
+                        if (File.Exists(p)) return p;
+                    }
+                }
+                string unitySdk = EditorPrefs.GetString("AndroidSdkRoot", "");
+                if (!string.IsNullOrEmpty(unitySdk))
+                {
+                    string p = Path.Combine(unitySdk, "platform-tools", "adb.exe");
+                    if (File.Exists(p)) return p;
+                }
+                return null;
+            }
+
+            private static void InstallApkToDevice(string device, string apkPath)
+            {
+                if (!File.Exists(apkPath))
+                {
+                    BuildLogger.Error($"[Dashboard] APK 不存在: {apkPath}");
+                    return;
+                }
+                string adb = FindAdbPath();
+                if (adb == null)
+                {
+                    BuildLogger.Error("[Dashboard] 未找到 ADB");
+                    return;
+                }
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = adb,
+                        Arguments = $"-s {device} install -r -d \"{apkPath}\"",
+                        UseShellExecute = false, RedirectStandardOutput = true,
+                        RedirectStandardError = true, CreateNoWindow = true,
+                    };
+                    using var p = System.Diagnostics.Process.Start(psi);
+                    if (p == null) return;
+                    string output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+                    p.WaitForExit();
+                    BuildLogger.Info($"[Dashboard] 安装到 {device}: {(p.ExitCode == 0 ? "成功" : "失败")}\n{output}");
+                }
+                catch (Exception ex)
+                {
+                    BuildLogger.Error($"[Dashboard] 安装失败: {ex.Message}");
+                }
+            }
 
         [HideReferenceObjectPicker]
-        private sealed class ProfileView
+        public sealed class ProfileView
         {
             private readonly BuildDashboardWindow _window;
 
@@ -368,9 +629,9 @@ namespace Boot.Editor.Build
                 _window = window;
             }
 
-            [Title("Build Profile")]
+            [Title("构建配置")]
             [ShowInInspector, ValueDropdown(nameof(ProfileOptions))]
-            [LabelText("Profile")]
+            [LabelText("配置")]
             public BuildProfile ActiveProfile
             {
                 get => _window._profile;
@@ -381,7 +642,7 @@ namespace Boot.Editor.Build
             [HideLabel]
             public BuildProfile Settings => _window._profile;
 
-            [Button("Select Asset")]
+            [Button("定位资源")]
             public void SelectAsset()
             {
                 Selection.activeObject = _window._profile;
@@ -389,10 +650,10 @@ namespace Boot.Editor.Build
                     EditorGUIUtility.PingObject(_window._profile);
             }
 
-            [Button("Create Profile")]
+            [Button("新建配置")]
             public void CreateProfile() => _window.CreateProfile();
 
-            [Button("Refresh Profiles")]
+            [Button("刷新列表")]
             public void RefreshProfiles()
             {
                 _window.RefreshProfiles();
@@ -404,9 +665,9 @@ namespace Boot.Editor.Build
         }
 
         [HideReferenceObjectPicker]
-        private sealed class StageView
+        public sealed class StageView
         {
-            [Title("Registered P0-P9 Stages")]
+            [Title("P0-P9 构建阶段")]
             [ShowInInspector, TableList(IsReadOnly = true, AlwaysExpanded = true)]
             public List<StageEntry> Stages => BuildStageRegistry.GetAll()
                 .Select(stage => new StageEntry
@@ -415,13 +676,25 @@ namespace Boot.Editor.Build
                     Id = stage.Id,
                     Name = stage.DisplayName,
                     Category = stage.Category,
-                    Policy = stage.Policy.ToString(),
+                    Policy = FormatPolicy(stage.Policy),
                 })
                 .ToList();
+
+            private static string FormatPolicy(BuildStagePolicy policy)
+            {
+                var parts = new System.Text.StringBuilder();
+                if ((policy & BuildStagePolicy.Required) != 0) parts.Append("必须 ");
+                if ((policy & BuildStagePolicy.Optional) != 0) parts.Append("可选 ");
+                if ((policy & BuildStagePolicy.AlwaysRun) != 0) parts.Append("总是执行 ");
+                if ((policy & BuildStagePolicy.NoSkip) != 0) parts.Append("禁止跳过 ");
+                if ((policy & BuildStagePolicy.Transactional) != 0) parts.Append("事务 ");
+                if ((policy & BuildStagePolicy.ProducesArtifacts) != 0) parts.Append("产物 ");
+                return parts.ToString().Trim();
+            }
         }
 
         [HideReferenceObjectPicker]
-        private sealed class ResultsView
+        public sealed class ResultsView
         {
             private readonly BuildDashboardWindow _window;
 
@@ -430,16 +703,16 @@ namespace Boot.Editor.Build
                 _window = window;
             }
 
-            [Title("Latest Result")]
-            [ShowInInspector, ReadOnly, LabelText("Status")]
+            [Title("最近结果")]
+            [ShowInInspector, ReadOnly, LabelText("状态")]
             public string Status => _window._lastReport == null
-                ? "No report"
-                : _window._lastReport.AllPassed ? "Succeeded" : "Failed";
+                ? "无报告"
+                : _window._lastReport.AllPassed ? "✓ 成功" : "✗ 失败";
 
-            [ShowInInspector, ReadOnly, LabelText("Run ID")]
+            [ShowInInspector, ReadOnly, LabelText("运行编号")]
             public string RunId => _window._lastReport?.RunId ?? "-";
 
-            [ShowInInspector, ReadOnly, LabelText("Duration")]
+            [ShowInInspector, ReadOnly, LabelText("总耗时")]
             public string Duration => _window._lastReport == null
                 ? "-"
                 : FormatDuration(_window._lastReport.TotalDurationMs);
@@ -449,30 +722,30 @@ namespace Boot.Editor.Build
                 .Select(ResultEntry.FromResult)
                 .ToList() ?? new List<ResultEntry>();
 
-            [Button("Open Report")]
+            [Button("打开报告")]
             public void OpenReport()
             {
                 string path = _window._profile == null
                     ? null
                     : GetLatestFile(_window._profile.GetOutputDir(), "build_report.md");
-                RevealFile(path, "No build_report.md was found for the selected profile.");
+                RevealFile(path, "未找到 build_report.md");
             }
 
-            [Button("Open Artifacts")]
+            [Button("打开产物")]
             public void OpenArtifacts()
             {
                 string path = _window._profile == null ? null : _window._profile.GetArchiveDir();
-                RevealFile(path, "The artifact directory does not exist yet.");
+                RevealFile(path, "产物目录尚不存在");
             }
 
-            [Button("Open Output")]
+            [Button("打开输出")]
             public void OpenOutput()
             {
                 string path = _window._profile?.GetOutputDir();
-                RevealFile(path, "The build output directory does not exist yet.");
+                RevealFile(path, "构建输出目录尚不存在");
             }
 
-            [Button("Copy AI Handoff Path")]
+            [Button("复制 AI 诊断路径")]
             public void CopyHandoffPath()
             {
                 string path = _window._profile == null
@@ -481,28 +754,33 @@ namespace Boot.Editor.Build
                 if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
                 {
                     GUIUtility.systemCopyBuffer = Path.GetFullPath(path);
-                    Debug.Log($"[BuildDashboard] Copied: {path}");
+                    BuildLogger.Info($"[BuildDashboard] 已复制: {path}");
                 }
                 else
                 {
-                    Debug.LogWarning("No ai_handoff.json was found for the selected profile.");
+                    BuildLogger.Warn("未找到 ai_handoff.json");
                 }
             }
         }
 
         [Serializable]
-        private sealed class IssueEntry
+        public sealed class IssueEntry
         {
-            [TableColumnWidth(70, Resizable = false)] public string Severity;
-            [TableColumnWidth(160)] public string Code;
+            [TableColumnWidth(70, Resizable = false), LabelText("严重度")]
+            public string Severity;
+            [TableColumnWidth(160), LabelText("代码")]
+            public string Code;
+            [LabelText("说明")]
             public string Message;
+            [LabelText("建议修复")]
             public string SuggestedFix;
 
             public static IssueEntry FromIssue(BuildIssue issue)
             {
                 return new IssueEntry
                 {
-                    Severity = issue.Severity.ToString(),
+                    Severity = issue.Severity == BuildIssueSeverity.Error ? "错误" :
+                        issue.Severity == BuildIssueSeverity.Warning ? "警告" : "信息",
                     Code = issue.Code,
                     Message = issue.Message,
                     SuggestedFix = issue.SuggestedFix,
@@ -511,22 +789,32 @@ namespace Boot.Editor.Build
         }
 
         [Serializable]
-        private sealed class StageEntry
+        public sealed class StageEntry
         {
-            [TableColumnWidth(45, Resizable = false)] public int Order;
-            [TableColumnWidth(100)] public string Id;
+            [TableColumnWidth(45, Resizable = false), LabelText("序号")]
+            public int Order;
+            [TableColumnWidth(100), LabelText("标识")]
+            public string Id;
+            [LabelText("名称")]
             public string Name;
-            [TableColumnWidth(100)] public string Category;
-            [TableColumnWidth(150)] public string Policy;
+            [TableColumnWidth(100), LabelText("分类")]
+            public string Category;
+            [TableColumnWidth(160), LabelText("策略")]
+            public string Policy;
         }
 
         [Serializable]
-        private sealed class ResultEntry
+        public sealed class ResultEntry
         {
-            [TableColumnWidth(100)] public string Stage;
+            [TableColumnWidth(100), LabelText("阶段")]
+            public string Stage;
+            [LabelText("名称")]
             public string Name;
-            [TableColumnWidth(75, Resizable = false)] public string Status;
-            [TableColumnWidth(90, Resizable = false)] public string Duration;
+            [TableColumnWidth(75, Resizable = false), LabelText("状态")]
+            public string Status;
+            [TableColumnWidth(90, Resizable = false), LabelText("耗时")]
+            public string Duration;
+            [LabelText("错误")]
             public string Error;
 
             public static ResultEntry FromResult(StageExecutionResult result)
@@ -535,11 +823,14 @@ namespace Boot.Editor.Build
                 {
                     Stage = result.StageId,
                     Name = result.DisplayName,
-                    Status = result.Status.ToString(),
+                    Status = result.Status == StageStatus.Passed ? "通过" :
+                        result.Status == StageStatus.Failed ? "失败" :
+                        result.Status == StageStatus.Skipped ? "跳过" : "未知",
                     Duration = FormatDuration(result.DurationMs),
                     Error = result.ErrorMessage,
                 };
             }
         }
     }
+}
 }

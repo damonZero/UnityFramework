@@ -25,7 +25,7 @@ namespace Boot.Editor.Build
             if (env != BuildEnvironment.Formal && env != BuildEnvironment.Audit)
                 return;
 
-            Debug.Log("[FormalLeakage] Verifying production release constraints...");
+            BuildLogger.Info("[FormalLeakage] Verifying production release constraints...");
 
             bool hasIssue = false;
 
@@ -91,7 +91,7 @@ namespace Boot.Editor.Build
                     "Formal leakage verification failed — see issues for details");
             }
 
-            Debug.Log("[FormalLeakage] ✓ All production release constraints passed");
+            BuildLogger.Info("[FormalLeakage] ✓ All production release constraints passed");
         }
     }
 }

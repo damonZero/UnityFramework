@@ -28,20 +28,20 @@ namespace Boot.Editor.Build
                 if (!string.IsNullOrEmpty(args.Platform))
                     profile.Platform = (BuildTarget)Enum.Parse(typeof(BuildTarget), args.Platform);
 
-                Debug.Log($"[BuildCI] ========== CI BUILD STARTED: {profile.ProfileName} ==========");
+                BuildLogger.Info($"[BuildCI] ========== CI BUILD STARTED: {profile.ProfileName} ==========");
                 var report = KJBuildPipeline.Build(profile);
 
                 int exitCode = report.AllPassed
                     ? (int)Framework.BuildPipeline.CI.BuildExitCode.Success
                     : (int)Framework.BuildPipeline.CI.BuildExitCode.UnknownError;
 
-                Debug.Log($"[BuildCI] Build result: {(report.AllPassed ? "SUCCESS" : "FAILED")}");
-                Debug.Log($"[BuildCI] Exit code: {exitCode}");
+                BuildLogger.Info($"[BuildCI] Build result: {(report.AllPassed ? "SUCCESS" : "FAILED")}");
+                BuildLogger.Info($"[BuildCI] Exit code: {exitCode}");
                 EditorApplication.Exit(exitCode);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[BuildCI] Fatal: {ex}");
+                BuildLogger.Error($"[BuildCI] Fatal: {ex}");
                 EditorApplication.Exit((int)Framework.BuildPipeline.CI.BuildExitCode.UnknownError);
             }
         }

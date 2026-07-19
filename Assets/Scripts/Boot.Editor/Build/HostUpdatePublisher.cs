@@ -10,11 +10,12 @@ using YooAsset.Editor;
 namespace Boot.Editor.Build
 {
     /// <summary>
-    /// Host update publisher. It never runs HybridCLR GenerateAll or BuildPlayer.
+    /// 热更补丁发布工具。不执行 HybridCLR GenerateAll 或 BuildPlayer。
     /// </summary>
     public static class HostUpdatePublisher
     {
-        private const string ServerRoot = "C:/ZZS/Project/NewProjectK/Server/CDN/Android/DefaultPackage";
+        /// <summary>CDN 服务器根目录</summary>
+        public static readonly string ServerRoot = "C:/ZZS/Project/NewProjectK/Server/CDN/Android/DefaultPackage";
 
         [MenuItem("KJ/Build/Publish Host Update 1.0.1")]
         public static void PublishMenu() => Publish("1.0.1");
@@ -52,7 +53,7 @@ namespace Boot.Editor.Build
             string archive = Path.Combine(ServerRoot, version);
             CopyDirectory(source, archive);
             CopyDirectory(source, ServerRoot);
-            Debug.Log($"[HostUpdatePublisher] Published {version} to {ServerRoot}");
+            BuildLogger.Info($"[HostUpdatePublisher] Published {version} to {ServerRoot}");
         }
 
         private static void CopyDirectory(string source, string destination)

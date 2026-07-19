@@ -34,7 +34,7 @@ namespace Boot.Editor.Build
             var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
             var buildTarget = profile.Platform;
 
-            Debug.Log("[P1] Preflight: Starting checks...");
+            BuildLogger.Info("[P1] Preflight: Starting checks...");
 
             // 1. HybridCLR 运行时已安装
             var installer = new InstallerController();
@@ -45,13 +45,13 @@ namespace Boot.Editor.Build
                     "HybridCLR runtime not installed. Run KJ/HybridCLR/Maintenance/Install HybridCLR Runtime first."));
                 throw new BuildFailedException(Id, "HybridCLR runtime not installed");
             }
-            Debug.Log("[P1] ✓ HybridCLR runtime: installed");
+            BuildLogger.Info("[P1] ✓ HybridCLR runtime: installed");
 
             // 2. 平台切换
             BuildTarget activeTarget = EditorUserBuildSettings.activeBuildTarget;
             if (activeTarget != buildTarget)
             {
-                Debug.LogWarning($"[P1] Switching platform: {activeTarget} → {buildTarget}");
+                BuildLogger.Warn($"[P1] Switching platform: {activeTarget} → {buildTarget}");
                 if (!EditorUserBuildSettings.SwitchActiveBuildTarget(
                     BuildPipeline.GetBuildTargetGroup(buildTarget), buildTarget))
                 {
@@ -61,7 +61,7 @@ namespace Boot.Editor.Build
                     throw new BuildFailedException(Id, $"Platform switch failed: {buildTarget}");
                 }
             }
-            Debug.Log($"[P1] ✓ Platform: {buildTarget}");
+            BuildLogger.Info($"[P1] ✓ Platform: {buildTarget}");
 
             // 3. Boot 场景存在且在 BuildSettings
             if (!File.Exists(BootScenePath))
@@ -85,7 +85,7 @@ namespace Boot.Editor.Build
                     "Boot scene not in BuildSettings. Run KJ/HybridCLR/Maintenance/Prepare Boot Scene first."));
                 throw new BuildFailedException(Id, "Boot scene not in BuildSettings");
             }
-            Debug.Log("[P1] ✓ Boot scene: in BuildSettings");
+            BuildLogger.Info("[P1] ✓ Boot scene: in BuildSettings");
 
             // 4. AssetConfig 存在
             var assetConfig = Resources.Load<AssetConfig>("AssetConfig");
@@ -96,15 +96,15 @@ namespace Boot.Editor.Build
                     "AssetConfig not found at Resources/AssetConfig.asset"));
                 throw new BuildFailedException(Id, "AssetConfig missing");
             }
-            Debug.Log($"[P1] ✓ AssetConfig: {assetConfig.PackageName}");
+            BuildLogger.Info($"[P1] ✓ AssetConfig: {assetConfig.PackageName}");
 
             // 5. IL2CPP 强制
             BuildTargetGroup targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             var currentBackend = PlayerSettings.GetScriptingBackend(targetGroup);
             if (currentBackend != ScriptingImplementation.IL2CPP)
-                Debug.LogWarning($"[P1] ScriptingBackend is {currentBackend}; P6 will switch it transactionally to IL2CPP.");
+                BuildLogger.Warn($"[P1] ScriptingBackend is {currentBackend}; P6 will switch it transactionally to IL2CPP.");
             else
-                Debug.Log("[P1] ✓ ScriptingBackend: IL2CPP");
+                BuildLogger.Info("[P1] ✓ ScriptingBackend: IL2CPP");
 
             // 6. Android 平台检查
             if (buildTarget == BuildTarget.Android)
@@ -118,7 +118,7 @@ namespace Boot.Editor.Build
                 ValidateFormalSettings(context, profile, targetGroup);
             }
 
-            Debug.Log("[P1] Preflight: ALL CHECKS PASSED");
+            BuildLogger.Info("[P1] Preflight: ALL CHECKS PASSED");
         }
 
         private void ValidateFormalSettings(BuildContext context, BuildProfile profile,
@@ -151,7 +151,7 @@ namespace Boot.Editor.Build
                     "Debug defines detected in Formal environment",
                     null, "Remove KJ_GM_ENABLED / KJ_DEBUG_UI from Scripting Define Symbols"));
 
-            Debug.Log("[P1] ✓ Formal settings validated");
+            BuildLogger.Info("[P1] ✓ Formal settings validated");
         }
 
         private void ValidateAndroidTools(BuildContext context)
@@ -169,7 +169,7 @@ namespace Boot.Editor.Build
                 throw new BuildFailedException(Id, "Android module missing");
             }
 
-            Debug.Log("[P1] ✓ Android module present");
+            BuildLogger.Info("[P1] ✓ Android module present");
         }
     }
 }

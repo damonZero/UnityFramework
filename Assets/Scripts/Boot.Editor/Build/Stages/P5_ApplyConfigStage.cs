@@ -36,7 +36,7 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            Debug.Log("[P5] ApplyConfig: Writing runtime configuration...");
+            BuildLogger.Info("[P5] ApplyConfig: Writing runtime configuration...");
 
             // Snapshot 原始内容
             _originalConfigYaml = ReadAssetConfigYaml();
@@ -57,7 +57,7 @@ namespace Boot.Editor.Build
             // 3. 刷新资产数据库
             AssetDatabase.Refresh();
 
-            Debug.Log($"[P5] ApplyConfig: Configuration applied (Mode={profile.AssetMode})");
+            BuildLogger.Info($"[P5] ApplyConfig: Configuration applied (Mode={profile.AssetMode})");
         }
 
         public override void Verify(BuildContext context)
@@ -71,7 +71,7 @@ namespace Boot.Editor.Build
             if (profile.AssetMode == Framework.Asset.AssetConfig.PlayMode.Host &&
                 !yaml.Contains($"CdnBaseUrl: {profile.CdnBaseUrl}"))
                 throw new InvalidOperationException("AssetConfig.CdnBaseUrl was not applied");
-            Debug.Log($"[P5] ✓ AssetConfig verified as {profile.AssetMode}");
+            BuildLogger.Info($"[P5] ✓ AssetConfig verified as {profile.AssetMode}");
         }
 
         public override void Rollback(BuildContext context)
@@ -94,7 +94,7 @@ namespace Boot.Editor.Build
             File.WriteAllText(AssetConfigPath, yaml);
             AssetDatabase.ImportAsset(AssetConfigPath,
                 ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log($"[P5] AssetConfig set to {profile.AssetMode}, CDN={profile.CdnBaseUrl}");
+            BuildLogger.Info($"[P5] AssetConfig set to {profile.AssetMode}, CDN={profile.CdnBaseUrl}");
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Boot.Editor.Build
         {
             if (_originalConfigYaml == null)
             {
-                Debug.LogWarning("[P5] No original AssetConfig YAML to rollback");
+                BuildLogger.Warn("[P5] No original AssetConfig YAML to rollback");
                 return;
             }
 
@@ -113,12 +113,12 @@ namespace Boot.Editor.Build
                 File.WriteAllText(AssetConfigPath, _originalConfigYaml);
                 AssetDatabase.ImportAsset(AssetConfigPath,
                     ImportAssetOptions.ForceSynchronousImport);
-                Debug.Log("[P5] AssetConfig rolled back to original (EditorSimulate)");
+                BuildLogger.Info("[P5] AssetConfig rolled back to original (EditorSimulate)");
                 _originalConfigYaml = null;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[P5] Failed to rollback AssetConfig: {ex.Message}");
+                BuildLogger.Error($"[P5] Failed to rollback AssetConfig: {ex.Message}");
             }
         }
 
@@ -154,7 +154,7 @@ namespace Boot.Editor.Build
             if (newDefines != current)
             {
                 PlayerSettings.SetScriptingDefineSymbols(namedTarget, newDefines);
-                Debug.Log($"[P5] ScriptingDefines updated: {current} → {newDefines}");
+                BuildLogger.Info($"[P5] ScriptingDefines updated: {current} → {newDefines}");
             }
         }
     }

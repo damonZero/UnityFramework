@@ -7,6 +7,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	{
 		"MessagePipe.dll",
 		"Microsoft.Extensions.Logging.Abstractions.dll",
+			"Microsoft.Extensions.Logging.dll",
 		"System.Core.dll",
 		"System.Runtime.CompilerServices.Unsafe.dll",
 		"System.dll",
@@ -25,37 +26,13 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// }} 
 
 	// {{ AOT generic types
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Boot.BootUpdateRunner.<RunAsync>d__8>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Core.PoolService.<<Init>b__5_0>d,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<InstantiateAsync>d__34,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<GetAsync>d__9,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<Framework.Pool.GameObjectPool.<WarmupInternal>d__16>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Boot.BootUpdateRunner.<RunAsync>d__8>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Core.PoolService.<<Init>b__5_0>d,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<InstantiateAsync>d__34,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<GetAsync>d__9,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17,object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<Framework.Pool.GameObjectPool.<WarmupInternal>d__16>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<object,object>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask.<>c<object>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<object,object>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask<object>
 	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid.<>c<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid.<>c<Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>
-	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid<Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid.<>c<object>
+	// Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoid<object>
 	// Cysharp.Threading.Tasks.CompilerServices.IStateMachineRunnerPromise<object>
 	// Cysharp.Threading.Tasks.ITaskPoolNode<object>
 	// Cysharp.Threading.Tasks.IUniTaskSource<System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,System.ValueTuple<byte,object>>>>>>>>>>
@@ -114,6 +91,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// MessagePipe.IPublisher<Core.Asset.AssetSystemReadyEvent>
 	// MessagePipe.IPublisher<Core.Systems.Events.AppShuttingDownEvent>
 	// MessagePipe.IPublisher<Core.Systems.Events.AppStartedEvent>
+	// Microsoft.Extensions.Logging.ILogger<object>
 	// Microsoft.Extensions.Logging.Logger<object>
 	// System.Action<Framework.Asset.AssetRuntime.AssetCacheKey>
 	// System.Action<System.ValueTuple<object,object>>
@@ -447,6 +425,10 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Runtime.CompilerServices.ValueTaskAwaiter<System.ValueTuple<byte,System.ValueTuple<byte,object>>>
 	// System.Runtime.CompilerServices.ValueTaskAwaiter<System.ValueTuple<byte,object>>
 	// System.Runtime.CompilerServices.ValueTaskAwaiter<object>
+	// System.Span.Enumerator<byte>
+	// System.Span.Enumerator<int>
+	// System.Span.Enumerator<object>
+	// System.Span.Enumerator<ushort>
 	// System.Span<byte>
 	// System.Span<int>
 	// System.Span<object>
@@ -565,39 +547,20 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 
 	public void RefMethods()
 	{
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Boot.BootUpdateRunner.<RunAsync>d__8>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Boot.BootUpdateRunner.<RunAsync>d__8&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<WarmupInternal>d__16>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<WarmupInternal>d__16&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.YieldAwaitable.Awaiter,Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10>(Cysharp.Threading.Tasks.YieldAwaitable.Awaiter&,Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable.Awaiter,Framework.Pool.GameObjectPool.<GetAsync>d__9>(Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable.Awaiter&,Framework.Pool.GameObjectPool.<GetAsync>d__9&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Core.PoolService.<<Init>b__5_0>d>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Core.PoolService.<<Init>b__5_0>d&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Asset.AssetRuntime.<InstantiateAsync>d__34>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Asset.AssetRuntime.<InstantiateAsync>d__34&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<GetAsync>d__9>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<GetAsync>d__9&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.YieldAwaitable.Awaiter,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35>(Cysharp.Threading.Tasks.YieldAwaitable.Awaiter&,Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,Framework.Pool.GameObjectPool.<GetAsync>d__9>(System.Runtime.CompilerServices.TaskAwaiter&,Framework.Pool.GameObjectPool.<GetAsync>d__9&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter<object>,Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>>(System.Runtime.CompilerServices.TaskAwaiter<object>&,Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Boot.BootUpdateRunner.<RunAsync>d__8>(Boot.BootUpdateRunner.<RunAsync>d__8&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10>(Boot.BootUpdateRunner.<UpdateAssetsAsync>d__10&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48>(Framework.Asset.AssetRuntime.<StartSceneUnloadAsync>d__48&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49>(Framework.Asset.AssetRuntime.<UnloadSceneInternalAsync>d__49&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18>(Framework.Asset.AssetSceneHandle.<UnloadAsync>d__18&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<Framework.Pool.GameObjectPool.<WarmupInternal>d__16>(Framework.Pool.GameObjectPool.<WarmupInternal>d__16&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Core.PoolService.<<Init>b__5_0>d>(Core.PoolService.<<Init>b__5_0>d&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<InstantiateAsync>d__34>(Framework.Asset.AssetRuntime.<InstantiateAsync>d__34&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>>(Framework.Asset.AssetRuntime.<LoadAssetAsync>d__32<object>&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>>(Framework.Asset.AssetRuntime.<LoadAssetHandleAsync>d__31<object>&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35>(Framework.Asset.AssetRuntime.<LoadSceneAsync>d__35&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<GetAsync>d__9>(Framework.Pool.GameObjectPool.<GetAsync>d__9&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17>(Framework.Pool.GameObjectPool.<LoadPrefabAsync>d__17&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>(Cysharp.Threading.Tasks.UniTask.Awaiter&,Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.Start<Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>>(Framework.Asset.AssetRuntime.<LoadAssetInternalAsync>d__33<object>&)
-		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.Start<Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29>(Framework.Asset.AssetRuntime.<RunInitializeAsync>d__29&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,object>(Cysharp.Threading.Tasks.UniTask.Awaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,object>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.YieldAwaitable.Awaiter,object>(Cysharp.Threading.Tasks.YieldAwaitable.Awaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable.Awaiter,object>(Cysharp.Threading.Tasks.SwitchToMainThreadAwaitable.Awaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,object>(Cysharp.Threading.Tasks.UniTask.Awaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter<object>,object>(Cysharp.Threading.Tasks.UniTask.Awaiter<object>&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.YieldAwaitable.Awaiter,object>(Cysharp.Threading.Tasks.YieldAwaitable.Awaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,object>(System.Runtime.CompilerServices.TaskAwaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter<object>,object>(System.Runtime.CompilerServices.TaskAwaiter<object>&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder.Start<object>(object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskMethodBuilder<object>.Start<object>(object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.AwaitUnsafeOnCompleted<Cysharp.Threading.Tasks.UniTask.Awaiter,object>(Cysharp.Threading.Tasks.UniTask.Awaiter&,object&)
+		// System.Void Cysharp.Threading.Tasks.CompilerServices.AsyncUniTaskVoidMethodBuilder.Start<object>(object&)
+		// System.IDisposable Microsoft.Extensions.Logging.ILogger.BeginScope<object>(object)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<Core.Asset.AssetSystemLog.ConfigNotFoundState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ConfigNotFoundState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ConfigNotFoundState,System.Exception,string>)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<Core.Asset.AssetSystemLog.InitializeFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.InitializeFailedState,System.Exception,System.Func<Core.Asset.AssetSystemLog.InitializeFailedState,System.Exception,string>)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<Core.Asset.AssetSystemLog.ReadyState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ReadyState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ReadyState,System.Exception,string>)
@@ -621,6 +584,31 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<General.ModelLifecycleLog.ModelLoadedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelLoadedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelLoadedState,System.Exception,string>)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<General.ModelLifecycleLog.ModelUnloadFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelUnloadFailedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelUnloadFailedState,System.Exception,string>)
 		// System.Void Microsoft.Extensions.Logging.ILogger.Log<General.ModelLifecycleLog.ModelUnloadedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelUnloadedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelUnloadedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.ILogger.Log<object>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,object,System.Exception,System.Func<object,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Asset.AssetSystemLog.ConfigNotFoundState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ConfigNotFoundState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ConfigNotFoundState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Asset.AssetSystemLog.InitializeFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.InitializeFailedState,System.Exception,System.Func<Core.Asset.AssetSystemLog.InitializeFailedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Asset.AssetSystemLog.ReadyState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ReadyState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ReadyState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Asset.AssetSystemLog.ShutdownState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Asset.AssetSystemLog.ShutdownState,System.Exception,System.Func<Core.Asset.AssetSystemLog.ShutdownState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.StartupProbeSystemLog.ProbeInitState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.StartupProbeSystemLog.ProbeInitState,System.Exception,System.Func<Core.Systems.StartupProbeSystemLog.ProbeInitState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.StartupProbeSystemLog.ProbeShutdownState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.StartupProbeSystemLog.ProbeShutdownState,System.Exception,System.Func<Core.Systems.StartupProbeSystemLog.ProbeShutdownState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.AlreadyInitializedSkipState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.AlreadyInitializedSkipState,System.Exception,System.Func<Core.Systems.SystemManagerLog.AlreadyInitializedSkipState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.AlreadyInitializedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.AlreadyInitializedState,System.Exception,System.Func<Core.Systems.SystemManagerLog.AlreadyInitializedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.InitCompleteState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.InitCompleteState,System.Exception,System.Func<Core.Systems.SystemManagerLog.InitCompleteState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.InitCompleteWithFailuresState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.InitCompleteWithFailuresState,System.Exception,System.Func<Core.Systems.SystemManagerLog.InitCompleteWithFailuresState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.InitFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.InitFailedState,System.Exception,System.Func<Core.Systems.SystemManagerLog.InitFailedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.InitProgressState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.InitProgressState,System.Exception,System.Func<Core.Systems.SystemManagerLog.InitProgressState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.InitStartState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.InitStartState,System.Exception,System.Func<Core.Systems.SystemManagerLog.InitStartState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.ShutdownCompleteState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.ShutdownCompleteState,System.Exception,System.Func<Core.Systems.SystemManagerLog.ShutdownCompleteState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.ShutdownFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.ShutdownFailedState,System.Exception,System.Func<Core.Systems.SystemManagerLog.ShutdownFailedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.ShutdownProgressState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.ShutdownProgressState,System.Exception,System.Func<Core.Systems.SystemManagerLog.ShutdownProgressState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.ShutdownStartState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.ShutdownStartState,System.Exception,System.Func<Core.Systems.SystemManagerLog.ShutdownStartState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<Core.Systems.SystemManagerLog.SystemAlreadyRegisteredState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Core.Systems.SystemManagerLog.SystemAlreadyRegisteredState,System.Exception,System.Func<Core.Systems.SystemManagerLog.SystemAlreadyRegisteredState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<General.ModelLifecycleLog.CoreStartupFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.CoreStartupFailedState,System.Exception,System.Func<General.ModelLifecycleLog.CoreStartupFailedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<General.ModelLifecycleLog.ModelLoadFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelLoadFailedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelLoadFailedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<General.ModelLifecycleLog.ModelLoadedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelLoadedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelLoadedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<General.ModelLifecycleLog.ModelUnloadFailedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelUnloadFailedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelUnloadFailedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<General.ModelLifecycleLog.ModelUnloadedState>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,General.ModelLifecycleLog.ModelUnloadedState,System.Exception,System.Func<General.ModelLifecycleLog.ModelUnloadedState,System.Exception,string>)
+		// System.Void Microsoft.Extensions.Logging.Logger.Log<object>(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,object,System.Exception,System.Func<object,System.Exception,string>)
 		// Microsoft.Extensions.Logging.ILogger<object> Microsoft.Extensions.Logging.LoggerFactoryExtensions.CreateLogger<object>(Microsoft.Extensions.Logging.ILoggerFactory)
 		// object System.Activator.CreateInstance<object>()
 		// byte[] System.Array.Empty<byte>()

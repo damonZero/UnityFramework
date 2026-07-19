@@ -28,7 +28,7 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            Debug.Log("[P9] Report: Generating build reports...");
+            BuildLogger.Info("[P9] Report: Generating build reports...");
 
             // 报告由 BuildPipelineRunner.Run() 在最后统一生成
             // 此 Stage 负责额外的归档操作
@@ -41,12 +41,12 @@ namespace Boot.Editor.Build
                 {
                     string dest = Path.Combine(context.Paths.LogsDir, "editor.log");
                     File.Copy(editorLogPath, dest, true);
-                    Debug.Log($"[P9] Archived editor log: {dest}");
+                    BuildLogger.Info($"[P9] Archived editor log: {dest}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[P9] Failed to archive editor log: {ex.Message}");
+                BuildLogger.Warn($"[P9] Failed to archive editor log: {ex.Message}");
             }
 
             // 2. 复制 Runtime 日志（如果存在）
@@ -56,15 +56,15 @@ namespace Boot.Editor.Build
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[P9] Failed to copy runtime logs: {ex.Message}");
+                BuildLogger.Warn($"[P9] Failed to copy runtime logs: {ex.Message}");
             }
 
-            Debug.Log("[P9] Report: DONE");
+            BuildLogger.Info("[P9] Report: DONE");
         }
 
         public override void Verify(BuildContext context)
         {
-            Debug.Log("[P9] ✓ Report archive stage verified");
+            BuildLogger.Info("[P9] ✓ Report archive stage verified");
         }
 
         private static string GetEditorLogPath()
@@ -85,7 +85,7 @@ namespace Boot.Editor.Build
                 string dest = Path.Combine(destDir, Path.GetFileName(file));
                 File.Copy(file, dest, true);
             }
-            Debug.Log($"[P9] Archived runtime logs to: {destDir}");
+            BuildLogger.Info($"[P9] Archived runtime logs to: {destDir}");
         }
 
         // 与 P8 共享 logger 路径逻辑

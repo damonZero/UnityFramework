@@ -34,7 +34,7 @@ namespace Boot.Editor.Build
         {
             if (StagesById.ContainsKey(stage.Id))
             {
-                Debug.LogWarning($"[BuildStageRegistry] Duplicate stage ID: {stage.Id}");
+                BuildLogger.Warn($"[BuildStageRegistry] Duplicate stage ID: {stage.Id}");
                 return;
             }
             StagesById[stage.Id] = stage;

@@ -40,7 +40,10 @@ namespace Core.Bootstrap
                 loggerFactory.Dispose();
                 RuntimeLogManager.DisposeCurrent(runtimeLogSession);
             });
-            builder.Register(typeof(Logger<>), Lifetime.Singleton).As(typeof(ILogger<>));
+
+            // 用 SimpleLogger<T> 替代 Logger<T> —— 后者的 Log<TState> 在 AOT 侧 DLL，
+            // HybridCLR 无法穿透其泛型实例化。SimpleLogger<T> 在热更 Core 程序集中，直接可用。
+            builder.Register(typeof(SimpleLogger<>), Lifetime.Singleton).As(typeof(ILogger<>));
 
             // ── MessagePipe ──
             var options = builder.RegisterMessagePipe();

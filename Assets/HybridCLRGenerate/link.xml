@@ -36,7 +36,6 @@
     <type fullname="Microsoft.Extensions.Logging.LogLevel" preserve="all" />
     <type fullname="Microsoft.Extensions.Logging.LoggerExtensions" preserve="all" />
     <type fullname="Microsoft.Extensions.Logging.LoggerFactoryExtensions" preserve="all" />
-    <type fullname="Microsoft.Extensions.Logging.Logger`1" preserve="all" />
   </assembly>
   <assembly fullname="System.Runtime.CompilerServices.Unsafe">
     <type fullname="System.Runtime.CompilerServices.Unsafe" preserve="all" />
@@ -200,7 +199,10 @@
     <type fullname="System.Diagnostics.ConditionalAttribute" preserve="all" />
     <type fullname="System.Diagnostics.DebuggableAttribute" preserve="all" />
     <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggerBrowsableAttribute" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggerBrowsableState" preserve="all" />
     <type fullname="System.Diagnostics.DebuggerHiddenAttribute" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" preserve="all" />
     <type fullname="System.Enum" preserve="all" />
     <type fullname="System.Environment" preserve="all" />
     <type fullname="System.Exception" preserve="all" />

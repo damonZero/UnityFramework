@@ -60,7 +60,7 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            Debug.Log("[P3] HybridCLR: Syncing DLLs to YooAsset source...");
+            BuildLogger.Info("[P3] HybridCLR: Syncing DLLs to YooAsset source...");
 
             var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
             var buildTarget = profile.Platform;
@@ -92,7 +92,7 @@ namespace Boot.Editor.Build
                 "UnityEditor",
                 AssetDatabase.Refresh);
 
-            Debug.Log("[P3] HybridCLR: DONE");
+            BuildLogger.Info("[P3] HybridCLR: DONE");
         }
 
         private void CleanDirectory(string path)
@@ -101,7 +101,7 @@ namespace Boot.Editor.Build
             {
                 foreach (string f in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
                     File.Delete(f);
-                Debug.Log($"[P3] Cleaned: {path}");
+                BuildLogger.Info($"[P3] Cleaned: {path}");
             }
             else
             {
@@ -112,7 +112,7 @@ namespace Boot.Editor.Build
         public override void Verify(BuildContext context)
         {
             base.Verify(context);
-            Debug.Log("[P3] ✓ DLL sync verified");
+            BuildLogger.Info("[P3] ✓ DLL sync verified");
         }
 
         private static string GetHybridCLRTargetName(BuildTarget target) => target switch

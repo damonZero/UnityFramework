@@ -563,7 +563,6 @@ namespace Framework.Asset
 
         private InitializePackageOptions BuildOptions(AssetConfig config)
         {
-            var packageName = GetPackageName(config);
             return config.Mode switch
             {
                 AssetConfig.PlayMode.EditorSimulate => new EditorSimulateModeOptions
@@ -574,12 +573,12 @@ namespace Framework.Asset
                 AssetConfig.PlayMode.Offline => new OfflinePlayModeOptions
                 {
                     BuiltinFileSystemParameters =
-                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(packageName)
+                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters()
                 },
                 AssetConfig.PlayMode.Host => new HostPlayModeOptions
                 {
                     BuiltinFileSystemParameters =
-                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(packageName),
+                        FileSystemParameters.CreateDefaultBuiltinFileSystemParameters(),
                     CacheFileSystemParameters = BuildSandboxParameters(config)
                 },
                 _ => throw new ArgumentOutOfRangeException(nameof(config.Mode), config.Mode, null)
@@ -597,12 +596,11 @@ namespace Framework.Asset
 
         private FileSystemParameters BuildSandboxParameters(AssetConfig config)
         {
-            var packageName = GetPackageName(config);
             var cdnBaseUrl = string.IsNullOrWhiteSpace(config.CdnBaseUrl)
                 ? "http://127.0.0.1:8080/CDN"
                 : config.CdnBaseUrl;
             var parameters = FileSystemParameters.CreateDefaultSandboxFileSystemParameters(
-                new CdnRemoteService(cdnBaseUrl), packageName);
+                new CdnRemoteService(cdnBaseUrl));
             parameters.AddParameter(EFileSystemParameter.DownloadMaxConcurrency, config.DownloadMaxConcurrency);
             parameters.AddParameter(EFileSystemParameter.DownloadWatchdogTimeout, config.DownloadTimeout);
             return parameters;
