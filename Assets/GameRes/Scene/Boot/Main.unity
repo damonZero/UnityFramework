@@ -187,7 +187,71 @@ MonoBehaviour:
       fileName: AotMetadata/System.Core.dll.bytes
       resourcesPath: 
       assetPath: Assets/GameRes/HotUpdate/AotMetadata/System.Core.dll.bytes
+    - assemblyName: ZLinq
+      fileName: AotMetadata/ZLinq.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/ZLinq.dll.bytes
+    - assemblyName: System.Runtime.CompilerServices.Unsafe
+      fileName: AotMetadata/System.Runtime.CompilerServices.Unsafe.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/System.Runtime.CompilerServices.Unsafe.dll.bytes
+    - assemblyName: UnityEngine.CoreModule
+      fileName: AotMetadata/UnityEngine.CoreModule.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/UnityEngine.CoreModule.dll.bytes
+    - assemblyName: UniTask
+      fileName: AotMetadata/UniTask.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/UniTask.dll.bytes
+    - assemblyName: MessagePipe
+      fileName: AotMetadata/MessagePipe.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/MessagePipe.dll.bytes
+    - assemblyName: VContainer
+      fileName: AotMetadata/VContainer.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/VContainer.dll.bytes
+    - assemblyName: YooAsset
+      fileName: AotMetadata/YooAsset.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/YooAsset.dll.bytes
+    - assemblyName: Utf8StringInterpolation
+      fileName: AotMetadata/Utf8StringInterpolation.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/Utf8StringInterpolation.dll.bytes
+    - assemblyName: ZLogger
+      fileName: AotMetadata/ZLogger.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/ZLogger.dll.bytes
+    - assemblyName: Microsoft.Extensions.Logging.Abstractions
+      fileName: AotMetadata/Microsoft.Extensions.Logging.Abstractions.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/Microsoft.Extensions.Logging.Abstractions.dll.bytes
     hotUpdateAssemblies:
+    - assemblyName: Cache
+      fileName: Dlls/Cache.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Cache.dll.bytes
+    - assemblyName: Event
+      fileName: Dlls/Event.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Event.dll.bytes
+    - assemblyName: Log
+      fileName: Dlls/Log.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Log.dll.bytes
+    - assemblyName: RuntimeLog
+      fileName: Dlls/RuntimeLog.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/RuntimeLog.dll.bytes
+    - assemblyName: Pool
+      fileName: Dlls/Pool.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Pool.dll.bytes
+    - assemblyName: Asset
+      fileName: Dlls/Asset.dll.bytes
+      resourcesPath: 
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Asset.dll.bytes
     - assemblyName: Boot
       fileName: Dlls/Boot.dll.bytes
       resourcesPath: 
@@ -204,30 +268,6 @@ MonoBehaviour:
       fileName: Dlls/Project.dll.bytes
       resourcesPath: 
       assetPath: Assets/GameRes/HotUpdate/Dlls/Project.dll.bytes
-    - assemblyName: Pool
-      fileName: Dlls/Pool.dll.bytes
-      resourcesPath: 
-      assetPath: Assets/GameRes/HotUpdate/Dlls/Pool.dll.bytes
-    - assemblyName: Cache
-      fileName: Dlls/Cache.dll.bytes
-      resourcesPath: 
-      assetPath: Assets/GameRes/HotUpdate/Dlls/Cache.dll.bytes
-    - assemblyName: Event
-      fileName: Dlls/Event.dll.bytes
-      resourcesPath: 
-      assetPath: Assets/GameRes/HotUpdate/Dlls/Event.dll.bytes
-    - assemblyName: Asset
-      fileName: Dlls/Asset.dll.bytes
-      resourcesPath: 
-      assetPath: Assets/GameRes/HotUpdate/Dlls/Asset.dll.bytes
-    - assemblyName: Log
-      fileName: Dlls/Log.dll.bytes
-      resourcesPath: 
-      assetPath: Assets/GameRes/HotUpdate/Dlls/Log.dll.bytes
-    - assemblyName: RuntimeLog
-      fileName: Dlls/RuntimeLog.dll.bytes
-      resourcesPath: 
-      assetPath: Assets/GameRes/HotUpdate/Dlls/RuntimeLog.dll.bytes
   startupView: {fileID: 0}
 --- !u!1 &705507993
 GameObject:

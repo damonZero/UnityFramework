@@ -94,7 +94,7 @@ Profile 和输出指纹判断。
 ### 4.2 构建产物
 
 - **Player**：`BuildProfile.GetPlayerPath()`（默认 `BuildBackup/{Environment}/{VersionName}/{VersionCode}/KJ.exe`）
-- **YooAsset 真包**：`Assets/StreamingAssets/DefaultPackage/`（Offline 模式）
+- **YooAsset 真包**：`Assets/StreamingAssets/yoo/DefaultPackage/`（Offline 模式；根目录取 `BundleBuilderHelper.GetStreamingAssetsRoot()`）
 - **报告**：`{OutputRoot}/reports/build_report.json` + `build_report.md` + `ai_handoff.json`；schema 1.1.0 的 build report 包含 P2/P3/P4/P6 内部 `PerformanceSpans`
 
 ### 4.3 ADB 测试流程
@@ -113,11 +113,15 @@ v2 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPip
 
 ### 4.5 当前实现要点
 
+> 当前 Android Host 验证的事实状态与后续步骤见：[`host_hot_update_validation_2026-07-19.md`](host_hot_update_validation_2026-07-19.md)。当前仅确认 APK/P6/P7 成功，尚未确认 MuMu Host 生命周期和 1.0.1 热更闭环。
+
 - **BuildProfile 配置驱动**：Dev / Profiling / Audit / Formal / QA / Pre 按环境区分 Development Build、日志策略、GM/Debug UI、RuntimeLog、签名、SmokeRequired、输出目录。
 - **阶段插件化**：用 `BuildContext` / `IBuildStage` / `BuildPlan` / `BuildPipelineRunner` 执行 P0-P9。
+- **RawFile 包类型**：当前 `DefaultPackage` 只收集热更 DLL/AOT metadata，P4 使用 `RawFileBuildPipeline + EBundleType.RawBundle`；manifest 类型必须与 `PackRawFile` 内容一致。
 - **产物归档**：输出到 `BuildBackup/{Environment}/{Version}/{BuildNo}/`，包含 artifacts、logs、reports、state。
 - **Odin Dashboard**：Profile 编辑、预检、构建、Stage Monitor、报告查看、日志打开、失败诊断统一在 `KJ -> Build -> Dashboard`。
 - **AI 可接管报告**：构建失败时生成 `issues.json` 与 `ai_handoff.json`，包含错误码、阶段、证据、可能原因、建议修复和相关文件。
 - **Smoke 与日志系统强化**：Runtime smoke 必须收集 `boot.log`、`latest.jsonl`、`latest.session.json`；Formal/Audit 不允许因缺 adb/缺设备而静默通过。
 - **事务回滚**：`BuildTransaction` 统一快照并回滚 `AssetConfig`、Scripting Defines、ScriptingBackend、Editor build flags。
-- **打包耗时监控**：Editor-only、非 auto-reference 的 `Framework.Aop` 提供单调时钟 Span/session 和有界 Collector；P2 GenerateAll、P3 HybridCLR 编译同步、P4 YooAsset 构建、P6 BuildPlayer 等关键步骤通过 `BuildTelemetry` 显式采集。Collector 失败与构建隔离，明细按耗时排序写入 JSON/Markdown；2026-07-19 Unity 编译及定向 EditMode 14/14 通过，真实数据待完整 P0-P9 构建验证。当前不进入 Player，不改变 HybridCLR 程序集边界。
+- **指纹级联**：Stage 实现以 `IBuildStage.Version` 参与指纹；本轮执行的产物或事务依赖会强制下游执行，防止 P3 更新后 P4/P6 误用旧包。
+- **打包耗时监控**：Editor-only、非 auto-reference 的 `Framework.Aop` 提供单调时钟 Span/session 和有界 Collector；P2 GenerateAll、P3 HybridCLR 编译同步、P4 YooAsset 构建、P6 BuildPlayer 等关键步骤通过 `BuildTelemetry` 显式采集。Collector 失败与构建隔离，明细按耗时排序写入 JSON/Markdown；2026-07-19 Android P0-P9 RunId `20260719_131655_9b8295750` 已验证真实数据。当前不进入 Player，不改变 HybridCLR 程序集边界。

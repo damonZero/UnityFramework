@@ -8,6 +8,30 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12004, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PixelRect:
+    serializedVersion: 2
+    x: 416
+    y: 44
+    width: 760
+    height: 583.2
+  m_ShowMode: 0
+  m_Title: KJ Build
+  m_RootView: {fileID: 4}
+  m_MinSize: {x: 760, y: 581}
+  m_MaxSize: {x: 4000, y: 4021}
+  m_Maximized: 0
+--- !u!114 &2
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12004, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
@@ -16,15 +40,66 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 43.2
-    width: 2048
-    height: 1060.8
+    width: 1536
+    height: 772.8
   m_ShowMode: 4
   m_Title: Console
-  m_RootView: {fileID: 2}
+  m_RootView: {fileID: 5}
   m_MinSize: {x: 875, y: 321}
   m_MaxSize: {x: 10000, y: 10000}
   m_Maximized: 1
---- !u!114 &2
+--- !u!114 &3
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: BuildDashboardWindow
+  m_EditorClassIdentifier: 
+  m_Children: []
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 760
+    height: 583.2
+  m_MinSize: {x: 760, y: 581}
+  m_MaxSize: {x: 4000, y: 4021}
+  m_ActualView: {fileID: 15}
+  m_Panes:
+  - {fileID: 15}
+  m_Selected: 0
+  m_LastSelected: 0
+--- !u!114 &4
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Children:
+  - {fileID: 3}
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 760
+    height: 583.2
+  m_MinSize: {x: 760, y: 581}
+  m_MaxSize: {x: 4000, y: 4021}
+  vertical: 0
+  controlID: 14
+  draggingID: 0
+--- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -37,22 +112,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Children:
-  - {fileID: 3}
-  - {fileID: 5}
-  - {fileID: 4}
+  - {fileID: 6}
+  - {fileID: 8}
+  - {fileID: 7}
   m_Position:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 2048
-    height: 1060.8
+    width: 1536
+    height: 772.8
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
   m_UseTopView: 1
   m_TopViewHeight: 30
   m_UseBottomView: 1
   m_BottomViewHeight: 20
---- !u!114 &3
+--- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -69,12 +144,12 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 2048
+    width: 1536
     height: 30
   m_MinSize: {x: 0, y: 0}
   m_MaxSize: {x: 0, y: 0}
   m_LastLoadedLayoutName: 
---- !u!114 &4
+--- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -90,89 +165,11 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 1040.8
-    width: 2048
+    y: 752.8
+    width: 1536
     height: 20
   m_MinSize: {x: 0, y: 0}
   m_MaxSize: {x: 0, y: 0}
---- !u!114 &5
-MonoBehaviour:
-  m_ObjectHideFlags: 52
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 1
-  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Children:
-  - {fileID: 6}
-  - {fileID: 11}
-  m_Position:
-    serializedVersion: 2
-    x: 0
-    y: 30
-    width: 2048
-    height: 1010.80005
-  m_MinSize: {x: 300, y: 100}
-  m_MaxSize: {x: 24288, y: 16192}
-  vertical: 0
-  controlID: 16
-  draggingID: 0
---- !u!114 &6
-MonoBehaviour:
-  m_ObjectHideFlags: 52
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 1
-  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Children:
-  - {fileID: 7}
-  - {fileID: 10}
-  m_Position:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1562.4
-    height: 1010.80005
-  m_MinSize: {x: 200, y: 100}
-  m_MaxSize: {x: 16192, y: 16192}
-  vertical: 1
-  controlID: 17
-  draggingID: 0
---- !u!114 &7
-MonoBehaviour:
-  m_ObjectHideFlags: 52
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 1
-  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Children:
-  - {fileID: 8}
-  - {fileID: 9}
-  m_Position:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1562.4
-    height: 468.8
-  m_MinSize: {x: 200, y: 50}
-  m_MaxSize: {x: 16192, y: 8096}
-  vertical: 0
-  controlID: 18
-  draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -182,23 +179,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 1
-  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Children: []
+  m_Children:
+  - {fileID: 9}
+  - {fileID: 14}
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 0
-    width: 387.2
-    height: 468.8
-  m_MinSize: {x: 201, y: 221}
-  m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 14}
-  m_Panes:
-  - {fileID: 14}
-  m_Selected: 0
-  m_LastSelected: 0
+    y: 30
+    width: 1536
+    height: 722.8
+  m_MinSize: {x: 300, y: 100}
+  m_MaxSize: {x: 24288, y: 16192}
+  vertical: 0
+  controlID: 189
+  draggingID: 0
 --- !u!114 &9
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -208,24 +205,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 1
-  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: SceneView
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
   m_EditorClassIdentifier: 
-  m_Children: []
+  m_Children:
+  - {fileID: 10}
+  - {fileID: 13}
   m_Position:
     serializedVersion: 2
-    x: 387.2
+    x: 0
     y: 0
-    width: 1175.2
-    height: 468.8
-  m_MinSize: {x: 202, y: 221}
-  m_MaxSize: {x: 4002, y: 4021}
-  m_ActualView: {fileID: 15}
-  m_Panes:
-  - {fileID: 15}
-  - {fileID: 16}
-  m_Selected: 0
-  m_LastSelected: 1
+    width: 1172
+    height: 722.8
+  m_MinSize: {x: 200, y: 100}
+  m_MaxSize: {x: 16192, y: 16192}
+  vertical: 1
+  controlID: 190
+  draggingID: 0
 --- !u!114 &10
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -235,25 +231,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 1
-  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ConsoleWindow
+  m_Script: {fileID: 12010, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
   m_EditorClassIdentifier: 
-  m_Children: []
+  m_Children:
+  - {fileID: 11}
+  - {fileID: 12}
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 468.8
-    width: 1562.4
-    height: 542.00006
-  m_MinSize: {x: 101, y: 121}
-  m_MaxSize: {x: 4001, y: 4021}
-  m_ActualView: {fileID: 13}
-  m_Panes:
-  - {fileID: 17}
-  - {fileID: 13}
-  - {fileID: 12}
-  m_Selected: 1
-  m_LastSelected: 0
+    y: 0
+    width: 1172
+    height: 280.8
+  m_MinSize: {x: 200, y: 50}
+  m_MaxSize: {x: 16192, y: 8096}
+  vertical: 0
+  controlID: 191
+  draggingID: 0
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -269,11 +263,11 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1562.4
+    x: 0
     y: 0
-    width: 485.59998
-    height: 1010.80005
-  m_MinSize: {x: 276, y: 71}
+    width: 290.4
+    height: 280.8
+  m_MinSize: {x: 201, y: 221}
   m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 18}
   m_Panes:
@@ -281,6 +275,156 @@ MonoBehaviour:
   m_Selected: 0
   m_LastSelected: 0
 --- !u!114 &12
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 1
+  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: SceneView
+  m_EditorClassIdentifier: 
+  m_Children: []
+  m_Position:
+    serializedVersion: 2
+    x: 290.4
+    y: 0
+    width: 881.6
+    height: 280.8
+  m_MinSize: {x: 202, y: 221}
+  m_MaxSize: {x: 4002, y: 4021}
+  m_ActualView: {fileID: 19}
+  m_Panes:
+  - {fileID: 19}
+  - {fileID: 20}
+  m_Selected: 0
+  m_LastSelected: 1
+--- !u!114 &13
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 1
+  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: ConsoleWindow
+  m_EditorClassIdentifier: 
+  m_Children: []
+  m_Position:
+    serializedVersion: 2
+    x: 0
+    y: 280.8
+    width: 1172
+    height: 442
+  m_MinSize: {x: 101, y: 121}
+  m_MaxSize: {x: 4001, y: 4021}
+  m_ActualView: {fileID: 17}
+  m_Panes:
+  - {fileID: 21}
+  - {fileID: 17}
+  - {fileID: 16}
+  m_Selected: 1
+  m_LastSelected: 0
+--- !u!114 &14
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 1
+  m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Children: []
+  m_Position:
+    serializedVersion: 2
+    x: 1172
+    y: 0
+    width: 364
+    height: 722.8
+  m_MinSize: {x: 276, y: 71}
+  m_MaxSize: {x: 4001, y: 4021}
+  m_ActualView: {fileID: 22}
+  m_Panes:
+  - {fileID: 22}
+  m_Selected: 0
+  m_LastSelected: 0
+--- !u!114 &15
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c73519f7f07b2de44b142d57967caa0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MinSize: {x: 760, y: 560}
+  m_MaxSize: {x: 4000, y: 4000}
+  m_TitleContent:
+    m_Text: KJ Build
+    m_Image: {fileID: 0}
+    m_Tooltip: 
+  m_Pos:
+    serializedVersion: 2
+    x: 416
+    y: 44
+    width: 760
+    height: 562.2
+  m_SerializedDataModeController:
+    m_DataMode: 0
+    m_PreferredDataMode: 0
+    m_SupportedDataModes: 
+    isAutomatic: 1
+  m_ViewDataDictionary: {fileID: 0}
+  m_OverlayCanvas:
+    m_LastAppliedPresetName: Default
+    m_SaveData: []
+    m_OverlaysVisible: 1
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: inspectorTargetSerialized
+      Entry: 6
+      Data: 
+  labelWidth: 0.33
+  windowPadding: {x: 4, y: 4, z: 4, w: 4}
+  useScrollView: 1
+  drawUnityEditorPreview: 0
+  wrappedAreaMaxHeight: 1000
+  menuTreeConfig:
+    AutoScrollOnSelectionChanged: 1
+    DrawScrollView: 1
+    AutoHandleKeyboardNavigation: 1
+    DrawSearchToolbar: 1
+    UseCachedExpandedStates: 1
+    AutoFocusSearchBar: 1
+    SelectMenuItemsOnMouseDown: 0
+    ScrollPos: {x: 0, y: 0}
+    SearchTerm: 
+    SearchToolbarHeight: 24
+    EXPERIMENTAL_INTERNAL_DrawFlatTreeFastNoLayout: 0
+    EXPERIMENTAL_INTERNAL_SparseFixedLayouting: 0
+    ConfirmSlecectionOnDoubleClick: 1
+  menuWidth: 180
+  selectedItems:
+  - Build
+  resizableMenuWidth: 1
+--- !u!114 &16
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -301,9 +445,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 542.4
-    width: 1561.4
-    height: 521.00006
+    y: 354.4
+    width: 1171
+    height: 421
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -315,12 +459,12 @@ MonoBehaviour:
     m_SaveData: []
     m_OverlaysVisible: 1
   m_Spl:
-    ID: 114
+    ID: 261
     splitterInitialOffset: 409.6
     currentActiveSplitter: -1
     realSizes:
-    - 338.4
-    - 112.80002
+    - 263.2
+    - 88
     relativeSizes:
     - 0.74999994
     - 0.25000006
@@ -330,7 +474,7 @@ MonoBehaviour:
     maxSizes:
     - 0
     - 0
-    lastTotalSize: 451.2
+    lastTotalSize: 351.2
     splitSize: 6
     xOffset: 0
     m_Version: 1
@@ -338,9 +482,9 @@ MonoBehaviour:
     oldMinSizes: 
     oldMaxSizes: 
     oldSplitSize: 0
-  m_TestTypeToolbarIndex: 1
+  m_TestTypeToolbarIndex: 0
   m_PlayModeTestListGUI:
-    m_Window: {fileID: 12}
+    m_Window: {fileID: 16}
     m_NewResultList:
     - id: 1034
       uniqueId: '[KJ][suite]'
@@ -392,14 +536,14 @@ MonoBehaviour:
       - Uncategorized
     m_SelectedOption: 0
   m_EditModeTestListGUI:
-    m_Window: {fileID: 12}
+    m_Window: {fileID: 16}
     m_NewResultList:
     - id: 1000
       uniqueId: '[KJ][suite]'
       name: KJ
       fullName: KJ
       resultStatus: 1
-      duration: 0.2065801
+      duration: 2.669116
       messages: 
       output: 
       stacktrace: 
@@ -415,7 +559,7 @@ MonoBehaviour:
       name: Boot.Build.Editor.Tests.dll
       fullName: G:/MMMMMMMMMMMMMMMMMMMMMMMMMMMM/NewProjectK/KJ/Library/ScriptAssemblies/Boot.Build.Editor.Tests.dll
       resultStatus: 1
-      duration: 0.0484631
+      duration: 0.1265808
       messages: 
       output: 
       stacktrace: 
@@ -431,7 +575,7 @@ MonoBehaviour:
       name: Boot
       fullName: Boot
       resultStatus: 1
-      duration: 0.0478627
+      duration: 0.1220514
       messages: 
       output: 
       stacktrace: 
@@ -447,7 +591,7 @@ MonoBehaviour:
       name: Editor
       fullName: Boot.Editor
       resultStatus: 1
-      duration: 0.0476967
+      duration: 0.1214262
       messages: 
       output: 
       stacktrace: 
@@ -463,7 +607,7 @@ MonoBehaviour:
       name: Build
       fullName: Boot.Editor.Build
       resultStatus: 1
-      duration: 0.0475535
+      duration: 0.1176944
       messages: 
       output: 
       stacktrace: 
@@ -479,7 +623,7 @@ MonoBehaviour:
       name: Tests
       fullName: Boot.Editor.Build.Tests
       resultStatus: 1
-      duration: 0.0473735
+      duration: 0.1172534
       messages: 
       output: 
       stacktrace: 
@@ -495,7 +639,7 @@ MonoBehaviour:
       name: BuildPipelineTests
       fullName: Boot.Editor.Build.Tests.BuildPipelineTests
       resultStatus: 1
-      duration: 0.0469737
+      duration: 0.1148764
       messages: 
       output: 
       stacktrace: 
@@ -506,392 +650,12 @@ MonoBehaviour:
       categories: []
       parentId: 1035
       parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests][suite]
-    - id: 1024
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.ArtifactEntry_Sha256_DifferentForDifferentContent]
-      name: ArtifactEntry_Sha256_DifferentForDifferentContent
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.ArtifactEntry_Sha256_DifferentForDifferentContent
-      resultStatus: 1
-      duration: 0.0039052
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1025
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.ArtifactEntry_Sha256_SameForSameContent]
-      name: ArtifactEntry_Sha256_SameForSameContent
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.ArtifactEntry_Sha256_SameForSameContent
-      resultStatus: 1
-      duration: 0.0034337
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1002
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_Defaults_AreReasonable]
-      name: BuildConfig_Defaults_AreReasonable
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_Defaults_AreReasonable
-      resultStatus: 1
-      duration: 0.0011511
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1029
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetMarkerDir_UnderOutputDir]
-      name: BuildConfig_GetMarkerDir_UnderOutputDir
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetMarkerDir_UnderOutputDir
-      resultStatus: 1
-      duration: 0.0010472
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1004
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetOutputDir_AutoDerives]
-      name: BuildConfig_GetOutputDir_AutoDerives
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetOutputDir_AutoDerives
-      resultStatus: 1
-      duration: 0.0010192
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1003
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetOutputDir_UsesCustomDir]
-      name: BuildConfig_GetOutputDir_UsesCustomDir
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetOutputDir_UsesCustomDir
-      resultStatus: 1
-      duration: 0.0009852
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1005
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetPlayerPath_ReturnsCorrectExtension]
-      name: BuildConfig_GetPlayerPath_ReturnsCorrectExtension
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetPlayerPath_ReturnsCorrectExtension
-      resultStatus: 1
-      duration: 0.0009774
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1006
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetReportPath_DefaultName]
-      name: BuildConfig_GetReportPath_DefaultName
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_GetReportPath_DefaultName
-      resultStatus: 1
-      duration: 0.0009466
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1030
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_Platform_AllSupported]
-      name: BuildConfig_Platform_AllSupported
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_Platform_AllSupported
-      resultStatus: 1
-      duration: 0.0009886
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1007
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_Version_IsSettable]
-      name: BuildConfig_Version_IsSettable
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildConfig_Version_IsSettable
-      resultStatus: 1
-      duration: 0.0009337
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1023
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildFailedException_HasInnerException]
-      name: BuildFailedException_HasInnerException
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildFailedException_HasInnerException
-      resultStatus: 1
-      duration: 0.0008535
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1022
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildFailedException_HasStageName]
-      name: BuildFailedException_HasStageName
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildFailedException_HasStageName
-      resultStatus: 1
-      duration: 0.00089
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1010
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddArtifact_ComputesMetadata]
-      name: BuildReport_AddArtifact_ComputesMetadata
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddArtifact_ComputesMetadata
-      resultStatus: 1
-      duration: 0.0023549
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1011
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddArtifact_MissingFile]
-      name: BuildReport_AddArtifact_MissingFile
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddArtifact_MissingFile
-      resultStatus: 1
-      duration: 0.0008971
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1008
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddStage_CreatesCorrectEntry]
-      name: BuildReport_AddStage_CreatesCorrectEntry
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddStage_CreatesCorrectEntry
-      resultStatus: 1
-      duration: 0.0008693
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1009
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddStage_MultipleStagesInOrder]
-      name: BuildReport_AddStage_MultipleStagesInOrder
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_AddStage_MultipleStagesInOrder
-      resultStatus: 1
-      duration: 0.0008442
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1018
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_BuildSummary_ComputesCorrectly]
-      name: BuildReport_BuildSummary_ComputesCorrectly
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_BuildSummary_ComputesCorrectly
-      resultStatus: 1
-      duration: 0.0008477
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1014
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_SmokeConclusion_IsNullIfNotSet]
-      name: BuildReport_SmokeConclusion_IsNullIfNotSet
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_SmokeConclusion_IsNullIfNotSet
-      resultStatus: 1
-      duration: 0.0009063
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1017
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_SmokeConclusion_RecordsMilestones]
-      name: BuildReport_SmokeConclusion_RecordsMilestones
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_SmokeConclusion_RecordsMilestones
-      resultStatus: 1
-      duration: 0.0008733
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1012
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_WriteJson_ProducesValidFile]
-      name: BuildReport_WriteJson_ProducesValidFile
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_WriteJson_ProducesValidFile
-      resultStatus: 1
-      duration: 0.0026676
-      messages: 
-      output: '[BuildReport] JSON report written to C:\Users\ADMINI~1\AppData\Local\Temp\KJ_BuildTest_193a5875595d4ade9b15fb6fce884acb\report.json
-
-'
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1013
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_WriteMarkdown_ProducesValidFile]
-      name: BuildReport_WriteMarkdown_ProducesValidFile
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReport_WriteMarkdown_ProducesValidFile
-      resultStatus: 1
-      duration: 0.0040727
-      messages: 
-      output: '[BuildReport] Markdown report written to C:\Users\ADMINI~1\AppData\Local\Temp\KJ_BuildTest_a176bddbae674c16950082a275afbf09\report.md
-
-'
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
     - id: 1021
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.Markers_ClearAllMarkers_RemovesAll]
-      name: Markers_ClearAllMarkers_RemovesAll
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.Markers_ClearAllMarkers_RemovesAll
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopRuntime_BeginSession_RejectsNullCollector]
+      name: AopRuntime_BeginSession_RejectsNullCollector
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopRuntime_BeginSession_RejectsNullCollector
       resultStatus: 1
-      duration: 0.0047564
-      messages: 
-      output: '[KJBuildPipeline] All stage markers cleared
-
-'
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1019
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.Markers_IsStageDone_ReturnsFalseWhenNoMarker]
-      name: Markers_IsStageDone_ReturnsFalseWhenNoMarker
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.Markers_IsStageDone_ReturnsFalseWhenNoMarker
-      resultStatus: 1
-      duration: 0.0009075
+      duration: 0.0133755
       messages: 
       output: 
       stacktrace: 
@@ -904,30 +668,11 @@ MonoBehaviour:
       parentId: 1001
       parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
     - id: 1020
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.Markers_MarkAndCheck_Works]
-      name: Markers_MarkAndCheck_Works
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.Markers_MarkAndCheck_Works
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopRuntime_BeginSession_RejectsNullRunId]
+      name: AopRuntime_BeginSession_RejectsNullRunId
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopRuntime_BeginSession_RejectsNullRunId
       resultStatus: 1
-      duration: 0.0018388
-      messages: 
-      output: '[KJBuildPipeline] All stage markers cleared
-
-'
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1016
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.SmokeConclusion_DefaultResult_IsNotScheduled]
-      name: SmokeConclusion_DefaultResult_IsNotScheduled
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.SmokeConclusion_DefaultResult_IsNotScheduled
-      resultStatus: 1
-      duration: 0.0008825
+      duration: 0.0012056
       messages: 
       output: 
       stacktrace: 
@@ -939,29 +684,12 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1001
       parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1015
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.SmokeResult_AllValues_AreDistinct]
-      name: SmokeResult_AllValues_AreDistinct
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.SmokeResult_AllValues_AreDistinct
+    - id: 1022
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopRuntime_DoubleBeginSession_Throws]
+      name: AopRuntime_DoubleBeginSession_Throws
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopRuntime_DoubleBeginSession_Throws
       resultStatus: 1
-      duration: 0.0008769
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
-    - id: 1028
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.StageResult_Duration_ShouldBeNonNegative]
-      name: StageResult_Duration_ShouldBeNonNegative
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.StageResult_Duration_ShouldBeNonNegative
-      resultStatus: 1
-      duration: 0.0008688
+      duration: 0.0015053
       messages: 
       output: 
       stacktrace: 
@@ -974,11 +702,79 @@ MonoBehaviour:
       parentId: 1001
       parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
     - id: 1026
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.StageResult_Invariants_CanBeTracked]
-      name: StageResult_Invariants_CanBeTracked
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.StageResult_Invariants_CanBeTracked
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSession_Dispose_IsIdempotent]
+      name: AopSession_Dispose_IsIdempotent
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSession_Dispose_IsIdempotent
       resultStatus: 1
-      duration: 0.0008982
+      duration: 0.0058768
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1014
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSession_IsolatesCollectorFailure]
+      name: AopSession_IsolatesCollectorFailure
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSession_IsolatesCollectorFailure
+      resultStatus: 1
+      duration: 0.0030432
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1017
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_Cancel_RecordsCancelledStatus]
+      name: AopSpan_Cancel_RecordsCancelledStatus
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_Cancel_RecordsCancelledStatus
+      resultStatus: 1
+      duration: 0.0011621
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1016
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_DisabledSpan_IsNoOp]
+      name: AopSpan_DisabledSpan_IsNoOp
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_DisabledSpan_IsNoOp
+      resultStatus: 1
+      duration: 0.0005474
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1018
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_DoubleDispose_DoesNotDuplicateEvent]
+      name: AopSpan_DoubleDispose_DoesNotDuplicateEvent
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_DoubleDispose_DoesNotDuplicateEvent
+      resultStatus: 1
+      duration: 0.0004896
       messages: 
       output: 
       stacktrace: 
@@ -991,11 +787,312 @@ MonoBehaviour:
       parentId: 1001
       parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
     - id: 1027
-      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.StageResult_Skipped_HasReason]
-      name: StageResult_Skipped_HasReason
-      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.StageResult_Skipped_HasReason
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_FailAfterCompletion_IsIgnored]
+      name: AopSpan_FailAfterCompletion_IsIgnored
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_FailAfterCompletion_IsIgnored
       resultStatus: 1
-      duration: 0.000871
+      duration: 0.0004126
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1013
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_RecordsFailureWithoutChangingException]
+      name: AopSpan_RecordsFailureWithoutChangingException
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_RecordsFailureWithoutChangingException
+      resultStatus: 1
+      duration: 0.0011751
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1012
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_RecordsMonotonicDurationAndParent]
+      name: AopSpan_RecordsMonotonicDurationAndParent
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_RecordsMonotonicDurationAndParent
+      resultStatus: 1
+      duration: 0.0018151
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1019
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_TripleNested_RecordsCorrectHierarchy]
+      name: AopSpan_TripleNested_RecordsCorrectHierarchy
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.AopSpan_TripleNested_RecordsCorrectHierarchy
+      resultStatus: 1
+      duration: 0.0007
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1006
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildPaths_DerivesExpectedDirectories]
+      name: BuildPaths_DerivesExpectedDirectories
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildPaths_DerivesExpectedDirectories
+      resultStatus: 1
+      duration: 0.0015628
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1005
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_ComputeProfileHash_ChangesWhenBuildInputsChange]
+      name: BuildProfile_ComputeProfileHash_ChangesWhenBuildInputsChange
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_ComputeProfileHash_ChangesWhenBuildInputsChange
+      resultStatus: 1
+      duration: 0.0073868
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1002
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_Defaults_AreReasonable]
+      name: BuildProfile_Defaults_AreReasonable
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_Defaults_AreReasonable
+      resultStatus: 1
+      duration: 0.0027838
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1003
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_GetOutputDir_UsesOutputRoot]
+      name: BuildProfile_GetOutputDir_UsesOutputRoot
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_GetOutputDir_UsesOutputRoot
+      resultStatus: 1
+      duration: 0.0007891
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1004
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_GetPlayerPath_ReturnsPlatformExtension]
+      name: BuildProfile_GetPlayerPath_ReturnsPlatformExtension
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildProfile_GetPlayerPath_ReturnsPlatformExtension
+      resultStatus: 1
+      duration: 0.0007194
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1008
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReportData_DefaultLists_AreNonNull]
+      name: BuildReportData_DefaultLists_AreNonNull
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReportData_DefaultLists_AreNonNull
+      resultStatus: 1
+      duration: 0.0009182
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1009
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildReportData_SerializesPerformanceSpans]
+      name: BuildReportData_SerializesPerformanceSpans
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildReportData_SerializesPerformanceSpans
+      resultStatus: 1
+      duration: 0.0039115
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1007
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildStageRegistry_RegistersP0ToP9InOrder]
+      name: BuildStageRegistry_RegistersP0ToP9InOrder
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildStageRegistry_RegistersP0ToP9InOrder
+      resultStatus: 1
+      duration: 0.0042016
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1011
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.BuildTransaction_Rollback_IsIdempotent]
+      name: BuildTransaction_Rollback_IsIdempotent
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.BuildTransaction_Rollback_IsIdempotent
+      resultStatus: 1
+      duration: 0.025119
+      messages: 
+      output: '[Transaction] Snapshot file: Temp\BuildPipelineTests\snapshot.txt
+
+        [Transaction]
+        Rolling back 1 snapshot(s)...
+
+        [Transaction] Restored: File: C:\ZZS\Project\NewProjectK\KJ\Temp\BuildPipelineTests\snapshot.txt
+
+        [Transaction]
+        Rollback complete
+
+        [Transaction] Already rolled back, skipping
+
+'
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1015
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.InMemoryAopCollector_DropsEventsBeyondCapacity]
+      name: InMemoryAopCollector_DropsEventsBeyondCapacity
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.InMemoryAopCollector_DropsEventsBeyondCapacity
+      resultStatus: 1
+      duration: 0.0005154
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1024
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.InMemoryAopCollector_RejectsZeroCapacity]
+      name: InMemoryAopCollector_RejectsZeroCapacity
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.InMemoryAopCollector_RejectsZeroCapacity
+      resultStatus: 1
+      duration: 0.0004929
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1023
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.InMemoryAopCollector_SnapshotResetsInternalState]
+      name: InMemoryAopCollector_SnapshotResetsInternalState
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.InMemoryAopCollector_SnapshotResetsInternalState
+      resultStatus: 1
+      duration: 0.0004074
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1010
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.StageExecutionResult_Skipped_CountsAsPassed]
+      name: StageExecutionResult_Skipped_CountsAsPassed
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.StageExecutionResult_Skipped_CountsAsPassed
+      resultStatus: 1
+      duration: 0.0003261
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests][suite]
+    - id: 1025
+      uniqueId: Boot.Build.Editor.Tests.dll/Boot/Editor/Build/Tests/BuildPipelineTests/[Boot.Build.Editor.Tests][Boot.Editor.Build.Tests.BuildPipelineTests.StopwatchAopClock_Frequency_MatchesStopwatch]
+      name: StopwatchAopClock_Frequency_MatchesStopwatch
+      fullName: Boot.Editor.Build.Tests.BuildPipelineTests.StopwatchAopClock_Frequency_MatchesStopwatch
+      resultStatus: 1
+      duration: 0.0006209
       messages: 
       output: 
       stacktrace: 
@@ -1012,7 +1109,7 @@ MonoBehaviour:
       name: KJ.Tests.EditMode.dll
       fullName: C:/ZZS/Project/NewProjectK/KJ/Library/ScriptAssemblies/KJ.Tests.EditMode.dll
       resultStatus: 1
-      duration: 0.1466646
+      duration: 2.5016248
       messages: 
       output: 
       stacktrace: 
@@ -1028,7 +1125,7 @@ MonoBehaviour:
       name: Tests
       fullName: Tests
       resultStatus: 1
-      duration: 0.1425065
+      duration: 2.4865463
       messages: 
       output: 
       stacktrace: 
@@ -1044,7 +1141,7 @@ MonoBehaviour:
       name: EditMode
       fullName: Tests.EditMode
       resultStatus: 1
-      duration: 0.1418545
+      duration: 2.481967
       messages: 
       output: 
       stacktrace: 
@@ -1060,7 +1157,7 @@ MonoBehaviour:
       name: BoundedStoreTests
       fullName: Tests.EditMode.BoundedStoreTests
       resultStatus: 1
-      duration: 0.0652134
+      duration: 0.1038573
       messages: 
       output: 
       stacktrace: 
@@ -1076,7 +1173,7 @@ MonoBehaviour:
       name: CapacityPolicyKeepsOnlyNEntries
       fullName: Tests.EditMode.BoundedStoreTests.CapacityPolicyKeepsOnlyNEntries
       resultStatus: 1
-      duration: 0.0001224
+      duration: 0.0039239
       messages: 
       output: 
       stacktrace: 
@@ -1093,7 +1190,7 @@ MonoBehaviour:
       name: ClearInvokesOnEvictedForAllValues
       fullName: Tests.EditMode.BoundedStoreTests.ClearInvokesOnEvictedForAllValues
       resultStatus: 1
-      duration: 0.0001178
+      duration: 0.0047895
       messages: 
       output: 
       stacktrace: 
@@ -1110,7 +1207,7 @@ MonoBehaviour:
       name: CompositePolicyFansOutToAllSubPolicies
       fullName: Tests.EditMode.BoundedStoreTests.CompositePolicyFansOutToAllSubPolicies
       resultStatus: 1
-      duration: 0.000069
+      duration: 0.0008338
       messages: 
       output: 
       stacktrace: 
@@ -1127,7 +1224,7 @@ MonoBehaviour:
       name: GetOrAddRecreatesExpiredTtlEntry
       fullName: Tests.EditMode.BoundedStoreTests.GetOrAddRecreatesExpiredTtlEntry
       resultStatus: 1
-      duration: 0.0001013
+      duration: 0.0052394
       messages: 
       output: 
       stacktrace: 
@@ -1144,7 +1241,7 @@ MonoBehaviour:
       name: GetOrAddSameKeyConcurrentRunsFactoryOnce
       fullName: Tests.EditMode.BoundedStoreTests.GetOrAddSameKeyConcurrentRunsFactoryOnce
       resultStatus: 1
-      duration: 0.0018873
+      duration: 0.0067451
       messages: 
       output: 
       stacktrace: 
@@ -1161,7 +1258,7 @@ MonoBehaviour:
       name: LruPolicyEvictsLeastRecentlyUsed
       fullName: Tests.EditMode.BoundedStoreTests.LruPolicyEvictsLeastRecentlyUsed
       resultStatus: 1
-      duration: 0.0000957
+      duration: 0.0010456
       messages: 
       output: 
       stacktrace: 
@@ -1178,7 +1275,7 @@ MonoBehaviour:
       name: PutOverwriteInvokesOnEvictedForOldValue
       fullName: Tests.EditMode.BoundedStoreTests.PutOverwriteInvokesOnEvictedForOldValue
       resultStatus: 1
-      duration: 0.0000935
+      duration: 0.00083
       messages: 
       output: 
       stacktrace: 
@@ -1195,7 +1292,7 @@ MonoBehaviour:
       name: TryGetPurgesExpiredTtlEntry
       fullName: Tests.EditMode.BoundedStoreTests.TryGetPurgesExpiredTtlEntry
       resultStatus: 1
-      duration: 0.000106
+      duration: 0.0007026
       messages: 
       output: 
       stacktrace: 
@@ -1212,7 +1309,7 @@ MonoBehaviour:
       name: TtlPolicySelectsExpiredEntry
       fullName: Tests.EditMode.BoundedStoreTests.TtlPolicySelectsExpiredEntry
       resultStatus: 1
-      duration: 0.0613089
+      duration: 0.0742994
       messages: 
       output: 
       stacktrace: 
@@ -1229,7 +1326,7 @@ MonoBehaviour:
       name: CacheThreadSafetyTests
       fullName: Tests.EditMode.CacheThreadSafetyTests
       resultStatus: 1
-      duration: 0.0052916
+      duration: 0.0169148
       messages: 
       output: 
       stacktrace: 
@@ -1245,7 +1342,7 @@ MonoBehaviour:
       name: EvictionCallbackIsInvokedOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.EvictionCallbackIsInvokedOutsideLock
       resultStatus: 1
-      duration: 0.000194
+      duration: 0.0011653
       messages: 
       output: 
       stacktrace: 
@@ -1262,7 +1359,7 @@ MonoBehaviour:
       name: GetOrAddDiscardsDuplicateOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.GetOrAddDiscardsDuplicateOutsideLock
       resultStatus: 1
-      duration: 0.0002783
+      duration: 0.0016639
       messages: 
       output: 
       stacktrace: 
@@ -1279,7 +1376,7 @@ MonoBehaviour:
       name: GetOrAddEvictsOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.GetOrAddEvictsOutsideLock
       resultStatus: 1
-      duration: 0.0000889
+      duration: 0.0009367
       messages: 
       output: 
       stacktrace: 
@@ -1296,7 +1393,7 @@ MonoBehaviour:
       name: GetOrAddFactoryRunsOutsideLock
       fullName: Tests.EditMode.CacheThreadSafetyTests.GetOrAddFactoryRunsOutsideLock
       resultStatus: 1
-      duration: 0.000076
+      duration: 0.0006687
       messages: 
       output: 
       stacktrace: 
@@ -1313,7 +1410,7 @@ MonoBehaviour:
       name: GameObjectPoolTests
       fullName: Tests.EditMode.GameObjectPoolTests
       resultStatus: 1
-      duration: 0.0066142
+      duration: 0.0748413
       messages: 
       output: 
       stacktrace: 
@@ -1329,7 +1426,7 @@ MonoBehaviour:
       name: CallingFromBackgroundThreadThrows
       fullName: Tests.EditMode.GameObjectPoolTests.CallingFromBackgroundThreadThrows
       resultStatus: 1
-      duration: 0.0001935
+      duration: 0.0112714
       messages: 
       output: 
       stacktrace: 
@@ -1346,7 +1443,7 @@ MonoBehaviour:
       name: CapacityInstancePolicyControlsRetention
       fullName: Tests.EditMode.GameObjectPoolTests.CapacityInstancePolicyControlsRetention
       resultStatus: 1
-      duration: 0.0003702
+      duration: 0.0104348
       messages: 
       output: 
       stacktrace: 
@@ -1363,7 +1460,7 @@ MonoBehaviour:
       name: ClearReleasesCachedPrefabsThroughBoundedStoreClear
       fullName: Tests.EditMode.GameObjectPoolTests.ClearReleasesCachedPrefabsThroughBoundedStoreClear
       resultStatus: 1
-      duration: 0.0003322
+      duration: 0.0073361
       messages: 
       output: 
       stacktrace: 
@@ -1380,7 +1477,7 @@ MonoBehaviour:
       name: GetAsyncConsumingDestroyedInstanceDoesNotLeakNullRegistryEntry
       fullName: Tests.EditMode.GameObjectPoolTests.GetAsyncConsumingDestroyedInstanceDoesNotLeakNullRegistryEntry
       resultStatus: 1
-      duration: 0.0002345
+      duration: 0.0026448
       messages: 
       output: 
       stacktrace: 
@@ -1397,7 +1494,7 @@ MonoBehaviour:
       name: InstanceFromAnotherPoolIsRejectedAndDoesNotChangeCounts
       fullName: Tests.EditMode.GameObjectPoolTests.InstanceFromAnotherPoolIsRejectedAndDoesNotChangeCounts
       resultStatus: 1
-      duration: 0.0006365
+      duration: 0.0047597
       messages: 
       output: "[GameObjectPool] \u5B9E\u4F8B 'Cube(Clone)' \u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8C61\u6C60\uFF0CPrefabPath='cube'\uFF08\u5DF2\u62D2\u7EDD\u5165\u5E93\uFF09\u3002\r\n"
       stacktrace: 
@@ -1414,7 +1511,7 @@ MonoBehaviour:
       name: PersistentPathNeverEvictedByCapacity
       fullName: Tests.EditMode.GameObjectPoolTests.PersistentPathNeverEvictedByCapacity
       resultStatus: 1
-      duration: 0.0002697
+      duration: 0.0016057
       messages: 
       output: 
       stacktrace: 
@@ -1431,7 +1528,7 @@ MonoBehaviour:
       name: RecycleOverMaxIdleDestroysExcessInstances
       fullName: Tests.EditMode.GameObjectPoolTests.RecycleOverMaxIdleDestroysExcessInstances
       resultStatus: 1
-      duration: 0.0002708
+      duration: 0.001649
       messages: 
       output: 
       stacktrace: 
@@ -1448,7 +1545,7 @@ MonoBehaviour:
       name: ReverseIndexPreventsDoubleRecycle
       fullName: Tests.EditMode.GameObjectPoolTests.ReverseIndexPreventsDoubleRecycle
       resultStatus: 1
-      duration: 0.0001497
+      duration: 0.0017489
       messages: 
       output: 
       stacktrace: 
@@ -1465,7 +1562,7 @@ MonoBehaviour:
       name: WrongPathRecycleDoesNotLeakActiveCount
       fullName: Tests.EditMode.GameObjectPoolTests.WrongPathRecycleDoesNotLeakActiveCount
       resultStatus: 1
-      duration: 0.0005775
+      duration: 0.0024001
       messages: 
       output: "[GameObjectPool] \u5B9E\u4F8B\u88AB\u9519\u8BEF\u5F52\u8FD8\u81F3\u8DEF\u5F84
         'cubeB'\uFF0C\u4F46\u5176\u6CE8\u518C\u8DEF\u5F84\u4E3A 'cubeA'\uFF08\u53CD\u5411\u7D22\u5F15\u6C61\u67D3\uFF0C\u5DF2\u9500\u6BC1\u4E0D\u5165\u5E93\uFF09\u3002\r\n"
@@ -1483,7 +1580,7 @@ MonoBehaviour:
       name: HybridCLRBootTests
       fullName: Tests.EditMode.HybridCLRBootTests
       resultStatus: 1
-      duration: 0.0108186
+      duration: 0.0584625
       messages: 
       output: 
       stacktrace: 
@@ -1499,7 +1596,7 @@ MonoBehaviour:
       name: AllTenHotUpdateAssembliesAreLoaded
       fullName: Tests.EditMode.HybridCLRBootTests.AllTenHotUpdateAssembliesAreLoaded
       resultStatus: 1
-      duration: 0.0013328
+      duration: 0.0037752
       messages: 
       output: 
       stacktrace: 
@@ -1516,7 +1613,7 @@ MonoBehaviour:
       name: AssetConfig_PlayModeHasExpectedValues
       fullName: Tests.EditMode.HybridCLRBootTests.AssetConfig_PlayModeHasExpectedValues
       resultStatus: 1
-      duration: 0.0001127
+      duration: 0.0017761
       messages: 
       output: 
       stacktrace: 
@@ -1533,7 +1630,7 @@ MonoBehaviour:
       name: AssetRuntime_WrapFromExistingPackage_NullGuards
       fullName: Tests.EditMode.HybridCLRBootTests.AssetRuntime_WrapFromExistingPackage_NullGuards
       resultStatus: 1
-      duration: 0.0001194
+      duration: 0.0052901
       messages: 
       output: 
       stacktrace: 
@@ -1550,7 +1647,7 @@ MonoBehaviour:
       name: AssetRuntime_WrapFromExistingPackage_SetsReady
       fullName: Tests.EditMode.HybridCLRBootTests.AssetRuntime_WrapFromExistingPackage_SetsReady
       resultStatus: 1
-      duration: 0.0000729
+      duration: 0.0006226
       messages: 
       output: 
       stacktrace: 
@@ -1567,7 +1664,7 @@ MonoBehaviour:
       name: BootAssemblyEntry_ConstructorSetsProperties
       fullName: Tests.EditMode.HybridCLRBootTests.BootAssemblyEntry_ConstructorSetsProperties
       resultStatus: 1
-      duration: 0.0000552
+      duration: 0.00035
       messages: 
       output: 
       stacktrace: 
@@ -1584,7 +1681,7 @@ MonoBehaviour:
       name: BootBridge_ExposesState_AndEmptyEarlyLogsWhenNull
       fullName: Tests.EditMode.HybridCLRBootTests.BootBridge_ExposesState_AndEmptyEarlyLogsWhenNull
       resultStatus: 1
-      duration: 0.0000816
+      duration: 0.0014263
       messages: 
       output: 
       stacktrace: 
@@ -1601,7 +1698,7 @@ MonoBehaviour:
       name: BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName
       fullName: Tests.EditMode.HybridCLRBootTests.BootLoader_ResolvesBootUpdateRunnerByAssemblyQualifiedName
       resultStatus: 1
-      duration: 0.0000911
+      duration: 0.0008529
       messages: 
       output: 
       stacktrace: 
@@ -1618,7 +1715,7 @@ MonoBehaviour:
       name: BootMetadataEntry_ConstructorSetsProperties
       fullName: Tests.EditMode.HybridCLRBootTests.BootMetadataEntry_ConstructorSetsProperties
       resultStatus: 1
-      duration: 0.000053
+      duration: 0.000385
       messages: 
       output: 
       stacktrace: 
@@ -1635,7 +1732,7 @@ MonoBehaviour:
       name: BootRemoteService_CustomUrlProviderOverrides
       fullName: Tests.EditMode.HybridCLRBootTests.BootRemoteService_CustomUrlProviderOverrides
       resultStatus: 1
-      duration: 0.0000566
+      duration: 0.000811
       messages: 
       output: 
       stacktrace: 
@@ -1652,7 +1749,7 @@ MonoBehaviour:
       name: BootRemoteService_DefaultUrlUsesBaseUrl
       fullName: Tests.EditMode.HybridCLRBootTests.BootRemoteService_DefaultUrlUsesBaseUrl
       resultStatus: 1
-      duration: 0.0000619
+      duration: 0.000315
       messages: 
       output: 
       stacktrace: 
@@ -1669,7 +1766,7 @@ MonoBehaviour:
       name: BootStartupLog_RecordsSnapshotEntries
       fullName: Tests.EditMode.HybridCLRBootTests.BootStartupLog_RecordsSnapshotEntries
       resultStatus: 1
-      duration: 0.0019309
+      duration: 0.0058418
       messages: 
       output: 
       stacktrace: 
@@ -1686,7 +1783,7 @@ MonoBehaviour:
       name: BootStartupSettings_Defaults
       fullName: Tests.EditMode.HybridCLRBootTests.BootStartupSettings_Defaults
       resultStatus: 1
-      duration: 0.000081
+      duration: 0.0006829
       messages: 
       output: 
       stacktrace: 
@@ -1703,7 +1800,7 @@ MonoBehaviour:
       name: BootUpdateRunner_HasStaticStartTakingBootBridge
       fullName: Tests.EditMode.HybridCLRBootTests.BootUpdateRunner_HasStaticStartTakingBootBridge
       resultStatus: 1
-      duration: 0.0000728
+      duration: 0.0004977
       messages: 
       output: 
       stacktrace: 
@@ -1720,7 +1817,7 @@ MonoBehaviour:
       name: HybridCLRSettings_ContainsAllTenHotUpdateAssemblies
       fullName: Tests.EditMode.HybridCLRBootTests.HybridCLRSettings_ContainsAllTenHotUpdateAssemblies
       resultStatus: 1
-      duration: 0.0008887
+      duration: 0.014228
       messages: 
       output: 
       stacktrace: 
@@ -1737,7 +1834,7 @@ MonoBehaviour:
       name: Launcher_DoesNotReferenceHotUpdateAssemblies
       fullName: Tests.EditMode.HybridCLRBootTests.Launcher_DoesNotReferenceHotUpdateAssemblies
       resultStatus: 1
-      duration: 0.0000765
+      duration: 0.001366
       messages: 
       output: 
       stacktrace: 
@@ -1754,7 +1851,7 @@ MonoBehaviour:
       name: ModelLifecycleTests
       fullName: Tests.EditMode.ModelLifecycleTests
       resultStatus: 1
-      duration: 0.0063861
+      duration: 0.0348982
       messages: 
       output: 
       stacktrace: 
@@ -1770,7 +1867,7 @@ MonoBehaviour:
       name: CoreStartupFailureBlocksModelLoading
       fullName: Tests.EditMode.ModelLifecycleTests.CoreStartupFailureBlocksModelLoading
       resultStatus: 1
-      duration: 0.0001894
+      duration: 0.0154183
       messages: 
       output: 
       stacktrace: 
@@ -1787,7 +1884,7 @@ MonoBehaviour:
       name: LoadAllLoadsModelsOrderedByPriority
       fullName: Tests.EditMode.ModelLifecycleTests.LoadAllLoadsModelsOrderedByPriority
       resultStatus: 1
-      duration: 0.0001335
+      duration: 0.0016502
       messages: 
       output: 
       stacktrace: 
@@ -1804,7 +1901,7 @@ MonoBehaviour:
       name: ModelLoadFailureDoesNotBlockOtherModels
       fullName: Tests.EditMode.ModelLifecycleTests.ModelLoadFailureDoesNotBlockOtherModels
       resultStatus: 1
-      duration: 0.0001049
+      duration: 0.0009005
       messages: 
       output: 
       stacktrace: 
@@ -1821,7 +1918,7 @@ MonoBehaviour:
       name: UnloadAllUnloadsModelsInReverseOrder
       fullName: Tests.EditMode.ModelLifecycleTests.UnloadAllUnloadsModelsInReverseOrder
       resultStatus: 1
-      duration: 0.0000963
+      duration: 0.0016508
       messages: 
       output: 
       stacktrace: 
@@ -1838,7 +1935,7 @@ MonoBehaviour:
       name: PoolTests
       fullName: Tests.EditMode.PoolTests
       resultStatus: 1
-      duration: 0.0059269
+      duration: 0.0246622
       messages: 
       output: 
       stacktrace: 
@@ -1854,7 +1951,7 @@ MonoBehaviour:
       name: CollectionPoolRentListReturnsClearedListOnDispose
       fullName: Tests.EditMode.PoolTests.CollectionPoolRentListReturnsClearedListOnDispose
       resultStatus: 1
-      duration: 0.0001173
+      duration: 0.0016696
       messages: 
       output: 
       stacktrace: 
@@ -1871,7 +1968,7 @@ MonoBehaviour:
       name: CollectionPoolValueCopyDoubleDisposeDoesNotDuplicateIdleEntry
       fullName: Tests.EditMode.PoolTests.CollectionPoolValueCopyDoubleDisposeDoesNotDuplicateIdleEntry
       resultStatus: 1
-      duration: 0.00006
+      duration: 0.0006362
       messages: 
       output: 
       stacktrace: 
@@ -1888,7 +1985,7 @@ MonoBehaviour:
       name: ObjectPoolIgnoresDuplicateReturnOfSameInstance
       fullName: Tests.EditMode.PoolTests.ObjectPoolIgnoresDuplicateReturnOfSameInstance
       resultStatus: 1
-      duration: 0.0000618
+      duration: 0.0028333
       messages: 
       output: 
       stacktrace: 
@@ -1905,7 +2002,7 @@ MonoBehaviour:
       name: ObjectPoolMaxIdleDiscardsItemsOverCapacity
       fullName: Tests.EditMode.PoolTests.ObjectPoolMaxIdleDiscardsItemsOverCapacity
       resultStatus: 1
-      duration: 0.0000554
+      duration: 0.0007367
       messages: 
       output: 
       stacktrace: 
@@ -1922,7 +2019,7 @@ MonoBehaviour:
       name: ObjectPoolPreloadInstantiatesFactoryItems
       fullName: Tests.EditMode.PoolTests.ObjectPoolPreloadInstantiatesFactoryItems
       resultStatus: 1
-      duration: 0.0000561
+      duration: 0.0004297
       messages: 
       output: 
       stacktrace: 
@@ -1939,7 +2036,7 @@ MonoBehaviour:
       name: ObjectPoolRentLeaseAutoReturnsOnDispose
       fullName: Tests.EditMode.PoolTests.ObjectPoolRentLeaseAutoReturnsOnDispose
       resultStatus: 1
-      duration: 0.0000715
+      duration: 0.0010305
       messages: 
       output: 
       stacktrace: 
@@ -1956,7 +2053,7 @@ MonoBehaviour:
       name: ObjectPoolRentReturnsFactoryItemAndPushesToStackOnReturn
       fullName: Tests.EditMode.PoolTests.ObjectPoolRentReturnsFactoryItemAndPushesToStackOnReturn
       resultStatus: 1
-      duration: 0.0000633
+      duration: 0.000898
       messages: 
       output: 
       stacktrace: 
@@ -1973,7 +2070,7 @@ MonoBehaviour:
       name: TypePoolGetOrCreateLazilyRegistersPoolAndReturnsItems
       fullName: Tests.EditMode.PoolTests.TypePoolGetOrCreateLazilyRegistersPoolAndReturnsItems
       resultStatus: 1
-      duration: 0.0000629
+      duration: 0.0020324
       messages: 
       output: 
       stacktrace: 
@@ -1990,7 +2087,7 @@ MonoBehaviour:
       name: RuntimeLogTests
       fullName: Tests.EditMode.RuntimeLogTests
       resultStatus: 1
-      duration: 0.0296396
+      duration: 2.1179214
       messages: 
       output: 
       stacktrace: 
@@ -2006,7 +2103,7 @@ MonoBehaviour:
       name: GameLog_BuffersBeforeSinkAndReplaysOnInstall
       fullName: Tests.EditMode.RuntimeLogTests.GameLog_BuffersBeforeSinkAndReplaysOnInstall
       resultStatus: 1
-      duration: 0.0014727
+      duration: 0.0100502
       messages: 
       output: 
       stacktrace: 
@@ -2023,7 +2120,7 @@ MonoBehaviour:
       name: RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries
       resultStatus: 1
-      duration: 0.004626
+      duration: 0.0323413
       messages: 
       output: 
       stacktrace: 
@@ -2040,7 +2137,7 @@ MonoBehaviour:
       name: RuntimeLogManager_DoesNotReplaceExistingBridgeSinkWhenSessionAlreadyExists
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogManager_DoesNotReplaceExistingBridgeSinkWhenSessionAlreadyExists
       resultStatus: 1
-      duration: 0.0029005
+      duration: 0.0062595
       messages: 
       output: 
       stacktrace: 
@@ -2057,7 +2154,7 @@ MonoBehaviour:
       name: RuntimeLogSession_EscapesMessagesAndWritesExceptionFields
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogSession_EscapesMessagesAndWritesExceptionFields
       resultStatus: 1
-      duration: 0.0034433
+      duration: 0.0135195
       messages: 
       output: 
       stacktrace: 
@@ -2074,7 +2171,7 @@ MonoBehaviour:
       name: RuntimeLogSession_RespectsMinimumLevel
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogSession_RespectsMinimumLevel
       resultStatus: 1
-      duration: 0.0034006
+      duration: 0.0134381
       messages: 
       output: 
       stacktrace: 
@@ -2091,7 +2188,7 @@ MonoBehaviour:
       name: RuntimeLogSession_WritesJsonlAndLatestFiles
       fullName: Tests.EditMode.RuntimeLogTests.RuntimeLogSession_WritesJsonlAndLatestFiles
       resultStatus: 1
-      duration: 0.0058252
+      duration: 0.0145333
       messages: 
       output: 
       stacktrace: 
@@ -2108,7 +2205,7 @@ MonoBehaviour:
       name: SystemManagerTests
       fullName: Tests.EditMode.SystemManagerTests
       resultStatus: 1
-      duration: 0.0045473
+      duration: 0.0233877
       messages: 
       output: 
       stacktrace: 
@@ -2124,7 +2221,7 @@ MonoBehaviour:
       name: InitAllSortsAndInitializesSystemsByPriority
       fullName: Tests.EditMode.SystemManagerTests.InitAllSortsAndInitializesSystemsByPriority
       resultStatus: 1
-      duration: 0.0001867
+      duration: 0.0065931
       messages: 
       output: 
       stacktrace: 
@@ -2141,7 +2238,7 @@ MonoBehaviour:
       name: InitFailuresAreTrackedAndDoNotCrashEntireInitialization
       fullName: Tests.EditMode.SystemManagerTests.InitFailuresAreTrackedAndDoNotCrashEntireInitialization
       resultStatus: 1
-      duration: 0.000138
+      duration: 0.0015328
       messages: 
       output: 
       stacktrace: 
@@ -2158,7 +2255,7 @@ MonoBehaviour:
       name: ShutdownAllExecutesInReverseOrderOfInitialization
       fullName: Tests.EditMode.SystemManagerTests.ShutdownAllExecutesInReverseOrderOfInitialization
       resultStatus: 1
-      duration: 0.0001216
+      duration: 0.0024833
       messages: 
       output: 
       stacktrace: 
@@ -2175,7 +2272,7 @@ MonoBehaviour:
       name: TickingDispatchesToTickableSystems
       fullName: Tests.EditMode.SystemManagerTests.TickingDispatchesToTickableSystems
       resultStatus: 1
-      duration: 0.0001171
+      duration: 0.0017978
       messages: 
       output: 
       stacktrace: 
@@ -2192,7 +2289,7 @@ MonoBehaviour:
       name: TestKitSmokeTests
       fullName: Tests.EditMode.TestKitSmokeTests
       resultStatus: 1
-      duration: 0.0062836
+      duration: 0.0247872
       messages: 
       output: 
       stacktrace: 
@@ -2208,7 +2305,7 @@ MonoBehaviour:
       name: CallProbeAssertSequenceAcceptsMatchingCalls
       fullName: Tests.EditMode.TestKitSmokeTests.CallProbeAssertSequenceAcceptsMatchingCalls
       resultStatus: 1
-      duration: 0.0000985
+      duration: 0.0009227
       messages: 
       output: 
       stacktrace: 
@@ -2225,7 +2322,7 @@ MonoBehaviour:
       name: ManualClockAdvanceUpdatesTimeAndDelta
       fullName: Tests.EditMode.TestKitSmokeTests.ManualClockAdvanceUpdatesTimeAndDelta
       resultStatus: 1
-      duration: 0.0000969
+      duration: 0.0037131
       messages: 
       output: 
       stacktrace: 
@@ -2242,7 +2339,7 @@ MonoBehaviour:
       name: RecordingAssetSystemRecordsOnlySuccessfulLoads
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingAssetSystemRecordsOnlySuccessfulLoads
       resultStatus: 1
-      duration: 0.0008466
+      duration: 0.0080481
       messages: 
       output: 
       stacktrace: 
@@ -2259,7 +2356,7 @@ MonoBehaviour:
       name: RecordingAssetSystemTracksMissingRequestsWithoutSuccessfulLoads
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingAssetSystemTracksMissingRequestsWithoutSuccessfulLoads
       resultStatus: 1
-      duration: 0.0000703
+      duration: 0.0009899
       messages: 
       output: 
       stacktrace: 
@@ -2276,7 +2373,7 @@ MonoBehaviour:
       name: RecordingAssetSystemTracksReleaseAndUnloadUnused
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingAssetSystemTracksReleaseAndUnloadUnused
       resultStatus: 1
-      duration: 0.0000836
+      duration: 0.0010029
       messages: 
       output: 
       stacktrace: 
@@ -2293,7 +2390,7 @@ MonoBehaviour:
       name: RecordingPublisherCapturesPublishedEvents
       fullName: Tests.EditMode.TestKitSmokeTests.RecordingPublisherCapturesPublishedEvents
       resultStatus: 1
-      duration: 0.0000715
+      duration: 0.0018402
       messages: 
       output: 
       stacktrace: 
@@ -2337,7 +2434,7 @@ MonoBehaviour:
       selectedCategoryMask: 0
       availableCategories:
       - Uncategorized
---- !u!114 &13
+--- !u!114 &17
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2358,9 +2455,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 542.4
-    width: 1561.4
-    height: 521.00006
+    y: 354.4
+    width: 1171
+    height: 421
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2371,7 +2468,7 @@ MonoBehaviour:
     m_LastAppliedPresetName: Default
     m_SaveData: []
     m_OverlaysVisible: 1
---- !u!114 &14
+--- !u!114 &18
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2393,8 +2490,8 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 73.6
-    width: 386.2
-    height: 447.8
+    width: 289.4
+    height: 259.8
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2410,7 +2507,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: befaffff
+      m_ExpandedIDs: 20fbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -2434,7 +2531,7 @@ MonoBehaviour:
       m_IsLocked: 0
     m_CurrentSortingName: TransformSorting
   m_WindowGUID: 4c969a2b90040154d917609493e03593
---- !u!114 &15
+--- !u!114 &19
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2454,10 +2551,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 387.2
+    x: 290.4
     y: 73.6
-    width: 1173.2
-    height: 447.8
+    width: 879.6
+    height: 259.8
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2816,9 +2913,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: -0.08717229, y: 0.89959055, z: -0.21045254, w: -0.3726226}
   m_Size:
-    m_Target: 9.12025
+    m_Target: 10
     speed: 2
-    m_Value: 9.55
+    m_Value: 10
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -2843,7 +2940,7 @@ MonoBehaviour:
   m_SceneVisActive: 1
   m_LastLockedObject: {fileID: 0}
   m_ViewIsLockedToObject: 0
---- !u!114 &16
+--- !u!114 &20
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2883,7 +2980,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
-  m_TargetSize: {x: 1099.5, y: 366.5}
+  m_TargetSize: {x: 879.6, y: 293.2}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -2898,10 +2995,10 @@ MonoBehaviour:
     m_VRangeLocked: 0
     hZoomLockedByDefault: 0
     vZoomLockedByDefault: 0
-    m_HBaseRangeMin: -439.80002
-    m_HBaseRangeMax: 439.80002
-    m_VBaseRangeMin: -146.6
-    m_VBaseRangeMax: 146.6
+    m_HBaseRangeMin: -351.84
+    m_HBaseRangeMax: 351.84
+    m_VBaseRangeMin: -117.28001
+    m_VBaseRangeMax: 117.28001
     m_HAllowExceedBaseRangeMin: 1
     m_HAllowExceedBaseRangeMax: 1
     m_VAllowExceedBaseRangeMin: 1
@@ -2934,7 +3031,7 @@ MonoBehaviour:
       width: 703.68
       height: 234.56001
     m_MinimalGUI: 1
-  m_defaultScale: 0.99999994
+  m_defaultScale: 1
   m_LastWindowPixelSize: {x: 1099.5, y: 392.75}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
@@ -2942,7 +3039,7 @@ MonoBehaviour:
   m_XRRenderMode: 0
   m_RenderTexture: {fileID: 0}
   m_showToolbar: 1
---- !u!114 &17
+--- !u!114 &21
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2963,9 +3060,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 542.4
-    width: 1561.4
-    height: 521.00006
+    y: 354.4
+    width: 1171
+    height: 421
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2987,7 +3084,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts/Boot.Editor/Build
+    - Assets/GameRes/Config
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -2995,16 +3092,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scripts/Boot.Editor/Build
+  - Assets/GameRes/Config
   m_LastFoldersGridSize: -1
-  m_LastProjectPath: G:\MMMMMMMMMMMMMMMMMMMMMMMMMMMM\NewProjectK\KJ
+  m_LastProjectPath: C:\ZZS\Project\NewProjectK\KJ
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 346a0000
-    m_LastClickedID: 27188
-    m_ExpandedIDs: 000000005e69000060690000626900006469000066690000686900006a6900006c6900006e69000070690000
+    m_SelectedIDs: 46690000
+    m_LastClickedID: 26950
+    m_ExpandedIDs: 0000000022690000246900002669000028690000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -3032,7 +3129,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000005e69000060690000626900006469000066690000686900006a6900006c6900006e69000070690000
+    m_ExpandedIDs: 0000000022690000246900002669000028690000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -3059,7 +3156,7 @@ MonoBehaviour:
   m_ListAreaState:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: c6230000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -3076,7 +3173,7 @@ MonoBehaviour:
       m_IsRenaming: 0
       m_OriginalEventType: 11
       m_IsRenamingFilename: 1
-      m_ClientGUIView: {fileID: 10}
+      m_ClientGUIView: {fileID: 13}
     m_CreateAssetUtility:
       m_EndAction: {fileID: 0}
       m_InstanceID: 0
@@ -3088,7 +3185,7 @@ MonoBehaviour:
     m_GridSize: 64
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 262.2
---- !u!114 &18
+--- !u!114 &22
 MonoBehaviour:
   m_ObjectHideFlags: 52
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3108,10 +3205,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1562.4
+    x: 1172
     y: 73.6
-    width: 484.59998
-    height: 989.80005
+    width: 363
+    height: 701.8
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0

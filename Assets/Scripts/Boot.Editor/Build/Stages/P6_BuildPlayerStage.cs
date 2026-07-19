@@ -17,6 +17,7 @@ namespace Boot.Editor.Build
     {
         public override string Id => "P6.Player";
         public override string DisplayName => "Build Player (IL2CPP)";
+        public override int Version => 2;
         public override int Order => 6;
         public override string Category => "Player";
         public override IReadOnlyList<string> DependsOn { get; } = new[]
@@ -73,6 +74,12 @@ namespace Boot.Editor.Build
                     "Data", "PlaybackEngines", "AndroidPlayer");
                 if (!Directory.Exists(androidPlayer))
                     throw new BuildFailedException(Id, "Android Build Support module not installed");
+
+                context.Transaction.SnapshotBoolSetting(
+                    "EditorUserBuildSettings.exportAsGoogleAndroidProject",
+                    v => EditorUserBuildSettings.exportAsGoogleAndroidProject = v,
+                    () => EditorUserBuildSettings.exportAsGoogleAndroidProject);
+                EditorUserBuildSettings.exportAsGoogleAndroidProject = false;
             }
 
             // 4. 刷新资源
@@ -86,6 +93,8 @@ namespace Boot.Editor.Build
             string outputDir = Path.GetDirectoryName(playerOutputPath);
             if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
                 Directory.CreateDirectory(outputDir);
+            if (Directory.Exists(playerOutputPath))
+                Directory.Delete(playerOutputPath, true);
 
             var options = new BuildPlayerOptions
             {
@@ -123,9 +132,6 @@ namespace Boot.Editor.Build
                     playerSize += new FileInfo(f).Length;
             }
             context.AddArtifact(playerOutputPath, $"Player ({buildTarget})", playerSize);
-
-            // 7. Android: 如果是 Export Project，后续需 Gradle 后处理
-            // （当前 v1 不做 Gradle 自动编译，需手动）
 
             Debug.Log($"[P6] BuildPlayer: DONE ({playerSize / 1024 / 1024} MB)");
         }

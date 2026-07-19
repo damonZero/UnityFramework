@@ -52,6 +52,15 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 改动热更边界时：先改 `HybridCLRSettings.asset`，再确认 `KJHybridClrBuildTools.ValidateRuntimePreloadAssemblyName` 拦截名单（当前 `{Launcher, TestKit}`）；`Launcher` 不得新增任何 Framework/热更引用。
 
+## 构建管线关键契约
+
+- 唯一配置源是 `BuildProfile`，Dashboard 的目标平台不跟随 Unity Build Settings。
+- YooAsset builtin 真包位于 `BundleBuilderHelper.GetStreamingAssetsRoot()/{PackageName}`，当前即 `Assets/StreamingAssets/yoo/DefaultPackage`，禁止硬编码成 `Assets/StreamingAssets/DefaultPackage`。
+- 当前 `DefaultPackage` 只有 `PackRawFile` 收集器，P4 必须使用 `RawFileBuildPipeline + EBundleType.RawBundle`，确保 manifest 与 `.rawfile` 内容类型一致。
+- P3 复用 `KJHybridClrBuildTools.SyncExistingOutputs()`，只同步 HybridCLR 配置声明的 10 个热更 DLL 与 3 个 AOT metadata；不得递归复制整个输出根，也不得删除 P2 生成的裁剪 AOT 目录。
+- Android APK 构建必须事务化关闭 `EditorUserBuildSettings.exportAsGoogleAndroidProject`，结束后恢复原设置。
+- 影响产物的 Stage 代码变更必须递增 `IBuildStage.Version`。本轮将执行的 `ProducesArtifacts` / `Transactional` 依赖必须级联禁止下游跳过。
+
 ## 高性能零分配 & 对象池（ZString / ZLinq / ZLogger / Pool / Cache）
 
 项目已引入 Cysharp Z系库（UPM git + NuGet），并自建了 Pool/Cache 基础模块。详见 `.claude/rules/zero-allocation-libs.md`。

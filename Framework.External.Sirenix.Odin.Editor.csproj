@@ -57,13 +57,13 @@
     <None Include="Assets\Framework\1External\Sirenix\Odin Inspector\Assets\Editor\Bootstrap License.txt" />
     <None Include="Assets\Framework\1External\Sirenix\Assemblies\Sirenix.Serialization.xml" />
     <Reference Include="UnityEngine">
-      <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
+      <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor">
-      <HintPath>F:\Unity\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
+      <HintPath>C:\ZZS\Unity 2022.3.62f2\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

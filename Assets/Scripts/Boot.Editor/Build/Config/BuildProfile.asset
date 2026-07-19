@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0423a6444dcc9f4ebf11e538bba9a38, type: 3}
   m_Name: BuildProfile
   m_EditorClassIdentifier: 
-  ProfileName: Dev Standalone
+  ProfileName: Dev Android
   Environment: 0
   Channel: internal
   VersionName: 1.0.0
   VersionCode: 1
-  Platform: 19
+  Platform: 13
   PackageId: 
   KeystorePath: 
   KeystoreAlias: 
@@ -30,13 +30,14 @@ MonoBehaviour:
   AssetDownloadTag: hotupdate
   StartupTypeName: Project.Bootstrap.ProjectStartup, Project
   StartupMethodName: Start
-  CdnBaseUrl: 
+  CdnBaseUrl: http://10.0.2.2:8080/CDN/Android/DefaultPackage
+  AssetMode: 2
   EnableRuntimeLog: 1
   EnableGm: 0
   EnableDebugUi: 0
   SmokeEnabled: 1
   SmokeRequired: 0
-  SmokeDeviceSerial: 
+  SmokeDeviceSerial: 127.0.0.1:7555
   SmokeTimeoutSec: 120
   OutputRoot: 
   KeepLastBuildCount: 5

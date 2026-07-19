@@ -16,6 +16,7 @@ namespace Boot.Editor.Build
     {
         public override string Id => "P2.Generate";
         public override string DisplayName => "Generate HybridCLR (MethodBridge/link.xml)";
+        public override int Version => 2;
         public override int Order => 2;
         public override string Category => "HybridCLR";
         public override IReadOnlyList<string> DependsOn { get; } = new[] { "P1.Preflight" };
@@ -29,7 +30,8 @@ namespace Boot.Editor.Build
                     "Assets/Scripts/Core/",
                     "Assets/Scripts/General/",
                     "Assets/Scripts/Project/",
-                    "Assets/Framework/");
+                    "Assets/Framework/",
+                    "ProjectSettings/HybridCLRSettings.asset");
 
         public override BuildStageOutputs GetExpectedOutputs(BuildContext context)
             => new BuildStageOutputs()

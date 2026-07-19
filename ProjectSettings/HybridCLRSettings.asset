@@ -18,16 +18,16 @@ MonoBehaviour:
   il2cppPlusRepoURL: https://gitee.com/focus-creative-games/il2cpp_plus
   hotUpdateAssemblyDefinitions: []
   hotUpdateAssemblies:
+  - Cache
+  - Event
+  - Log
+  - RuntimeLog
+  - Pool
+  - Asset
   - Boot
   - Core
   - General
   - Project
-  - Pool
-  - Cache
-  - Event
-  - Asset
-  - Log
-  - RuntimeLog
   preserveHotUpdateAssemblies: []
   hotUpdateDllCompileOutputRootDir: HybridCLRData/HotUpdateDlls
   externalHotUpdateAssembliyDirs: []
@@ -36,6 +36,16 @@ MonoBehaviour:
   - mscorlib
   - System
   - System.Core
+  - System.Runtime.CompilerServices.Unsafe
+  - UnityEngine.CoreModule
+  - UniTask
+  - MessagePipe
+  - VContainer
+  - YooAsset
+  - Utf8StringInterpolation
+  - ZLinq
+  - ZLogger
+  - Microsoft.Extensions.Logging.Abstractions
   outputLinkFile: HybridCLRGenerate/link.xml
   outputAOTGenericReferenceFile: HybridCLRGenerate/AOTGenericReferences.cs
   maxGenericReferenceIteration: 10

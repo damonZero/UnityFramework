@@ -70,7 +70,7 @@ P0 Plan         — 校验 Profile、BuildPlan、输出目录
 P1 Preflight    — HybridCLR、平台、BootScene、AssetConfig、Android/Formal 预检
 P2 Generate     — HybridCLR GenerateAll、link.xml
 P3 HybridCLR    — 编译热更 DLL、AOT metadata、同步 .dll.bytes
-P4 Assets       — YooAsset ScriptableBuildPipeline → StreamingAssets
+P4 Assets       — YooAsset RawFileBuildPipeline → StreamingAssets
 P5 ApplyConfig  — 事务化写 AssetConfig.Mode 和 Scripting Defines
 P6 Player       — 事务化切 IL2CPP/build flags，BuildPipeline.BuildPlayer
 P7 Verify       — Player、YooAsset、DLL、metadata、Formal 泄露校验
@@ -106,9 +106,10 @@ Runner 对每个非 AlwaysRun/NoSkip Stage：
 
 1. 读取上次成功 fingerprint。
 2. 检查声明的 required outputs 是否存在。
-3. 计算并比较 Profile hash、输入路径状态、工具版本、Stage/Pipeline 版本。
-4. 匹配才允许跳过。
-5. Execute + Verify 成功后由 Runner 写新 fingerprint。
+3. 计算并比较 Profile hash、输入路径状态、工具版本、`IBuildStage.Version` / Pipeline 版本。
+4. 匹配后仍检查依赖计划；本轮执行的 `ProducesArtifacts` / `Transactional` 依赖会级联禁止下游跳过。
+5. 全部匹配才允许跳过。
+6. Execute + Verify 成功后由 Runner 写新 fingerprint。
 
 Stage 不允许自行写增量状态。
 
@@ -121,6 +122,7 @@ Stage 不允许自行写增量状态。
 - ScriptingBackend
 - `EditorUserBuildSettings.development`
 - `EditorUserBuildSettings.allowDebugging`
+- `EditorUserBuildSettings.exportAsGoogleAndroidProject`
 - 后续新增的签名或 PlayerSettings
 
 Runner 在失败、取消和成功结束时统一 rollback，保证 Editor 状态不被构建污染。
@@ -170,6 +172,13 @@ HybridCLR 热更新程序集边界。
 - P4：清理 StreamingAssets、YooAsset package build、AssetDatabase Refresh
 - P6：AssetDatabase Refresh、BuildPipeline.BuildPlayer
 
+YooAsset builtin 根必须取 `BundleBuilderHelper.GetStreamingAssetsRoot()`，当前真包路径为
+`Assets/StreamingAssets/yoo/{PackageName}`。P3 必须复用
+`KJHybridClrBuildTools.SyncExistingOutputs()` 精确同步当前平台的 10+3 DLL。
+当前 `DefaultPackage` 只有 `PackRawFile` 收集器，因此 P4 必须使用
+`RawFileBuildPipeline + EBundleType.RawBundle`；不得用
+`ScriptableBuildPipeline + AssetBundle` 生成类型错误的 manifest。
+
 Runtime smoke 默认读取 `boot.log` 与 `latest.jsonl`。必须命中：
 
 1. `[BootLoader] YooAsset`
@@ -182,8 +191,9 @@ Runtime smoke 默认读取 `boot.log` 与 `latest.jsonl`。必须命中：
 - Unity Editor 编译：已通过（2026-07-19，含 Aop/Boot.Build.Editor/Tests）
 - 旧配置/报告/marker/mask 文件：已删除
 - AOP/Build Pipeline 定向 EditMode：14/14 全绿
+- Android P0-P9 APK 端到端构建：已通过（2026-07-19，RunId `20260719_131655_9b8295750`）
+- Android + ADB 设备 Runtime smoke：待执行（本轮 Dev 无在线设备，optional smoke 通过）
 - P0-P9 Standalone 端到端构建：待执行
-- Android + ADB smoke：待执行
 - Odin Dashboard 手工验证：待执行
 
 ## 修改要求

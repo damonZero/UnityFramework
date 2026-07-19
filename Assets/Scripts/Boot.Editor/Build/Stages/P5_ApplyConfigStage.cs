@@ -19,6 +19,7 @@ namespace Boot.Editor.Build
 
         public override string Id => "P5.ApplyConfig";
         public override string DisplayName => "Apply Runtime Config";
+        public override int Version => 2;
         public override int Order => 5;
         public override string Category => "Config";
         public override IReadOnlyList<string> DependsOn { get; } = new[] { "P4.Assets" };
@@ -26,9 +27,12 @@ namespace Boot.Editor.Build
             BuildStagePolicy.Required | BuildStagePolicy.Transactional;
 
         public override BuildStageInputs GetInputs(BuildContext context)
-            => new BuildStageInputs()
-                .WithSourcePaths("Assets/Resources/AssetConfig.asset")
+        {
+            string profilePath = AssetDatabase.GetAssetPath(context.Profile);
+            return new BuildStageInputs()
+                .WithSourcePaths("Assets/Resources/AssetConfig.asset", profilePath)
                 .WithDependsOn("P4.Assets");
+        }
 
         public override void Execute(BuildContext context)
         {
@@ -44,8 +48,8 @@ namespace Boot.Editor.Build
             var targetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             context.Transaction.SnapshotScriptingDefines(targetGroup);
 
-            // 1. 写 AssetConfig.Mode = Offline
-            SetAssetConfigModeToOffline();
+            // 1. 写运行时资源模式与 CDN
+            ApplyAssetConfig(profile);
 
             // 2. 写 Scripting Define Symbols（按环境）
             ApplyScriptingDefines(context, targetGroup);
@@ -53,17 +57,21 @@ namespace Boot.Editor.Build
             // 3. 刷新资产数据库
             AssetDatabase.Refresh();
 
-            Debug.Log("[P5] ApplyConfig: Configuration applied (Mode=Offline)");
+            Debug.Log($"[P5] ApplyConfig: Configuration applied (Mode={profile.AssetMode})");
         }
 
         public override void Verify(BuildContext context)
         {
-            // 验证 AssetConfig.Mode 确实为 Offline
+            var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
             string yaml = ReadAssetConfigYaml();
             var match = Regex.Match(yaml, @"Mode:\s*(\d+)");
-            if (!match.Success || match.Groups[1].Value != "1")
-                throw new InvalidOperationException($"AssetConfig.Mode is not Offline (got: {match.Groups[1].Value})");
-            Debug.Log("[P5] ✓ AssetConfig.Mode verified as Offline");
+            string expectedMode = ((int)profile.AssetMode).ToString();
+            if (!match.Success || match.Groups[1].Value != expectedMode)
+                throw new InvalidOperationException($"AssetConfig.Mode mismatch (expected {expectedMode}, got {match.Groups[1].Value})");
+            if (profile.AssetMode == Framework.Asset.AssetConfig.PlayMode.Host &&
+                !yaml.Contains($"CdnBaseUrl: {profile.CdnBaseUrl}"))
+                throw new InvalidOperationException("AssetConfig.CdnBaseUrl was not applied");
+            Debug.Log($"[P5] ✓ AssetConfig verified as {profile.AssetMode}");
         }
 
         public override void Rollback(BuildContext context)
@@ -78,15 +86,15 @@ namespace Boot.Editor.Build
             return File.ReadAllText(AssetConfigPath);
         }
 
-        private static void SetAssetConfigModeToOffline()
+        private static void ApplyAssetConfig(BuildProfile profile)
         {
             string yaml = File.ReadAllText(AssetConfigPath);
-            // Mode: 0 (EditorSimulate) → Mode: 1 (Offline)
-            yaml = Regex.Replace(yaml, @"\bMode:\s*0\b", "Mode: 1");
+            yaml = Regex.Replace(yaml, @"\bMode:\s*\d+\b", $"Mode: {(int)profile.AssetMode}");
+            yaml = Regex.Replace(yaml, @"(?m)^\s*CdnBaseUrl:.*$", $"  CdnBaseUrl: {profile.CdnBaseUrl}");
             File.WriteAllText(AssetConfigPath, yaml);
             AssetDatabase.ImportAsset(AssetConfigPath,
                 ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log("[P5] AssetConfig.Mode set to 1 (Offline) via YAML direct write");
+            Debug.Log($"[P5] AssetConfig set to {profile.AssetMode}, CDN={profile.CdnBaseUrl}");
         }
 
         /// <summary>

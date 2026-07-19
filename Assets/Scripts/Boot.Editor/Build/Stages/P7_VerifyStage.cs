@@ -4,6 +4,7 @@ using System.IO;
 using Framework.BuildPipeline.Plan;
 using UnityEditor;
 using UnityEngine;
+using YooAsset.Editor;
 
 namespace Boot.Editor.Build
 {
@@ -14,6 +15,7 @@ namespace Boot.Editor.Build
     {
         public override string Id => "P7.Verify";
         public override string DisplayName => "Static Artifact Verification";
+        public override int Version => 2;
         public override int Order => 7;
         public override string Category => "Verify";
         public override IReadOnlyList<string> DependsOn { get; } = new[] { "P6.Player" };
@@ -51,10 +53,11 @@ namespace Boot.Editor.Build
 
             // 2. YooAsset 包完整性
             string packageName = profile.PackageName;
-            string streamingAssetsPackage = $"Assets/StreamingAssets/{packageName}";
+            string streamingAssetsPackage = Path.Combine(
+                BundleBuilderHelper.GetStreamingAssetsRoot(), packageName);
             if (Directory.Exists(streamingAssetsPackage))
             {
-                string versionFile = $"{streamingAssetsPackage}/{packageName}.version";
+                string versionFile = Path.Combine(streamingAssetsPackage, $"{packageName}.version");
                 if (!File.Exists(versionFile))
                     throw new BuildFailedException(Id,
                         $"Package version file missing: {versionFile}");

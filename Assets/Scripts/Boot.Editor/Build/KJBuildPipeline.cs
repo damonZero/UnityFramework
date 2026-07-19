@@ -66,6 +66,48 @@ namespace Boot.Editor.Build
             }
         }
 
+        /// <summary>
+        /// Host smoke baseline: reuse already generated HybridCLR/YooAsset artifacts,
+        /// apply Host config, and rebuild only the Player.
+        /// </summary>
+        public static void BuildHostBaselineFromCommandLine()
+        {
+            BuildProfile profile = null;
+            BuildContext context = null;
+            try
+            {
+                profile = LoadProfileOrThrow(GetArg("profile"));
+                context = new BuildContext
+                {
+                    Profile = profile,
+                    Paths = new BuildPaths(profile),
+                    Transaction = new BuildTransaction(),
+                };
+                context.Paths.EnsureDirectories();
+
+                new P4_BuildAssetStage().Verify(context);
+                var config = new P5_ApplyConfigStage();
+                config.Execute(context);
+                config.Verify(context);
+                var player = new P6_BuildPlayerStage();
+                player.Execute(context);
+                player.Verify(context);
+                new P7_VerifyStage().Execute(context);
+                Debug.Log("[KJBuildPipeline] Host baseline Player build succeeded without P2/MethodBridge.");
+                EditorApplication.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[KJBuildPipeline] Host baseline build failed: {ex}");
+                EditorApplication.Exit(1);
+            }
+            finally
+            {
+                try { context?.Transaction?.Rollback(); }
+                catch (Exception rollbackEx) { Debug.LogError($"[KJBuildPipeline] Rollback failed: {rollbackEx.Message}"); }
+            }
+        }
+
         private static string GetArg(string name)
         {
             string[] args = Environment.GetCommandLineArgs();

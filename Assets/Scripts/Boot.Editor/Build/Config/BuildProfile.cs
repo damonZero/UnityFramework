@@ -1,4 +1,5 @@
 using System;
+using Framework.Asset;
 using Framework.BuildPipeline.Environment;
 using Framework.BuildPipeline.Plan;
 using UnityEditor;
@@ -87,6 +88,9 @@ namespace Boot.Editor.Build
 
         [Tooltip("CDN 基础 URL（Host 模式必填）")]
         public string CdnBaseUrl = "";
+
+        [Tooltip("Player 运行时资源模式")]
+        public AssetConfig.PlayMode AssetMode = AssetConfig.PlayMode.Offline;
 
         // ===== Logging =====
 
@@ -189,7 +193,9 @@ namespace Boot.Editor.Build
             sb.Append(PackageName); sb.Append('|');
             sb.Append(Channel); sb.Append('|');
             sb.Append(PackageId); sb.Append('|');
-            sb.Append(CdnBaseUrl ?? ""); sb.Append('|');
+            // Runtime asset config is fingerprinted by P5 through the profile asset itself.
+            // Keep this slot stable so CDN-only changes do not invalidate P2/P3/P4.
+            sb.Append(""); sb.Append('|');
             sb.Append(SmokeRequired);
             foreach (var d in ExtraScriptingDefines ?? Array.Empty<string>())
                 { sb.Append('|'); sb.Append(d); }

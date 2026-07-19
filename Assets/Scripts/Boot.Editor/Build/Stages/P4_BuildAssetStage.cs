@@ -11,12 +11,13 @@ using YooAsset.Editor;
 namespace Boot.Editor.Build
 {
     /// <summary>
-    /// P4 Build Asset — YooAsset 生产构建（输出到 StreamingAssets）。
+    /// P4 Build Asset — YooAsset RawFile 生产构建（输出到 StreamingAssets）。
     /// </summary>
     public class P4_BuildAssetStage : BuildStageBase
     {
         public override string Id => "P4.Assets";
         public override string DisplayName => "Build YooAsset Bundles";
+        public override int Version => 3;
         public override int Order => 4;
         public override string Category => "YooAsset";
         public override IReadOnlyList<string> DependsOn { get; } = new[] { "P3.HybridCLR" };
@@ -31,10 +32,10 @@ namespace Boot.Editor.Build
         public override BuildStageOutputs GetExpectedOutputs(BuildContext context)
         {
             string packageName = context.Profile.PackageName;
-            string streamingAssetsRoot = $"Assets/StreamingAssets/{packageName}";
+            string streamingAssetsRoot = GetStreamingAssetsPackagePath(packageName);
             return new BuildStageOutputs()
                 .WithRequiredDirectory(streamingAssetsRoot)
-                .WithRequiredFile($"{streamingAssetsRoot}/{packageName}.version");
+                .WithRequiredFile(Path.Combine(streamingAssetsRoot, $"{packageName}.version"));
         }
 
         public override void Execute(BuildContext context)
@@ -46,7 +47,7 @@ namespace Boot.Editor.Build
             Debug.Log($"[P4] BuildAsset: Building YooAsset package '{packageName}' for {buildTarget}");
 
             // 1. 清理旧 StreamingAssets 包
-            string streamingAssetsPath = $"Assets/StreamingAssets/{packageName}";
+            string streamingAssetsPath = GetStreamingAssetsPackagePath(packageName);
             BuildTelemetry.Measure("P4.CleanStreamingAssets", "YooAsset", () =>
             {
                 if (Directory.Exists(streamingAssetsPath))
@@ -57,26 +58,22 @@ namespace Boot.Editor.Build
             });
 
             // 2. YooAsset 生产构建
-            var buildParams = new ScriptableBuildParameters
+            var buildParams = new RawFileBuildParameters
             {
                 BuildOutputRoot = BundleBuilderHelper.GetDefaultBuildOutputRoot(),
                 BundledFileRoot = BundleBuilderHelper.GetStreamingAssetsRoot(),
-                BuildPipeline = EBuildPipeline.ScriptableBuildPipeline.ToString(),
-                BuildBundleType = (int)EBundleType.AssetBundle,
+                BuildPipeline = EBuildPipeline.RawFileBuildPipeline.ToString(),
+                BuildBundleType = (int)EBundleType.RawBundle,
                 BuildTarget = buildTarget,
                 PackageName = packageName,
                 PackageVersion = profile.VersionName,
-                CompressOption = ECompressOption.LZ4,
-                DisableWriteTypeTree = true,
                 FileNameStyle = EFileNameStyle.HashName,
                 VerifyBuildingResult = true,
                 BundledCopyOption = EBundledCopyOption.ClearAndCopyAll,
-                EnableSharePackRule = true,
-                SingleReferencedPackAlone = true,
                 ClearBuildCacheFiles = true,
             };
 
-            var pipeline = new ScriptableBuildPipeline();
+            var pipeline = new RawFileBuildPipeline();
             var buildResult = BuildTelemetry.Measure(
                 "P4.BuildYooAssetPackage",
                 "YooAsset",
@@ -98,8 +95,8 @@ namespace Boot.Editor.Build
         public override void Verify(BuildContext context)
         {
             string packageName = context.Profile.PackageName;
-            string streamingAssetsPath = $"Assets/StreamingAssets/{packageName}";
-            string versionFile = $"{streamingAssetsPath}/{packageName}.version";
+            string streamingAssetsPath = GetStreamingAssetsPackagePath(packageName);
+            string versionFile = Path.Combine(streamingAssetsPath, $"{packageName}.version");
 
             if (!Directory.Exists(streamingAssetsPath))
                 throw new InvalidOperationException($"StreamingAssets package not found: {streamingAssetsPath}");
@@ -108,5 +105,8 @@ namespace Boot.Editor.Build
 
             Debug.Log("[P4] ✓ YooAsset package verified");
         }
+
+        internal static string GetStreamingAssetsPackagePath(string packageName)
+            => Path.Combine(BundleBuilderHelper.GetStreamingAssetsRoot(), packageName);
     }
 }

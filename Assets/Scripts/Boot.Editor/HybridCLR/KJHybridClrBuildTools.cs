@@ -97,7 +97,7 @@ namespace Boot.Editor.HybridCLR
             Debug.Log("[KJHybridClrBuildTools] HybridCLR runtime is installed.");
         }
 
-        private static void SyncExistingOutputs()
+        public static void SyncExistingOutputs()
         {
             var target = EditorUserBuildSettings.activeBuildTarget;
             var settings = SettingsUtil.HybridCLRSettings;

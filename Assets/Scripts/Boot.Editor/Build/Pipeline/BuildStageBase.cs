@@ -12,6 +12,7 @@ namespace Boot.Editor.Build
     {
         public abstract string Id { get; }
         public abstract string DisplayName { get; }
+        public virtual int Version => 1;
         public abstract int Order { get; }
         public abstract string Category { get; }
         public virtual IReadOnlyList<string> DependsOn { get; } = Array.Empty<string>();

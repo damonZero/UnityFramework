@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6adb2dfb73beb54597235739cff9767, type: 3}
   m_Name: AssetConfig
   m_EditorClassIdentifier: 
-  Mode: 0
+  Mode: 2
   PackageName: DefaultPackage
   EditorSimulatePackageRoot: C:/ZZS/Project/NewProjectK/KJ/Bundles/Android/DefaultPackage/Simulate
-  CdnBaseUrl: http://127.0.0.1:8080/CDN
+  CdnBaseUrl: http://10.0.2.2:8080/CDN/Android/DefaultPackage
   DownloadTimeout: 60
   DownloadMaxConcurrency: 10
   FailedRetryCount: 3

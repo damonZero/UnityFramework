@@ -194,8 +194,28 @@ namespace Boot.Editor.Build
                         decision = BuildSkipDecision.DoNotSkip("Input, tool, profile, or pipeline fingerprint changed");
                     }
                 }
+
+                if (decision.CanSkip)
+                {
+                    foreach (string dependencyId in stage.DependsOn)
+                    {
+                        var dependencyEntry = plan.Entries.Find(e => e.StageId == dependencyId);
+                        var dependencyStage = stages.FirstOrDefault(s => s.Id == dependencyId);
+                        bool changesDownstream = dependencyStage != null
+                            && (dependencyStage.Policy.HasFlag(BuildStagePolicy.ProducesArtifacts)
+                                || dependencyStage.Policy.HasFlag(BuildStagePolicy.Transactional));
+                        if (dependencyEntry != null && !dependencyEntry.WillSkip && changesDownstream)
+                        {
+                            decision = BuildSkipDecision.DoNotSkip(
+                                $"Dependency {dependencyId} will produce new inputs");
+                            break;
+                        }
+                    }
+                }
+
                 plan.AddEntry(stage.Id, stage.DisplayName, stage.Order,
                     decision.CanSkip, decision.ReasonCode, decision.HumanReason);
+                plan.Entries[plan.Entries.Count - 1].DependsOn.AddRange(stage.DependsOn);
             }
 
             return plan;
@@ -253,7 +273,7 @@ namespace Boot.Editor.Build
             {
                 StageId = stage.Id,
                 PipelineVersion = "1.0.0",
-                StageVersion = 1,
+                StageVersion = stage.Version,
                 ProfileHash = inputs.ProfileHash,
                 InputsHash = HashInputs(inputs),
                 OutputsHash = includeOutputs ? HashOutputs(outputs) : "",

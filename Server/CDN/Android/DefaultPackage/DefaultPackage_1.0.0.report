@@ -1,0 +1,762 @@
+{
+    "Summary": {
+        "YooVersion": "3.0.3-beta",
+        "UnityVersion": "2022.3.62f2",
+        "BuildDate": "2026/7/19 14:53:25",
+        "BuildSeconds": 4,
+        "BuildTarget": 13,
+        "BuildPipeline": "RawFileBuildPipeline",
+        "BuildBundleType": 3,
+        "BuildPackageName": "DefaultPackage",
+        "BuildPackageVersion": "1.0.0",
+        "BuildPackageNote": "2026/7/19 14:53:20",
+        "UniqueBundleName": false,
+        "EnableAddressable": false,
+        "SupportExtensionless": true,
+        "LocationToLower": false,
+        "IncludeAssetGuid": false,
+        "AutoCollectShaders": true,
+        "IgnoreRuleName": "Framework.Asset.Editor.YooAsset.KJAssetIgnoreRule",
+        "ClearBuildCacheFiles": true,
+        "UseAssetDependencyDB": false,
+        "EnableSharePackRule": false,
+        "SingleReferencedPackAlone": true,
+        "EncryptionServicesClassName": "null",
+        "ManifestProcessServicesClassName": "null",
+        "ManifestRestoreServicesClassName": "null",
+        "FileNameStyle": 0,
+        "CompressOption": 0,
+        "DisableWriteTypeTree": false,
+        "IgnoreTypeTreeChanges": false,
+        "ReplaceAssetPathWithAddress": false,
+        "WriteLinkXML": true,
+        "CacheServerHost": "",
+        "CacheServerPort": 0,
+        "BuiltinShadersBundleName": "",
+        "MonoScriptsBundleName": "",
+        "AssetFileTotalCount": 23,
+        "MainAssetTotalCount": 23,
+        "AllBundleTotalCount": 23,
+        "AllBundleTotalSize": 4872704,
+        "EncryptedBundleTotalCount": 0,
+        "EncryptedBundleTotalSize": 0
+    },
+    "AssetInfos": [
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/MessagePipe.dll.bytes",
+            "AssetGuid": "19b44b7d4279c95478c9451c2ca0cbd5",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_messagepipe_dll_bytes.rawfile",
+            "MainBundleSize": 115712,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/Microsoft.Extensions.Logging.Abstractions.dll.bytes",
+            "AssetGuid": "ed31096235b1e5f4c8e0235afc8612ce",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_microsoft_extensions_logging_abstractions_dll_bytes.rawfile",
+            "MainBundleSize": 24576,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/mscorlib.dll.bytes",
+            "AssetGuid": "828d28e13a4fae8469f489b0bfda4068",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_mscorlib_dll_bytes.rawfile",
+            "MainBundleSize": 2318848,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/System.Core.dll.bytes",
+            "AssetGuid": "cdfc7482940f2a243868a91606a4a838",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_system_core_dll_bytes.rawfile",
+            "MainBundleSize": 98816,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/System.dll.bytes",
+            "AssetGuid": "a1c82341ae0b1c24ba7545459adb3cd5",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_system_dll_bytes.rawfile",
+            "MainBundleSize": 217600,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/System.Runtime.CompilerServices.Unsafe.dll.bytes",
+            "AssetGuid": "674995fc2d3cac745a30c0e900b61b82",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_system_runtime_compilerservices_unsafe_dll_bytes.rawfile",
+            "MainBundleSize": 8192,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/UniTask.dll.bytes",
+            "AssetGuid": "118475ac5171ea94dad668e6bf00d7ac",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_unitask_dll_bytes.rawfile",
+            "MainBundleSize": 555008,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/UnityEngine.CoreModule.dll.bytes",
+            "AssetGuid": "c44c1e85a20e25047a833e636b38da8d",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_unityengine_coremodule_dll_bytes.rawfile",
+            "MainBundleSize": 402432,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/Utf8StringInterpolation.dll.bytes",
+            "AssetGuid": "d36ac311463f69543a7866c0035f6c18",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_utf8stringinterpolation_dll_bytes.rawfile",
+            "MainBundleSize": 32768,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/VContainer.dll.bytes",
+            "AssetGuid": "3b50c83a125038d40854b0d9074b79c9",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_vcontainer_dll_bytes.rawfile",
+            "MainBundleSize": 95744,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/YooAsset.dll.bytes",
+            "AssetGuid": "d7d890949d2906749bc4384ab95f989a",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_yooasset_dll_bytes.rawfile",
+            "MainBundleSize": 366080,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/ZLinq.dll.bytes",
+            "AssetGuid": "e50b0eaa29f9053418ce619ce6c3bc88",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_zlinq_dll_bytes.rawfile",
+            "MainBundleSize": 243712,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/ZLogger.dll.bytes",
+            "AssetGuid": "3dda2efe4daa6824bab8be4caf4c0e9c",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_aotmetadata_zlogger_dll_bytes.rawfile",
+            "MainBundleSize": 141824,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Asset.dll.bytes",
+            "AssetGuid": "c306b900b74479e4baa382f6dd2f8777",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_asset_dll_bytes.rawfile",
+            "MainBundleSize": 38400,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Boot.dll.bytes",
+            "AssetGuid": "e511b3646a6443649a81c5564b5660e8",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_boot_dll_bytes.rawfile",
+            "MainBundleSize": 15872,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Cache.dll.bytes",
+            "AssetGuid": "26e94d44140eb9e46a6edb43c6fc8a79",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_cache_dll_bytes.rawfile",
+            "MainBundleSize": 13824,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Core.dll.bytes",
+            "AssetGuid": "508cf867baaa2784aa870beec45c9219",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_core_dll_bytes.rawfile",
+            "MainBundleSize": 72704,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Event.dll.bytes",
+            "AssetGuid": "6d98dcb4d887e5844aba6da41dd37dd9",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_event_dll_bytes.rawfile",
+            "MainBundleSize": 8704,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/General.dll.bytes",
+            "AssetGuid": "412ede17280e9754e993c42975877fa0",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_general_dll_bytes.rawfile",
+            "MainBundleSize": 27648,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Log.dll.bytes",
+            "AssetGuid": "bd7cf264352c11f4084dd8a2bbfeb6be",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_log_dll_bytes.rawfile",
+            "MainBundleSize": 15360,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Pool.dll.bytes",
+            "AssetGuid": "25811040a9c310846bbb03945d82ea6d",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_pool_dll_bytes.rawfile",
+            "MainBundleSize": 27648,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Project.dll.bytes",
+            "AssetGuid": "a072f150add1b784cba17d3653ad753f",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_project_dll_bytes.rawfile",
+            "MainBundleSize": 7168,
+            "DependAssets": [],
+            "DependBundles": []
+        },
+        {
+            "Address": "",
+            "AssetPath": "Assets/GameRes/HotUpdate/Dlls/RuntimeLog.dll.bytes",
+            "AssetGuid": "2b90847c3c75e624c9db37d094c273d3",
+            "AssetTags": [
+                "hotupdate"
+            ],
+            "MainBundleName": "assets_gameres_hotupdate_dlls_runtimelog_dll_bytes.rawfile",
+            "MainBundleSize": 24064,
+            "DependAssets": [],
+            "DependBundles": []
+        }
+    ],
+    "BundleInfos": [
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_messagepipe_dll_bytes.rawfile",
+            "FileName": "4862b598f48ae7a07ca74e271eb374b8.rawfile",
+            "FileHash": "4862b598f48ae7a07ca74e271eb374b8",
+            "FileCrc": 1565973539,
+            "FileSize": 115712,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/MessagePipe.dll.bytes",
+                    "AssetGUID": "19b44b7d4279c95478c9451c2ca0cbd5"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_microsoft_extensions_logging_abstractions_dll_bytes.rawfile",
+            "FileName": "d7813c4584682ebdbf15187edffaa6fe.rawfile",
+            "FileHash": "d7813c4584682ebdbf15187edffaa6fe",
+            "FileCrc": 3278422405,
+            "FileSize": 24576,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/Microsoft.Extensions.Logging.Abstractions.dll.bytes",
+                    "AssetGUID": "ed31096235b1e5f4c8e0235afc8612ce"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_mscorlib_dll_bytes.rawfile",
+            "FileName": "a22b6cf6e0465812a73ebd00ca47e40a.rawfile",
+            "FileHash": "a22b6cf6e0465812a73ebd00ca47e40a",
+            "FileCrc": 3111722502,
+            "FileSize": 2318848,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/mscorlib.dll.bytes",
+                    "AssetGUID": "828d28e13a4fae8469f489b0bfda4068"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_system_core_dll_bytes.rawfile",
+            "FileName": "ef43dd08400829f41e42942ca11d4ace.rawfile",
+            "FileHash": "ef43dd08400829f41e42942ca11d4ace",
+            "FileCrc": 4268733029,
+            "FileSize": 98816,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/System.Core.dll.bytes",
+                    "AssetGUID": "cdfc7482940f2a243868a91606a4a838"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_system_dll_bytes.rawfile",
+            "FileName": "6fcafa3758bf1a80b450548b93fea71e.rawfile",
+            "FileHash": "6fcafa3758bf1a80b450548b93fea71e",
+            "FileCrc": 2830498828,
+            "FileSize": 217600,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/System.dll.bytes",
+                    "AssetGUID": "a1c82341ae0b1c24ba7545459adb3cd5"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_system_runtime_compilerservices_unsafe_dll_bytes.rawfile",
+            "FileName": "51d3c050366592adc347f0ae1ea8194a.rawfile",
+            "FileHash": "51d3c050366592adc347f0ae1ea8194a",
+            "FileCrc": 3165903028,
+            "FileSize": 8192,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/System.Runtime.CompilerServices.Unsafe.dll.bytes",
+                    "AssetGUID": "674995fc2d3cac745a30c0e900b61b82"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_unitask_dll_bytes.rawfile",
+            "FileName": "be42e2a7ff53882b0a309545ccec1294.rawfile",
+            "FileHash": "be42e2a7ff53882b0a309545ccec1294",
+            "FileCrc": 2019761137,
+            "FileSize": 555008,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/UniTask.dll.bytes",
+                    "AssetGUID": "118475ac5171ea94dad668e6bf00d7ac"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_unityengine_coremodule_dll_bytes.rawfile",
+            "FileName": "e4a339dded11096b37f67ce4ad17fd43.rawfile",
+            "FileHash": "e4a339dded11096b37f67ce4ad17fd43",
+            "FileCrc": 162944025,
+            "FileSize": 402432,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/UnityEngine.CoreModule.dll.bytes",
+                    "AssetGUID": "c44c1e85a20e25047a833e636b38da8d"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_utf8stringinterpolation_dll_bytes.rawfile",
+            "FileName": "18bb0d4a2a2faef68dcdbd53b55e7eaa.rawfile",
+            "FileHash": "18bb0d4a2a2faef68dcdbd53b55e7eaa",
+            "FileCrc": 3890048187,
+            "FileSize": 32768,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/Utf8StringInterpolation.dll.bytes",
+                    "AssetGUID": "d36ac311463f69543a7866c0035f6c18"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_vcontainer_dll_bytes.rawfile",
+            "FileName": "72f73a67742a41a70ad2f887a9745a30.rawfile",
+            "FileHash": "72f73a67742a41a70ad2f887a9745a30",
+            "FileCrc": 2611910359,
+            "FileSize": 95744,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/VContainer.dll.bytes",
+                    "AssetGUID": "3b50c83a125038d40854b0d9074b79c9"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_yooasset_dll_bytes.rawfile",
+            "FileName": "3a7012623cc7f0ad7ca1711db959fcd0.rawfile",
+            "FileHash": "3a7012623cc7f0ad7ca1711db959fcd0",
+            "FileCrc": 831092462,
+            "FileSize": 366080,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/YooAsset.dll.bytes",
+                    "AssetGUID": "d7d890949d2906749bc4384ab95f989a"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_zlinq_dll_bytes.rawfile",
+            "FileName": "63ce7521f048b6dfc25f64d61f902295.rawfile",
+            "FileHash": "63ce7521f048b6dfc25f64d61f902295",
+            "FileCrc": 2810332787,
+            "FileSize": 243712,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/ZLinq.dll.bytes",
+                    "AssetGUID": "e50b0eaa29f9053418ce619ce6c3bc88"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_aotmetadata_zlogger_dll_bytes.rawfile",
+            "FileName": "9985bcf61110cd6e40619770fc61e59f.rawfile",
+            "FileHash": "9985bcf61110cd6e40619770fc61e59f",
+            "FileCrc": 2839036793,
+            "FileSize": 141824,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/AotMetadata/ZLogger.dll.bytes",
+                    "AssetGUID": "3dda2efe4daa6824bab8be4caf4c0e9c"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_asset_dll_bytes.rawfile",
+            "FileName": "69ca5de873478de4fddbb2142064ea6a.rawfile",
+            "FileHash": "69ca5de873478de4fddbb2142064ea6a",
+            "FileCrc": 3121853552,
+            "FileSize": 38400,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Asset.dll.bytes",
+                    "AssetGUID": "c306b900b74479e4baa382f6dd2f8777"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_boot_dll_bytes.rawfile",
+            "FileName": "6003419488aa7855d48893d0df11d852.rawfile",
+            "FileHash": "6003419488aa7855d48893d0df11d852",
+            "FileCrc": 4076695874,
+            "FileSize": 15872,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Boot.dll.bytes",
+                    "AssetGUID": "e511b3646a6443649a81c5564b5660e8"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_cache_dll_bytes.rawfile",
+            "FileName": "44993fcb1b5fd9b7d65f3237bbb7215d.rawfile",
+            "FileHash": "44993fcb1b5fd9b7d65f3237bbb7215d",
+            "FileCrc": 3260346472,
+            "FileSize": 13824,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Cache.dll.bytes",
+                    "AssetGUID": "26e94d44140eb9e46a6edb43c6fc8a79"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_core_dll_bytes.rawfile",
+            "FileName": "94cc0125188bda9f3aef0cd2099fe32d.rawfile",
+            "FileHash": "94cc0125188bda9f3aef0cd2099fe32d",
+            "FileCrc": 2367206564,
+            "FileSize": 72704,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Core.dll.bytes",
+                    "AssetGUID": "508cf867baaa2784aa870beec45c9219"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_event_dll_bytes.rawfile",
+            "FileName": "ca10f52710f550f7d3e44f1905da9762.rawfile",
+            "FileHash": "ca10f52710f550f7d3e44f1905da9762",
+            "FileCrc": 3147765419,
+            "FileSize": 8704,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Event.dll.bytes",
+                    "AssetGUID": "6d98dcb4d887e5844aba6da41dd37dd9"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_general_dll_bytes.rawfile",
+            "FileName": "036031c227511181d786c87a048a85bc.rawfile",
+            "FileHash": "036031c227511181d786c87a048a85bc",
+            "FileCrc": 353015260,
+            "FileSize": 27648,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/General.dll.bytes",
+                    "AssetGUID": "412ede17280e9754e993c42975877fa0"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_log_dll_bytes.rawfile",
+            "FileName": "5074eafa936edf6ebd544ffcb8adb60c.rawfile",
+            "FileHash": "5074eafa936edf6ebd544ffcb8adb60c",
+            "FileCrc": 377444475,
+            "FileSize": 15360,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Log.dll.bytes",
+                    "AssetGUID": "bd7cf264352c11f4084dd8a2bbfeb6be"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_pool_dll_bytes.rawfile",
+            "FileName": "a9d654df22d8a91181f9113d624f14cd.rawfile",
+            "FileHash": "a9d654df22d8a91181f9113d624f14cd",
+            "FileCrc": 2136826859,
+            "FileSize": 27648,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Pool.dll.bytes",
+                    "AssetGUID": "25811040a9c310846bbb03945d82ea6d"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_project_dll_bytes.rawfile",
+            "FileName": "11c836a39737e202d8630ad1c354d950.rawfile",
+            "FileHash": "11c836a39737e202d8630ad1c354d950",
+            "FileCrc": 1113856769,
+            "FileSize": 7168,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/Project.dll.bytes",
+                    "AssetGUID": "a072f150add1b784cba17d3653ad753f"
+                }
+            ]
+        },
+        {
+            "BundleName": "assets_gameres_hotupdate_dlls_runtimelog_dll_bytes.rawfile",
+            "FileName": "ad6f1b4bd12f1cbea3e2b2be0032bff1.rawfile",
+            "FileHash": "ad6f1b4bd12f1cbea3e2b2be0032bff1",
+            "FileCrc": 3252777853,
+            "FileSize": 24064,
+            "Encrypted": false,
+            "Tags": [
+                "hotupdate"
+            ],
+            "DependBundles": [],
+            "ReferenceBundles": [],
+            "BundleContents": [
+                {
+                    "AssetPath": "Assets/GameRes/HotUpdate/Dlls/RuntimeLog.dll.bytes",
+                    "AssetGUID": "2b90847c3c75e624c9db37d094c273d3"
+                }
+            ]
+        }
+    ],
+    "IndependentAssets": []
+}

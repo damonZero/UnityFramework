@@ -58,7 +58,10 @@ namespace Boot
                 _view?.SetProgress(0.1f);
 
                 if (_settings.EnableHotUpdate)
+                {
+                    await DownloadHotUpdateAssetsAsync(config);
                     await LoadHotUpdateCodeAsync();
+                }
 
                 _view?.SetProgress(0.9f);
                 var bridge = new BootBridge(_package, _settings, _view, config, BootStartupLog.Snapshot);
@@ -161,6 +164,38 @@ namespace Boot
             parameters.AddParameter(EFileSystemParameter.DownloadMaxConcurrency, config.DownloadMaxConcurrency);
             parameters.AddParameter(EFileSystemParameter.DownloadWatchdogTimeout, config.DownloadTimeout);
             return parameters;
+        }
+
+        private async UniTask DownloadHotUpdateAssetsAsync(AssetConfig config)
+        {
+            if (config.Mode != AssetConfig.PlayMode.Host)
+                return;
+
+            int concurrency = Math.Max(1, config.DownloadMaxConcurrency);
+            int retryCount = Math.Max(0, config.FailedRetryCount);
+            var options = string.IsNullOrWhiteSpace(_settings.AssetDownloadTag)
+                ? new ResourceDownloaderOptions(concurrency, retryCount)
+                : new ResourceDownloaderOptions(_settings.AssetDownloadTag, concurrency, retryCount);
+            var downloader = _package.CreateResourceDownloader(options);
+            if (downloader.TotalDownloadCount == 0)
+            {
+                BootStartupLog.Info("[BootLoader] Hot-update files are current");
+                return;
+            }
+
+            BootStartupLog.Info($"[BootLoader] Downloading hot-update files: {downloader.TotalDownloadCount}");
+            _view?.SetStatus("Downloading update");
+            downloader.StartDownload();
+            while (!downloader.IsDone)
+            {
+                _view?.SetProgress(Mathf.Lerp(0.1f, 0.45f, downloader.Progress));
+                await UniTask.Yield();
+            }
+
+            if (downloader.Status != EOperationStatus.Succeeded)
+                throw new InvalidOperationException($"[BootLoader] Hot-update download failed: {downloader.Error}");
+
+            BootStartupLog.Info("[BootLoader] Hot-update download completed");
         }
 
         private UniTask LoadHotUpdateCodeAsync()

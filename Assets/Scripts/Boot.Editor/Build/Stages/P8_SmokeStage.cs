@@ -172,7 +172,8 @@ namespace Boot.Editor.Build
                 timeout);
 
             // 轮询拉取日志
-            string localLogDir = Path.Combine(Path.GetTempPath(), $"KJSmoke_{device}_{DateTime.Now:yyyyMMddHHmmss}");
+            string safeDevice = SanitizePathSegment(device);
+            string localLogDir = Path.Combine(Path.GetTempPath(), $"KJSmoke_{safeDevice}_{DateTime.Now:yyyyMMddHHmmss}");
             Directory.CreateDirectory(localLogDir);
 
             bool booted = false;
@@ -224,6 +225,25 @@ namespace Boot.Editor.Build
         }
 
         // ===== ADB 辅助 =====
+
+        public static string SanitizePathSegment(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "unknown";
+
+            char[] chars = value.ToCharArray();
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (chars[i] == ':' || chars[i] == Path.DirectorySeparatorChar ||
+                    chars[i] == Path.AltDirectorySeparatorChar || Array.IndexOf(invalidChars, chars[i]) >= 0)
+                {
+                    chars[i] = '_';
+                }
+            }
+
+            return new string(chars);
+        }
 
         private static string FindAdb()
         {

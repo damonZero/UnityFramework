@@ -16,6 +16,9 @@ namespace Boot.Editor.Build
         /// <summary>Stage 显示名称</summary>
         string DisplayName { get; }
 
+        /// <summary>Stage 实现版本；影响产物的代码变更时递增</summary>
+        int Version { get; }
+
         /// <summary>执行顺序（升序）</summary>
         int Order { get; }
 

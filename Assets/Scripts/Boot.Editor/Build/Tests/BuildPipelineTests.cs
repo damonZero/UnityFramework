@@ -431,6 +431,58 @@ namespace Boot.Editor.Build.Tests
             Assert.IsNull(recorded.ExceptionType);
         }
 
+        [Test]
+        public void AndroidSmoke_SanitizesNetworkAdbSerialForWindowsPath()
+        {
+            string result = P8_SmokeStage.SanitizePathSegment("127.0.0.1:7555");
+
+            Assert.AreEqual("127.0.0.1_7555", result);
+            Assert.AreEqual("unknown", P8_SmokeStage.SanitizePathSegment(" "));
+        }
+
+        [Test]
+        public void HotUpdateAssemblies_AreConfiguredInDependencyOrder()
+        {
+            string settings = File.ReadAllText("ProjectSettings/HybridCLRSettings.asset").Replace("\r\n", "\n");
+            string scene = File.ReadAllText("Assets/GameRes/Scene/Boot/Main.unity").Replace("\r\n", "\n");
+            string[] expected = { "Cache", "Event", "Log", "RuntimeLog", "Pool", "Asset", "Boot", "Core", "General", "Project" };
+
+            int settingsCursor = settings.IndexOf("  hotUpdateAssemblies:\n", StringComparison.Ordinal);
+            int sceneCursor = scene.IndexOf("    hotUpdateAssemblies:\n", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(settingsCursor, 0);
+            Assert.GreaterOrEqual(sceneCursor, 0);
+
+            foreach (string assemblyName in expected)
+            {
+                settingsCursor = settings.IndexOf($"  - {assemblyName}\n", settingsCursor, StringComparison.Ordinal);
+                sceneCursor = scene.IndexOf($"    - assemblyName: {assemblyName}\n", sceneCursor, StringComparison.Ordinal);
+                Assert.GreaterOrEqual(settingsCursor, 0, $"HybridCLRSettings order is invalid at {assemblyName}");
+                Assert.GreaterOrEqual(sceneCursor, 0, $"Boot scene order is invalid at {assemblyName}");
+                settingsCursor++;
+                sceneCursor++;
+            }
+        }
+
+        [Test]
+        public void AotMetadata_CoversGeneratedPatchedAssemblyList()
+        {
+            string settings = File.ReadAllText("ProjectSettings/HybridCLRSettings.asset");
+            string scene = File.ReadAllText("Assets/GameRes/Scene/Boot/Main.unity");
+            string[] expected =
+            {
+                "mscorlib", "System", "System.Core", "System.Runtime.CompilerServices.Unsafe",
+                "UnityEngine.CoreModule", "UniTask", "MessagePipe", "VContainer", "YooAsset",
+                "Utf8StringInterpolation", "ZLinq", "ZLogger", "Microsoft.Extensions.Logging.Abstractions",
+            };
+
+            foreach (string assemblyName in expected)
+            {
+                StringAssert.Contains($"  - {assemblyName}", settings);
+                StringAssert.Contains($"    - assemblyName: {assemblyName}", scene);
+                StringAssert.Contains($"Assets/GameRes/HotUpdate/AotMetadata/{assemblyName}.dll.bytes", scene);
+            }
+        }
+
         private sealed class ManualAopClock : IAopClock
         {
             private long _timestamp;
