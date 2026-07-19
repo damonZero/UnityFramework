@@ -42,7 +42,7 @@ namespace Boot.Editor.Build
             {
                 context.AddIssue(BuildIssue.Error(
                     BuildErrorCodes.PreHybridCLRNotInstalled, Id,
-                    "HybridCLR runtime not installed. Run KJ/HybridCLR/Install HybridCLR Runtime first."));
+                    "HybridCLR runtime not installed. Run KJ/HybridCLR/Maintenance/Install HybridCLR Runtime first."));
                 throw new BuildFailedException(Id, "HybridCLR runtime not installed");
             }
             Debug.Log("[P1] ✓ HybridCLR runtime: installed");
@@ -82,7 +82,7 @@ namespace Boot.Editor.Build
             {
                 context.AddIssue(BuildIssue.Error(
                     BuildErrorCodes.PreBootSceneMissing, Id,
-                    "Boot scene not in BuildSettings. Run KJ/HybridCLR/Prepare Boot Scene first."));
+                    "Boot scene not in BuildSettings. Run KJ/HybridCLR/Maintenance/Prepare Boot Scene first."));
                 throw new BuildFailedException(Id, "Boot scene not in BuildSettings");
             }
             Debug.Log("[P1] ✓ Boot scene: in BuildSettings");

@@ -7,6 +7,7 @@ namespace Boot.Editor.Build
     /// 构建环境快照 —— 记录 Unity、Git、OS、SDK 等版本信息。
     /// 每次构建开始时采集，写入构建报告。
     /// </summary>
+    [Serializable]
     public class BuildEnvironmentSnapshot
     {
         public string UnityVersion;

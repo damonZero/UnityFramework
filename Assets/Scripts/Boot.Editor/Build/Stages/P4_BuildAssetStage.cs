@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Boot.Editor.Build.Telemetry;
 using Framework.BuildPipeline.Plan;
 using UnityEditor;
 using UnityEngine;
@@ -46,11 +47,14 @@ namespace Boot.Editor.Build
 
             // 1. 清理旧 StreamingAssets 包
             string streamingAssetsPath = $"Assets/StreamingAssets/{packageName}";
-            if (Directory.Exists(streamingAssetsPath))
+            BuildTelemetry.Measure("P4.CleanStreamingAssets", "YooAsset", () =>
             {
-                Directory.Delete(streamingAssetsPath, true);
-                File.Delete($"{streamingAssetsPath}.meta");
-            }
+                if (Directory.Exists(streamingAssetsPath))
+                {
+                    Directory.Delete(streamingAssetsPath, true);
+                    File.Delete($"{streamingAssetsPath}.meta");
+                }
+            });
 
             // 2. YooAsset 生产构建
             var buildParams = new ScriptableBuildParameters
@@ -73,8 +77,14 @@ namespace Boot.Editor.Build
             };
 
             var pipeline = new ScriptableBuildPipeline();
-            var buildResult = pipeline.Run(buildParams, true);
-            AssetDatabase.Refresh();
+            var buildResult = BuildTelemetry.Measure(
+                "P4.BuildYooAssetPackage",
+                "YooAsset",
+                () => pipeline.Run(buildParams, true));
+            BuildTelemetry.Measure(
+                "P4.RefreshAssetDatabase",
+                "UnityEditor",
+                AssetDatabase.Refresh);
 
             if (!buildResult.Success)
             {

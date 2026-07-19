@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Framework.Aop;
 using Framework.BuildPipeline.Diagnostics;
 using Framework.BuildPipeline.Plan;
 using Framework.BuildPipeline.Reports;
 using UnityEditor;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Boot.Editor.Build
 {
@@ -20,6 +22,7 @@ namespace Boot.Editor.Build
         private readonly BuildContext _ctx;
         private readonly List<StageExecutionResult> _stageResults = new List<StageExecutionResult>();
         private bool _allPassed = true;
+        private long _buildStartedTimestamp;
 
         public BuildPipelineRunner(BuildContext context)
         {
@@ -30,6 +33,10 @@ namespace Boot.Editor.Build
         {
             if (_ctx.Profile == null)
                 throw new InvalidOperationException("BuildProfile is required.");
+
+            _buildStartedTimestamp = Stopwatch.GetTimestamp();
+            var telemetryCollector = new InMemoryAopCollector();
+            using var telemetrySession = AopRuntime.BeginSession(_ctx.RunId, telemetryCollector);
 
             var snapshot = BuildEnvironmentSnapshot.Capture();
             var stages = BuildStageRegistry.GetAll();
@@ -60,7 +67,6 @@ namespace Boot.Editor.Build
                     {
                         Debug.LogWarning("[BuildPipelineRunner] Build cancelled by user");
                         _allPassed = false;
-                        _ctx.Transaction.Rollback();
                         break;
                     }
 
@@ -71,7 +77,6 @@ namespace Boot.Editor.Build
                     {
                         _allPassed = false;
                         Debug.LogError($"[BuildPipelineRunner] Required stage failed: {stage.Id}, aborting");
-                        _ctx.Transaction.Rollback();
                         break;
                     }
 
@@ -83,18 +88,22 @@ namespace Boot.Editor.Build
             {
                 _allPassed = false;
                 Debug.LogError($"[BuildPipelineRunner] Unexpected error: {ex}");
-                try { _ctx.Transaction.Rollback(); } catch { }
             }
             finally
             {
                 try { _ctx.Transaction.Rollback(); }
-                catch (Exception ex) { Debug.LogError($"[BuildPipelineRunner] Final rollback failed: {ex.Message}"); }
+                catch (Exception ex) { Debug.LogError($"[BuildPipelineRunner] Rollback failed: {ex.Message}"); }
             }
 
-            var report = BuildReport();
+            var report = BuildReport(
+                telemetryCollector.Snapshot(),
+                telemetryCollector.DroppedCount,
+                telemetrySession.CollectorFailureCount);
             report.EnvironmentSnapshot = snapshot;
             WriteReports(report);
             VerifyReportFiles();
+            Debug.Log($"[BuildTelemetry] Captured {report.PerformanceSpans.Count} spans, " +
+                      $"dropped={report.PerformanceDroppedCount}, collectorFailures={report.PerformanceCollectorFailureCount}");
             return report;
         }
 
@@ -103,6 +112,7 @@ namespace Boot.Editor.Build
         private StageExecutionResult ExecuteStage(IBuildStage stage, bool planSaysSkip)
         {
             Debug.Log($"[BuildPipelineRunner] === {stage.Id}: {stage.DisplayName} ===");
+            long startedTimestamp = Stopwatch.GetTimestamp();
 
             var result = new StageExecutionResult
             {
@@ -152,7 +162,7 @@ namespace Boot.Editor.Build
             finally
             {
                 result.FinishedAtUtc = DateTime.UtcNow.ToString("o");
-                result.DurationMs = (long)(DateTime.UtcNow - DateTime.Parse(result.StartedAtUtc)).TotalMilliseconds;
+                result.DurationMs = ElapsedMilliseconds(startedTimestamp);
             }
 
             _stageResults.Add(result);
@@ -322,11 +332,14 @@ namespace Boot.Editor.Build
 
         // ===== 报告 =====
 
-        private BuildReportData BuildReport()
+        private BuildReportData BuildReport(
+            List<AopEvent> performanceSpans,
+            int performanceDroppedCount,
+            int performanceCollectorFailureCount)
         {
             return new BuildReportData
             {
-                SchemaVersion = "1.0.0",
+                SchemaVersion = "1.1.0",
                 RunId = _ctx.RunId,
                 PipelineVersion = "1.0.0",
                 ProfileName = _ctx.Profile?.ProfileName,
@@ -335,11 +348,20 @@ namespace Boot.Editor.Build
                 Version = _ctx.Profile?.VersionName,
                 BuildStartedAt = _ctx.StartedAtUtc.ToString("o"),
                 BuildFinishedAt = DateTime.UtcNow.ToString("o"),
-                TotalDurationMs = (long)(DateTime.UtcNow - _ctx.StartedAtUtc).TotalMilliseconds,
+                TotalDurationMs = ElapsedMilliseconds(_buildStartedTimestamp),
                 AllPassed = _allPassed,
                 StageResults = _stageResults,
                 Issues = _ctx.Issues,
+                PerformanceSpans = performanceSpans,
+                PerformanceDroppedCount = performanceDroppedCount,
+                PerformanceCollectorFailureCount = performanceCollectorFailureCount,
             };
+        }
+
+        private static long ElapsedMilliseconds(long startedTimestamp)
+        {
+            long elapsedTicks = Math.Max(0, Stopwatch.GetTimestamp() - startedTimestamp);
+            return (long)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
         }
 
         private void WriteReports(BuildReportData report)
@@ -421,6 +443,21 @@ namespace Boot.Editor.Build
             foreach (var s in report.StageResults)
                 sw.WriteLine($"| {s.DisplayName} | {s.Status} | {s.DurationMs}ms | {s.ErrorMessage ?? ""} |");
             sw.WriteLine();
+
+            if (report.PerformanceSpans != null && report.PerformanceSpans.Count > 0)
+            {
+                sw.WriteLine("## Performance Spans");
+                sw.WriteLine($"Captured: {report.PerformanceSpans.Count}, Dropped: {report.PerformanceDroppedCount}, Collector failures: {report.PerformanceCollectorFailureCount}");
+                sw.WriteLine();
+                sw.WriteLine("| Operation | Category | Status | Duration | Exception |");
+                sw.WriteLine("|-----------|----------|--------|----------|-----------|");
+                foreach (var span in report.PerformanceSpans.OrderByDescending(s => s.DurationMs))
+                {
+                    sw.WriteLine($"| {span.Name} | {span.Category} | {span.Status} | {span.DurationMs:F2}ms | {span.ExceptionType ?? ""} |");
+                }
+                sw.WriteLine();
+            }
+
             if (report.Issues != null && report.Issues.Count > 0)
             {
                 sw.WriteLine("## Issues");
@@ -465,7 +502,7 @@ namespace Boot.Editor.Build
                     }
                 }
                 handoff.SuggestedActions.Add("Check Unity Console for detailed error");
-                handoff.SuggestedActions.Add("Re-run KJ/Build/Full Player Build & Validate");
+                handoff.SuggestedActions.Add("Open KJ/Build/Dashboard and run a full build");
             }
 
             File.WriteAllText(path, JsonUtility.ToJson(handoff, true));
@@ -476,6 +513,10 @@ namespace Boot.Editor.Build
 
     /// <summary>
     /// Stage 执行结果。
+    /// </summary>
+    /// <summary>
+    /// Stage 执行结果。
+    /// 注意：使用 public field 而非 property 是因为 UnityEngine.JsonUtility 不支持属性序列化。
     /// </summary>
     [Serializable]
     public class StageExecutionResult
@@ -502,12 +543,13 @@ namespace Boot.Editor.Build
     }
 
     /// <summary>
-    /// 构建报告顶层数据结构
+    /// 构建报告顶层数据结构。
+    /// 注意：使用 public field 而非 property 是因为 UnityEngine.JsonUtility 不支持属性序列化。
     /// </summary>
     [Serializable]
     public class BuildReportData
     {
-        public string SchemaVersion = "1.0.0";
+        public string SchemaVersion = "1.1.0";
         public string RunId;
         public string PipelineVersion = "1.0.0";
         public string ProfileName;
@@ -521,5 +563,8 @@ namespace Boot.Editor.Build
         public List<StageExecutionResult> StageResults = new List<StageExecutionResult>();
         public List<Framework.BuildPipeline.Diagnostics.BuildIssue> Issues = new List<Framework.BuildPipeline.Diagnostics.BuildIssue>();
         public BuildEnvironmentSnapshot EnvironmentSnapshot;
+        public List<AopEvent> PerformanceSpans = new List<AopEvent>();
+        public int PerformanceDroppedCount;
+        public int PerformanceCollectorFailureCount;
     }
 }

@@ -12,9 +12,9 @@ namespace Boot.Editor.Build
         public static readonly Dictionary<string, string> KnownErrors = new Dictionary<string, string>
         {
             ["HybridCLR runtime not installed"] =
-                "Run KJ/HybridCLR/Install HybridCLR Runtime in Unity Editor.",
+                "Run KJ/HybridCLR/Maintenance/Install HybridCLR Runtime in Unity Editor.",
             ["Boot scene not in BuildSettings"] =
-                "Run KJ/HybridCLR/Prepare Boot Scene to add the boot scene.",
+                "Run KJ/HybridCLR/Maintenance/Prepare Boot Scene to add the boot scene.",
             ["IL2CPP required"] =
                 "Go to PlayerSettings → Other Settings → Scripting Backend → select IL2CPP.",
             ["AssetConfig not found"] =

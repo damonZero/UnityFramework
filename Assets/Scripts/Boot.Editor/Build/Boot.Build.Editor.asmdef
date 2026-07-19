@@ -4,6 +4,7 @@
     "references": [
         "Boot",
         "Boot.Editor",
+        "Aop",
         "Framework.BuildPipeline",
         "Asset",
         "AssetShared",

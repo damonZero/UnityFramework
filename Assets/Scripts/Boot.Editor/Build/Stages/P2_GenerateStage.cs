@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Boot.Editor.Build.Telemetry;
 using Framework.BuildPipeline.Plan;
 using HybridCLR.Editor.Commands;
 using UnityEditor;
@@ -32,17 +33,20 @@ namespace Boot.Editor.Build
 
         public override BuildStageOutputs GetExpectedOutputs(BuildContext context)
             => new BuildStageOutputs()
-                .WithRequiredFile("HybridCLRGenerate/link.xml");
+                .WithRequiredFile("Assets/HybridCLRGenerate/link.xml");
 
         public override void Execute(BuildContext context)
         {
             Debug.Log("[P2] Generate: PrebuildCommand.GenerateAll()...");
 
             // 调用现有 HybridCLR 生成逻辑
-            PrebuildCommand.GenerateAll();
+            BuildTelemetry.Measure(
+                "P2.GenerateAll",
+                "HybridCLR",
+                PrebuildCommand.GenerateAll);
 
             // 校验 link.xml
-            string linkXmlPath = "HybridCLRGenerate/link.xml";
+            string linkXmlPath = "Assets/HybridCLRGenerate/link.xml";
             if (!File.Exists(linkXmlPath) || new FileInfo(linkXmlPath).Length == 0)
             {
                 throw new BuildFailedException(Id,

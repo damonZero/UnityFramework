@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Boot.Editor.Build.Telemetry;
 using Framework.BuildPipeline.Plan;
 using HybridCLR.Editor.Commands;
 using UnityEditor;
@@ -45,7 +46,7 @@ namespace Boot.Editor.Build
 
         public override void Execute(BuildContext context)
         {
-            Debug.Log("[P3] HybridCLR: Compiling DLLs...");
+            Debug.Log("[P3] HybridCLR: Syncing DLLs to YooAsset source...");
 
             var profile = context.Profile ?? throw new InvalidOperationException("BuildProfile is required");
             var buildTarget = profile.Platform;
@@ -54,19 +55,30 @@ namespace Boot.Editor.Build
             // 1. 清理旧产物
             string hotUpdatePath = Path.Combine(HotUpdateDllSource, targetName);
             string aotMetaPath = Path.Combine(AOTMetadataSource, targetName);
-            CleanDirectory(hotUpdatePath);
-            CleanDirectory(aotMetaPath);
+            BuildTelemetry.Measure("P3.CleanOutputs", "HybridCLR", () =>
+            {
+                CleanDirectory(hotUpdatePath);
+                CleanDirectory(aotMetaPath);
+            });
 
-            // 2. 编译热更 DLL
-            CompileDllCommand.CompileDll(buildTarget, profile.DevelopmentBuild);
+            // 2. 编译热更 DLL（P2 PrebuildCommand.GenerateAll 已编译，此处补充以确保产物存在）
+            // 注意: P2 中 CompileDllCommand.CompileDll 使用的是 EditorUserBuildSettings.development，
+            // 这里使用 profile.DevelopmentBuild 确保一致性
+            BuildTelemetry.Measure(
+                "P3.CompileHotUpdateDlls",
+                "HybridCLR",
+                () => CompileDllCommand.CompileDll(buildTarget, profile.DevelopmentBuild));
 
-            // 3. 生成 stripped AOT metadata
-            StripAOTDllCommand.GenerateStripedAOTDlls(buildTarget);
+            // 3. 同步到 YooAsset 源目录
+            BuildTelemetry.Measure(
+                "P3.SyncHotUpdateAssets",
+                "HybridCLR",
+                SyncToAssetDirectory);
 
-            // 4. 同步到 YooAsset 源目录
-            SyncToAssetDirectory();
-
-            AssetDatabase.Refresh();
+            BuildTelemetry.Measure(
+                "P3.RefreshAssetDatabase",
+                "UnityEditor",
+                AssetDatabase.Refresh);
 
             Debug.Log("[P3] HybridCLR: DONE");
         }

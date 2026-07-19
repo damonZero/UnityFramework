@@ -200,18 +200,5 @@ namespace Boot.Editor.Build
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
 
-        [MenuItem("KJ/Build/Create Build Profile")]
-        private static void CreateBuildProfile()
-        {
-            var profile = CreateInstance<BuildProfile>();
-            string path = "Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset";
-            string dir = System.IO.Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
-                System.IO.Directory.CreateDirectory(dir);
-            AssetDatabase.CreateAsset(profile, path);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log($"[BuildProfile] Created at {path}");
-        }
     }
 }

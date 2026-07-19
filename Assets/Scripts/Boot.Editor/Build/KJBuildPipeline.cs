@@ -32,7 +32,7 @@ namespace Boot.Editor.Build
             var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(DefaultProfilePath);
             if (profile == null)
                 throw new InvalidOperationException(
-                    $"BuildProfile not found: {DefaultProfilePath}. Create one via KJ/Build/Create Build Profile.");
+                    $"BuildProfile not found: {DefaultProfilePath}. Open KJ/Build/Dashboard and restore the default profile asset.");
             return profile;
         }
 
@@ -99,35 +99,4 @@ namespace Boot.Editor.Build
         }
     }
 
-    public static class KJBuildPipelineMenu
-    {
-        [MenuItem("KJ/Build/Full Player Build & Validate")]
-        private static void BuildFullPlayer()
-        {
-            try
-            {
-                var profile = KJBuildPipeline.LoadDefaultProfileOrThrow();
-                Debug.Log($"[KJBuildPipeline] ========== FULL BUILD STARTED: {profile.ProfileName} ==========");
-                var report = KJBuildPipeline.Build(profile);
-
-                if (report.AllPassed)
-                {
-                    EditorUtility.DisplayDialog("Build Complete",
-                        $"Build succeeded.\n\nReports: {new BuildPaths(profile).ReportsDir}", "OK");
-                }
-                else
-                {
-                    var failed = report.StageResults.Find(s => s.Status == StageStatus.Failed);
-                    EditorUtility.DisplayDialog("Build Failed",
-                        $"Failed at: {failed?.StageId ?? "Unknown"}\n\n{failed?.ErrorMessage}\n\nReports: {new BuildPaths(profile).ReportsDir}", "OK");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[KJBuildPipeline] Build failed before report generation: {ex}");
-                EditorUtility.DisplayDialog("Build Failed", ex.Message, "OK");
-            }
-        }
-
-    }
 }

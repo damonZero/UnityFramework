@@ -18,9 +18,13 @@ namespace Boot.Editor.Build
     {
         private readonly List<ISnapshot> _snapshots = new List<ISnapshot>();
         private bool _committed = false;
+        private bool _rolledBack = false;
 
         /// <summary>是否已经 commit（不可再 rollback）</summary>
         public bool IsCommitted => _committed;
+
+        /// <summary>是否已经 rollback（防止重复 rollback）</summary>
+        public bool IsRolledBack => _rolledBack;
 
         // ===== Snapshot 接口 =====
 
@@ -149,6 +153,14 @@ namespace Boot.Editor.Build
                 Debug.Log("[Transaction] Already committed, rollback skipped");
                 return;
             }
+
+            if (_rolledBack)
+            {
+                Debug.Log("[Transaction] Already rolled back, skipping");
+                return;
+            }
+
+            _rolledBack = true;
 
             Debug.Log($"[Transaction] Rolling back {_snapshots.Count} snapshot(s)...");
 

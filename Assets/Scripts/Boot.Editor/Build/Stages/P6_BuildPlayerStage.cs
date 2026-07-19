@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Boot.Editor.Build.Telemetry;
 using Framework.BuildPipeline.Plan;
 using UnityEditor;
 using UnityEditor.Build;
@@ -75,7 +76,10 @@ namespace Boot.Editor.Build
             }
 
             // 4. 刷新资源
-            AssetDatabase.Refresh();
+            BuildTelemetry.Measure(
+                "P6.RefreshAssetDatabase",
+                "UnityEditor",
+                AssetDatabase.Refresh);
 
             // 5. 构建 Player
             string playerOutputPath = profile.GetPlayerPath();
@@ -97,7 +101,10 @@ namespace Boot.Editor.Build
             Debug.Log($"[P6] Output: {playerOutputPath}");
             Debug.Log($"[P6] Scenes: {options.scenes.Length}, Development: {isDev}");
 
-            var buildReport = BuildPipeline.BuildPlayer(options);
+            var buildReport = BuildTelemetry.Measure(
+                "P6.BuildPlayer",
+                "Player",
+                () => BuildPipeline.BuildPlayer(options));
 
             if (buildReport.summary.result != BuildResult.Succeeded)
             {
