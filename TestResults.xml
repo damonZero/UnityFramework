@@ -1,62 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test-run total="94" passed="94" failed="0" skipped="0" inconclusive="0">
-  <test-case name="ArtifactEntry_Sha256_DifferentForDifferentContent" status="Passed">
+<test-run total="91" passed="91" failed="0" skipped="0" inconclusive="0">
+  <test-case name="AopRuntime_BeginSession_RejectsNullCollector" status="Passed">
   </test-case>
-  <test-case name="ArtifactEntry_Sha256_SameForSameContent" status="Passed">
+  <test-case name="AopRuntime_BeginSession_RejectsNullRunId" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_Defaults_AreReasonable" status="Passed">
+  <test-case name="AopRuntime_DoubleBeginSession_Throws" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_GetMarkerDir_UnderOutputDir" status="Passed">
+  <test-case name="AopSession_Dispose_IsIdempotent" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_GetOutputDir_AutoDerives" status="Passed">
+  <test-case name="AopSession_IsolatesCollectorFailure" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_GetOutputDir_UsesCustomDir" status="Passed">
+  <test-case name="AopSpan_Cancel_RecordsCancelledStatus" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_GetPlayerPath_ReturnsCorrectExtension" status="Passed">
+  <test-case name="AopSpan_DisabledSpan_IsNoOp" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_GetReportPath_DefaultName" status="Passed">
+  <test-case name="AopSpan_DoubleDispose_DoesNotDuplicateEvent" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_Platform_AllSupported" status="Passed">
+  <test-case name="AopSpan_FailAfterCompletion_IsIgnored" status="Passed">
   </test-case>
-  <test-case name="BuildConfig_Version_IsSettable" status="Passed">
+  <test-case name="AopSpan_RecordsFailureWithoutChangingException" status="Passed">
   </test-case>
-  <test-case name="BuildFailedException_HasInnerException" status="Passed">
+  <test-case name="AopSpan_RecordsMonotonicDurationAndParent" status="Passed">
   </test-case>
-  <test-case name="BuildFailedException_HasStageName" status="Passed">
+  <test-case name="AopSpan_TripleNested_RecordsCorrectHierarchy" status="Passed">
   </test-case>
-  <test-case name="BuildReport_AddArtifact_ComputesMetadata" status="Passed">
+  <test-case name="BuildPaths_DerivesExpectedDirectories" status="Passed">
   </test-case>
-  <test-case name="BuildReport_AddArtifact_MissingFile" status="Passed">
+  <test-case name="BuildProfile_ComputeProfileHash_ChangesWhenBuildInputsChange" status="Passed">
   </test-case>
-  <test-case name="BuildReport_AddStage_CreatesCorrectEntry" status="Passed">
+  <test-case name="BuildProfile_Defaults_AreReasonable" status="Passed">
   </test-case>
-  <test-case name="BuildReport_AddStage_MultipleStagesInOrder" status="Passed">
+  <test-case name="BuildProfile_GetOutputDir_UsesOutputRoot" status="Passed">
   </test-case>
-  <test-case name="BuildReport_BuildSummary_ComputesCorrectly" status="Passed">
+  <test-case name="BuildProfile_GetPlayerPath_ReturnsPlatformExtension" status="Passed">
   </test-case>
-  <test-case name="BuildReport_SmokeConclusion_IsNullIfNotSet" status="Passed">
+  <test-case name="BuildReportData_DefaultLists_AreNonNull" status="Passed">
   </test-case>
-  <test-case name="BuildReport_SmokeConclusion_RecordsMilestones" status="Passed">
+  <test-case name="BuildReportData_SerializesPerformanceSpans" status="Passed">
   </test-case>
-  <test-case name="BuildReport_WriteJson_ProducesValidFile" status="Passed">
+  <test-case name="BuildStageRegistry_RegistersP0ToP9InOrder" status="Passed">
   </test-case>
-  <test-case name="BuildReport_WriteMarkdown_ProducesValidFile" status="Passed">
+  <test-case name="BuildTransaction_Rollback_IsIdempotent" status="Passed">
   </test-case>
-  <test-case name="Markers_ClearAllMarkers_RemovesAll" status="Passed">
+  <test-case name="InMemoryAopCollector_DropsEventsBeyondCapacity" status="Passed">
   </test-case>
-  <test-case name="Markers_IsStageDone_ReturnsFalseWhenNoMarker" status="Passed">
+  <test-case name="InMemoryAopCollector_RejectsZeroCapacity" status="Passed">
   </test-case>
-  <test-case name="Markers_MarkAndCheck_Works" status="Passed">
+  <test-case name="InMemoryAopCollector_SnapshotResetsInternalState" status="Passed">
   </test-case>
-  <test-case name="SmokeConclusion_DefaultResult_IsNotScheduled" status="Passed">
+  <test-case name="StageExecutionResult_Skipped_CountsAsPassed" status="Passed">
   </test-case>
-  <test-case name="SmokeResult_AllValues_AreDistinct" status="Passed">
-  </test-case>
-  <test-case name="StageResult_Duration_ShouldBeNonNegative" status="Passed">
-  </test-case>
-  <test-case name="StageResult_Invariants_CanBeTracked" status="Passed">
-  </test-case>
-  <test-case name="StageResult_Skipped_HasReason" status="Passed">
+  <test-case name="StopwatchAopClock_Frequency_MatchesStopwatch" status="Passed">
   </test-case>
   <test-case name="CapacityPolicyKeepsOnlyNEntries" status="Passed">
   </test-case>
