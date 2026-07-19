@@ -3,7 +3,7 @@
 > **用途：** 记录框架需要哪些模块、每个模块当前处于什么状态、它依赖什么。
 > **不做：** 固定执行顺序、工时估计、强制时间表。什么时候做什么模块取决于当时的需求和优先级判断。
 
-**Last Updated:** 2026-07-09
+**Last Updated:** 2026-07-19
 
 ---
 
@@ -22,9 +22,10 @@
 | LOG-AI-01 运行日志落盘与会话清单 | `Framework/RuntimeLog/` + `Boot/` + `Core/Logging/` | 独立 RuntimeLog session writer；Boot 早期安装；Core 接入 GameLog/ILogger/ZLogger；输出 JSONL、session 清单、latest 指针 |
 | LOG-AI-02 首版日志收集与 AI 分析入口 | `Assets/Scripts/Core.Editor/Logging/` | `KJ/Runtime Logs/*` 菜单：打开 latest、生成摘要、导出诊断包、清理本地日志 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
-| HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，正式构建前走完整 `Generate All And Sync` |
+| HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，完整 Editor 闭环走 `Generate All Sync And Prepare Boot`，生产构建统一走 Dashboard P0-P9 |
 | HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
-| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | BuildProfile-only 配置；`BuildPipelineRunner` Plan 驱动 P0-P9；Profile/Input/Tool/Output fingerprint 增量判断；`BuildTransaction` 统一回滚 AssetConfig/Defines/ScriptingBackend/build flags；YooAsset/HybridCLR/Player/Verify/Smoke/Report 全链路；Odin Dashboard、CI 无头入口和 AI handoff。旧 BuildConfig/BuildReport/StageDependencyTracker/marker/mask 已删除。Unity 编译通过，待 EditMode 与端到端验证。 |
+| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | BuildProfile-only 配置；`BuildPipelineRunner` Plan 驱动 P0-P9；Profile/Input/Tool/Output fingerprint 增量判断；`BuildTransaction` 统一回滚 AssetConfig/Defines/ScriptingBackend/build flags；YooAsset/HybridCLR/Player/Verify/Smoke/Report 全链路；Odin Dashboard、CI 无头入口和 AI handoff。EditMode 测试 74/74 全绿。旧 BuildConfig/BuildReport/StageDependencyTracker/marker/mask 已删除。 |
+| AOP-PERF-01 打包耗时监控雏形 | `Assets/Framework/Aop/` + `Assets/Scripts/Boot.Editor/Build/Telemetry/` | Editor-only 显式 Observability 首版：单调时钟 Span/session、父子关系、有界 Collector 和故障隔离；监控 P2/P3/P4/P6 内部关键步骤；性能明细进入 build_report JSON/Markdown schema 1.1.0。Unity 编译与定向 EditMode 14/14 通过，真实打包报告待 E2E；Runtime 开放前必须完成 HybridCLR 归属评审。 |
 | Object Pool & Cache 重构 | `Framework/Pool/` + `Framework/Cache/` | `BoundedStore<TKey,TValue>` 替代旧 `Cache`（Put 覆盖两步 Remove+Add、Clear/Remove/淘汰统一 onEvicted、GetOrAdd single-flight、TTL 读路径清理）；`IStoreEvictionPolicy`/`IStoreExpirationPolicy` + `LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`；`ObjectPool<T>` 保持 lock 并发安全，`CollectionPool` 使用 `SingleThreadObjectPool<T>` 主线程热路径；`GameObjectPool` 五字典合并 `PrefabPoolState`+实例库存策略 `IInstanceRecyclePolicy`+反向索引污染检测+[MainThread] 断言；`PoolService.cs` DI 桥接；相关 EditMode 单测全绿 |
 
 ---
@@ -37,7 +38,8 @@
 |------|------|------|------|
 | Editor Play 启动链 smoke | Done | Boot + YooAsset + HybridCLR + Core | 用户已确认无报错；`Editor.log` 已看到 `[AssetSystem] Ready` 与 `[SystemManager] 全部初始化完成` |
 | Build Pipeline Unity 编译 | Done | Boot.Build.Editor + Tests asmdef | BuildProfile-only 重构后 Unity 编译无错误 |
-| Build Pipeline EditMode | Next | Profile/Transaction/Registry/Report | 运行 `Boot.Build.Editor.Tests`，确认新架构测试全绿 |
+| Build Pipeline EditMode | Done | Profile/Transaction/Registry/Report | 74/74 全绿：BuildProfile/BuildPaths/BuildStageRegistry/BuildReportData/BuildTransaction + BoundedStore/GameObjectPool/ObjectPool + HYB-03 15 边界 + ModelLifecycle/RuntimeLog/SystemManager/TestKit |
+| AOP 打包耗时监控 | Code Done / E2E Next | Framework.Aop + P2/P3/P4/P6 + Report | Unity 编译通过，定向测试 14/14；下一次完整构建验证 Span 耗时、失败状态和 JSON/Markdown 输出 |
 | Build Pipeline Standalone E2E | Next | P0-P9 | 使用默认 BuildProfile 跑一次完整 Standalone IL2CPP 构建与 smoke |
 | Player 打包 smoke | Next | Boot + HybridCLR + YooAsset + Core | 构建并运行 Player，验证完整启动链、AOT metadata/DLL 加载、资源清单/下载流程、无启动期 Error/Exception |
 | 资源加载矩阵 | Next | Framework.Asset + Core.AssetSystem | 验证 RawFile bytes、cached/owned 资源加载、实例化、场景加载/卸载、下载器、Release、UnloadUnused |
@@ -53,7 +55,7 @@
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
 | Timer | Low | `Core/Timer/` | ISystem | Tick-based（非协程），一次性 + 循环，暂停/恢复，最小 GC |
-| Object Pool | Low-Medium | `Core/Pool/` | Framework.Asset | ✅ 代码已重构完成（见上方"已完成"）；`PoolService.cs` DI 桥接；`BoundedStore` 替代旧 `Cache`；Pool/Cache 相关 EditMode 单测全绿 |
+| Object Pool | Low-Medium | `Framework/Pool/` | Framework.Asset | ✅ 代码已重构完成（见上方"已完成"）；`PoolService.cs` DI 桥接；`BoundedStore` 替代旧 `Cache`；Pool/Cache 相关 EditMode 单测全绿 |
 | PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和注册链路去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
 | LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Framework/Log.Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则；跨层入口才放 `Assets/Editor/` |
 | CI 打包脚本与产物管理 | Low-Medium | 待定（可能 `ci/` 或 `Assets/Editor/`） | Build Pipeline | 代码已有 `BuildFromCommandLine()`（Boot.Editor.Build.KJBuildPipeline），待规划：① 封装为 `ci/build.ps1` 一键脚本（自动定位 Unity 路径、传参、捕获退出码）；② 产物输出路径规范（APK/IPA/Standalone 放到哪里）；③ 版本号/环境自动注入策略；④ 与外部 CI（Jenkins/蓝盾）对接方式 |
@@ -110,7 +112,7 @@
 |------|--------|------|------|------|
 | HYB-00 热更边界固化 | Medium | `.planning/` + asmdef 策略 | Boot, Framework | 明确托管 DLL 下发、重启生效、真正换包三类边界，作为 UI/Config/Net 前置约束 |
 | HYB-01 HybridCLR 最小加载闭环 | High | `Boot/` | 稳定 Framework 资源接口 | Boot 侧热更配置、AOT 元数据补充、Core/General/Project DLL 加载、再反射创建热更 Stage |
-| HYB-02B 热更 smoke test | Medium | Unity Editor + Player | HYB-02A, YooAsset | 先完成当前验证 gate：Player 打包 smoke、资源加载矩阵、PlayMode 覆盖、“改 Project 代码后无整包更新”验证；正式包前再跑完整 `Generate All And Sync` |
+| HYB-02B 热更 smoke test | Medium | Unity Editor + Player | HYB-02A, YooAsset | 先完成当前验证 gate：Player 打包 smoke、资源加载矩阵、PlayMode 覆盖、“改 Project 代码后无整包更新”验证；正式包统一从 Dashboard 执行 P0-P9 |
 | ~~HYB-03 Boot.Update 拆分~~ | ✅ 已完成（见上方"已完成"） | `Scripts/Boot/Launcher/` + `Framework/AssetShared/` | HYB-01, HYB-02 | 落地为 AOT `Launcher` + 热更 `Boot`；Boot 变更可下载但已加载 DLL 替换需重启/下次启动生效 |
 
 ---
@@ -123,7 +125,7 @@
 | 内置 Server 实现 | 客户端框架，Server 独立项目 |
 | 可视化脚本编辑器 | 独立产品级工程，集成第三方即可 |
 | 内置 Analytics / Crash | 耦合特定服务，提供扩展点即可 |
-| 自定义序列化格式 | Protobuf + Luban + JSON 已覆盖所有需求 |
+| 自定义序列化格式 | Protobuf + JSON 已覆盖当前需求；Luban 配置表待集成 |
 | 完整 MVVM 绑定框架 | 游戏 UI 是事件驱动刷新，不需要持续数据绑定 |
 | 事件总线字符串 ID | 已用 MessagePipe 强类型替代 |
 
@@ -161,4 +163,4 @@ ConfigManager (Luban) ← HybridCLR boundary + Framework.Asset
 
 ---
 
-*Boards updated: 2026-07-09*
+*Boards updated: 2026-07-17*
