@@ -245,11 +245,11 @@ HYB-02:
   `Assets/GameRes/HotUpdate/`. `StreamingAssets/HotUpdate` may be a local
   Editor/standalone fallback, but should not be the primary mobile path.
 - Use `KJ/HybridCLR/Prepare Runtime Assets And Boot` for the normal smoke path.
-- Use `KJ/HybridCLR/Generate All And Sync` for the full formal-build pipeline.
+- Use `KJ/HybridCLR/Generate All Sync And Prepare Boot` for the complete Editor Play preparation flow; production builds run P0-P9 from `KJ/Build/Dashboard`.
 - The final YooAsset hot-update DLL directory must contain only the configured
   runtime preload assemblies. HybridCLR intermediate output can contain many
   player script DLLs and is not the runtime publication boundary.
-- Use `KJ/HybridCLR/Apply To Open Entry` to write HybridCLRSettings assembly
+- `ApplyToOpenEntry` is an internal step of `Prepare Boot Scene`; use `KJ/HybridCLR/Maintenance/Prepare Boot Scene` to write HybridCLRSettings assembly
   lists into the open Boot `Entry` serialized settings.
 
 HYB-03 (done, 2026-07-07):

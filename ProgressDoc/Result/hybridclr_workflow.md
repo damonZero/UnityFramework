@@ -77,16 +77,13 @@ HybridCLR 编译后产生的临时文件默认位于项目根目录：
 
 ## 4. 构建打包管线（BuildProfile-only）
 
-以上 `KJ/HybridCLR/*` 菜单为**开发内循环**（Editor Play），不产出可运行的 Player 包。真正的"构建→打包→冒烟"走以下菜单：
+以上 `KJ/HybridCLR/*` 菜单为**开发内循环**（Editor Play），不产出可运行的 Player 包。真正的“构建→打包→冒烟”统一从 Dashboard 发起：
 
 ### 4.1 菜单入口
 
 | 菜单 | 用途 |
 |------|------|
-| `KJ → Build → Full Player Build & Validate` | 使用默认 `BuildProfile.asset` 执行 P0-P9 |
 | `KJ → Build → Dashboard` | Odin Dashboard：Profile 查看、预检、构建、Stage/报告/诊断 |
-| `KJ → Build → Build Stage Manager...` | Stage 只读概览；不再支持手动 mask/marker |
-| `KJ → Build → Create Build Profile` | 创建默认 Profile 模板 |
 
 当前权威配置源是 `Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset`。
 旧 `BuildConfig.cs` / `BuildConfig.asset` / `BuildReport.cs` / `StageDependencyTracker.cs`
@@ -98,7 +95,7 @@ Profile 和输出指纹判断。
 
 - **Player**：`BuildProfile.GetPlayerPath()`（默认 `BuildBackup/{Environment}/{VersionName}/{VersionCode}/KJ.exe`）
 - **YooAsset 真包**：`Assets/StreamingAssets/DefaultPackage/`（Offline 模式）
-- **报告**：`{OutputRoot}/reports/build_report.json` + `build_report.md` + `ai_handoff.json`
+- **报告**：`{OutputRoot}/reports/build_report.json` + `build_report.md` + `ai_handoff.json`；schema 1.1.0 的 build report 包含 P2/P3/P4/P6 内部 `PerformanceSpans`
 
 ### 4.3 ADB 测试流程
 
@@ -123,3 +120,4 @@ v2 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPip
 - **AI 可接管报告**：构建失败时生成 `issues.json` 与 `ai_handoff.json`，包含错误码、阶段、证据、可能原因、建议修复和相关文件。
 - **Smoke 与日志系统强化**：Runtime smoke 必须收集 `boot.log`、`latest.jsonl`、`latest.session.json`；Formal/Audit 不允许因缺 adb/缺设备而静默通过。
 - **事务回滚**：`BuildTransaction` 统一快照并回滚 `AssetConfig`、Scripting Defines、ScriptingBackend、Editor build flags。
+- **打包耗时监控**：Editor-only、非 auto-reference 的 `Framework.Aop` 提供单调时钟 Span/session 和有界 Collector；P2 GenerateAll、P3 HybridCLR 编译同步、P4 YooAsset 构建、P6 BuildPlayer 等关键步骤通过 `BuildTelemetry` 显式采集。Collector 失败与构建隔离，明细按耗时排序写入 JSON/Markdown；2026-07-19 Unity 编译及定向 EditMode 14/14 通过，真实数据待完整 P0-P9 构建验证。当前不进入 Player，不改变 HybridCLR 程序集边界。
