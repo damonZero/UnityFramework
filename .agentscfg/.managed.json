@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "managed": [
+    ".claude/**",
+    ".codex/**",
+    ".mcp.json",
+    ".opencode/**",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "adopted": {}
+}

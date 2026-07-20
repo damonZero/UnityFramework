@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "targets": {
+    "claude": { "enabled": true },
+    "opencode": { "enabled": false },
+    "codex": { "enabled": true }
+  },
+  "output": {
+    "newlines": "lf"
+  },
+  "managed": {
+    "allowRemove": false
+  },
+  "instructions": {
+    "includeProjectSection": true
+  }
+}
