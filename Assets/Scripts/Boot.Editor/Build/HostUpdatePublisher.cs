@@ -14,8 +14,10 @@ namespace Boot.Editor.Build
     /// </summary>
     public static class HostUpdatePublisher
     {
-        /// <summary>CDN 服务器根目录</summary>
-        public static readonly string ServerRoot = "C:/ZZS/Project/NewProjectK/Server/CDN/Android/DefaultPackage";
+        /// <summary>CDN 服务器根目录（项目根目录的同级 Server 目录）</summary>
+        public static readonly string ServerRoot = Path.Combine(
+            Directory.GetParent(Application.dataPath)?.Parent?.FullName ?? ".",
+            "Server", "CDN", "Android", "DefaultPackage");
 
         [MenuItem("KJ/Build/Publish Host Update 1.0.1")]
         public static void PublishMenu() => Publish("1.0.1");

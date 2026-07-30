@@ -65,7 +65,7 @@ namespace Boot.Editor.HybridCLR
             if (result == null || string.IsNullOrWhiteSpace(result.PackageRootDirectory))
                 throw new InvalidOperationException("YooAsset EditorSimulate build did not return a package root directory.");
 
-            config.EditorSimulatePackageRoot = result.PackageRootDirectory;
+            config.EditorSimulatePackageRoot = ToAssetRelativePath(result.PackageRootDirectory);
             EditorUtility.SetDirty(config);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -536,6 +536,24 @@ namespace Boot.Editor.HybridCLR
         private static string ToProjectPath(string assetPath)
         {
             return Path.GetFullPath(Path.Combine(Directory.GetParent(Application.dataPath)?.FullName ?? ".", assetPath));
+        }
+
+        /// <summary>
+        /// Converts an absolute filesystem path to a path relative to the Unity project root.
+        /// The result is stored in AssetConfig for cross-machine portability.
+        /// </summary>
+        private static string ToAssetRelativePath(string absolutePath)
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrEmpty(projectRoot))
+                return absolutePath;
+
+            var fullRoot = Path.GetFullPath(projectRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var fullPath = Path.GetFullPath(absolutePath);
+            if (!fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return absolutePath;
+
+            return fullPath.Substring(fullRoot.Length + 1);
         }
     }
 }

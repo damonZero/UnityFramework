@@ -148,10 +148,20 @@ namespace Boot
         private static string GetEditorSimulatePackageRoot(AssetConfig config)
         {
             if (!string.IsNullOrWhiteSpace(config.EditorSimulatePackageRoot))
-                return config.EditorSimulatePackageRoot;
+                return ResolveEditorSimulateRoot(config.EditorSimulatePackageRoot);
 
             throw new InvalidOperationException(
                 "[BootLoader] AssetConfig.EditorSimulatePackageRoot is empty. Run KJ/HybridCLR/Prepare YooAsset Editor Simulate Package (or Prepare Runtime Assets And Boot) before entering Play Mode.");
+        }
+
+        private static string ResolveEditorSimulateRoot(string path)
+        {
+            if (Path.IsPathRooted(path))
+                return path;
+
+            return Path.GetFullPath(Path.Combine(
+                Directory.GetParent(Application.dataPath)?.FullName ?? ".",
+                path));
         }
 
         private static FileSystemParameters BuildSandboxParameters(AssetConfig config)

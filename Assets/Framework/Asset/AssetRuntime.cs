@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Framework.Log;
@@ -588,10 +589,20 @@ namespace Framework.Asset
         private static string GetEditorSimulatePackageRoot(AssetConfig config)
         {
             if (!string.IsNullOrWhiteSpace(config.EditorSimulatePackageRoot))
-                return config.EditorSimulatePackageRoot;
+                return ResolveEditorSimulateRoot(config.EditorSimulatePackageRoot);
 
             throw new InvalidOperationException(
                 "AssetConfig.EditorSimulatePackageRoot is empty. Run KJ/HybridCLR/Prepare YooAsset Editor Simulate Package or KJ/HybridCLR/Prepare Runtime Assets And Boot before entering Play Mode.");
+        }
+
+        private static string ResolveEditorSimulateRoot(string path)
+        {
+            if (Path.IsPathRooted(path))
+                return path;
+
+            return Path.GetFullPath(Path.Combine(
+                Directory.GetParent(Application.dataPath)?.FullName ?? ".",
+                path));
         }
 
         private FileSystemParameters BuildSandboxParameters(AssetConfig config)
