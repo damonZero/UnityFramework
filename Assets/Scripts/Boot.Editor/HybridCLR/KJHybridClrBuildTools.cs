@@ -27,23 +27,6 @@ namespace Boot.Editor.HybridCLR
         private const string HotUpdateTag = "hotupdate";
         private const string BootScenePath = "Assets/GameRes/Scene/Boot/Main.unity";
 
-        private static void GenerateAllAndSync()
-        {
-            InstallHybridClrRuntimeIfNeeded();
-            EnsureBootSceneInBuildSettings();
-            PrebuildCommand.GenerateAll();
-            SyncExistingOutputs();
-        }
-
-        [MenuItem(MenuRoot + "Generate All Sync And Prepare Boot", priority = 9)]
-        public static void GenerateAllSyncAndPrepareBoot()
-        {
-            GenerateAllAndSync();
-            PrepareYooAssetEditorSimulatePackage();
-            PrepareBootScene();
-            ValidateOutputs();
-        }
-
         [MenuItem(MenuRoot + "Prepare Runtime Assets And Boot", priority = 8)]
         public static void PrepareRuntimeAssetsAndBoot()
         {
@@ -224,7 +207,7 @@ namespace Boot.Editor.HybridCLR
 
                     var fileName = $"Dlls/{name}.dll.bytes";
                     var assetPath = $"{DllAssetFolder}/{name}.dll.bytes";
-                    return new BootAssemblyEntry(name, fileName, null, assetPath);
+                    return new BootAssemblyEntry(name, fileName, assetPath);
                 })
                 .ToList();
         }
@@ -243,7 +226,7 @@ namespace Boot.Editor.HybridCLR
 
                     var fileName = $"AotMetadata/{name}.dll.bytes";
                     var assetPath = $"{MetadataAssetFolder}/{name}.dll.bytes";
-                    return new BootMetadataEntry(name, fileName, null, assetPath);
+                    return new BootMetadataEntry(name, fileName, assetPath);
                 })
                 .ToList();
         }
@@ -514,7 +497,6 @@ namespace Boot.Editor.HybridCLR
                 var item = property.GetArrayElementAtIndex(i);
                 item.FindPropertyRelative("assemblyName").stringValue = entry.AssemblyName;
                 item.FindPropertyRelative("fileName").stringValue = entry.FileName;
-                item.FindPropertyRelative("resourcesPath").stringValue = entry.ResourcesPath;
                 item.FindPropertyRelative("assetPath").stringValue = entry.AssetPath;
             }
         }
@@ -528,7 +510,6 @@ namespace Boot.Editor.HybridCLR
                 var item = property.GetArrayElementAtIndex(i);
                 item.FindPropertyRelative("assemblyName").stringValue = entry.AssemblyName;
                 item.FindPropertyRelative("fileName").stringValue = entry.FileName;
-                item.FindPropertyRelative("resourcesPath").stringValue = entry.ResourcesPath;
                 item.FindPropertyRelative("assetPath").stringValue = entry.AssetPath;
             }
         }

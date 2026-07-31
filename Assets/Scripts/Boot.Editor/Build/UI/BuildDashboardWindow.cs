@@ -189,7 +189,7 @@ namespace Boot.Editor.Build
                    && !UnityEditor.BuildPipeline.isBuildingPlayer;
         }
 
-        private void RunBuild()
+        private void RunBuild(bool forceFullRebuild = false)
         {
             if (!CanBuild())
             {
@@ -206,8 +206,9 @@ namespace Boot.Editor.Build
             try
             {
                 AssetDatabase.SaveAssets();
-                BuildLogger.Info($"[BuildDashboard] 一键打包开始: {GetProfileLabel(_profile)}");
-                _lastReport = KJBuildPipeline.Build(_profile);
+                string mode = forceFullRebuild ? "全量重建" : "自动增量";
+                BuildLogger.Info($"[BuildDashboard] {mode}打包开始: {GetProfileLabel(_profile)}");
+                _lastReport = KJBuildPipeline.Build(_profile, forceFullRebuild);
 
                 string result = _lastReport.AllPassed ? "成功" : "失败";
                 BuildLogger.Info($"[BuildDashboard] 打包{result}: {GetProfileLabel(_profile)}");
@@ -411,6 +412,10 @@ namespace Boot.Editor.Build
                 set => _installAfterBuild = value;
             }
 
+            [ShowInInspector, LabelText("强制全量重建")]
+            [Tooltip("忽略所有阶段和 HybridCLR 子步骤缓存。仅用于首次出包、工具链升级或缓存排查。")]
+            public bool ForceFullRebuild { get; set; }
+
             [ShowInInspector, ValueDropdown(nameof(SmokeDeviceOptions))]
             [LabelText("目标设备")]
             [EnableIf(nameof(InstallAfterBuild))]
@@ -444,7 +449,7 @@ namespace Boot.Editor.Build
                 {
                     _window._profile.SmokeEnabled = false;
                 }
-                _window.RunBuild();
+                _window.RunBuild(ForceFullRebuild);
             }
 
             [Button("刷新"), GUIColor(0.5f, 0.5f, 0.5f)]
@@ -827,7 +832,9 @@ namespace Boot.Editor.Build
                         result.Status == StageStatus.Failed ? "失败" :
                         result.Status == StageStatus.Skipped ? "跳过" : "未知",
                     Duration = FormatDuration(result.DurationMs),
-                    Error = result.ErrorMessage,
+                    Error = result.Status == StageStatus.Skipped
+                        ? result.SkipReason
+                        : result.ErrorMessage,
                 };
             }
         }

@@ -61,6 +61,22 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 改动热更边界时：先改 `HybridCLRSettings.asset`，再确认 `KJHybridClrBuildTools.ValidateRuntimePreloadAssemblyName` 拦截名单（当前 `{Launcher, TestKit}`）；`Launcher` 不得新增任何 Framework/热更引用。
 
+## 构建管线关键契约
+
+- 唯一配置源是 `BuildProfile`，Dashboard 的目标平台不跟随 Unity Build Settings。
+- YooAsset builtin 真包位于 `BundleBuilderHelper.GetStreamingAssetsRoot()/{PackageName}`，当前即 `Assets/StreamingAssets/yoo/DefaultPackage`，禁止硬编码成 `Assets/StreamingAssets/DefaultPackage`。
+- 当前 `DefaultPackage` 只有 `PackRawFile` 收集器，P4 必须使用 `RawFileBuildPipeline + EBundleType.RawBundle`，确保 manifest 与 `.rawfile` 内容类型一致。
+- P3 复用 `KJHybridClrBuildTools.SyncExistingOutputs()`，只同步 HybridCLR 配置声明的 10 个热更 DLL 与 3 个 AOT metadata；不得递归复制整个输出根，也不得删除 P2 生成的裁剪 AOT 目录。
+- Android APK 构建必须事务化关闭 `EditorUserBuildSettings.exportAsGoogleAndroidProject`，结束后恢复原设置。
+- 影响产物的 Stage 代码变更必须递增 `IBuildStage.Version`。本轮将执行的 `ProducesArtifacts` / `Transactional` 依赖必须级联禁止下游跳过。
+
+## Unity 验证职责
+
+- Unity Editor 编译与 TestRunner 由用户执行并反馈结果。Agent 不主动启动、关闭或重启 Unity Editor，也不主动运行 Unity TestRunner。
+- Agent 完成代码修改后，只执行不依赖 Unity 实例的静态检查，并明确列出需要用户验证的 Editor 编译、EditMode/PlayMode 测试或 Player 构建项。
+- 用户反馈的 Unity Editor 编译结果与 TestRunner 结果作为对应验证项的事实依据；除非用户明确要求，不再用第二个 Unity 实例、batchmode 或独立 Roslyn 编译重复验证。
+- 不使用 `dotnet build` 验证 Unity 生成的 `.csproj`；该路径受 Unity Analyzer/Source Generator 与语言版本配置影响，不能替代 Unity Editor 编译。
+
 ## 高性能零分配 & 对象池（ZString / ZLinq / ZLogger / Pool / Cache）
 
 项目已引入 Cysharp Z系库（UPM git + NuGet），并自建了 Pool/Cache 基础模块。详见 `.claude/rules/zero-allocation-libs.md`。
@@ -105,3 +121,6 @@ Boot ──▶ Core ──▶ General ──▶ Project
 ## 新建模块时
 
 加载 `module-scaffold` skill，或查阅 `.planning/目录结构规范.md`。
+
+
+<!-- agentscfg:generated file=CLAUDE.md source=BASE.md sha256=6ad48362fa27dbb32e64d4764896303d1aa501d903bd2fd14936258e44029fb3 -->

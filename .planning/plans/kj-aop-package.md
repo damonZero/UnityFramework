@@ -45,8 +45,8 @@ Source Generator 不承担任意方法织入。它只能新增源码，不能改
 
 优先补齐以下观测能力：
 
-- P2 GenerateAll 内部步骤耗时；
-- P3 DLL 编译、同步和 metadata 处理耗时；
+- P2 DLL、Il2CppDef、link.xml、AOT Strip、MethodBridge、AOT 泛型引用子步骤耗时；
+- P3 DLL/AOT metadata 同步与校验耗时；
 - P4 YooAsset 收集、构建、拷贝耗时；
 - P6 Unity Player、Gradle、IL2CPP 等关键阶段耗时；
 - 外部工具调用的耗时、退出码和超时状态；
@@ -537,7 +537,7 @@ Runtime 接入前必须先决定 `Aop` 程序集属于：
 3. 检查 `ValidateRuntimePreloadAssemblyName` blocklist；
 4. 验证 BootLoader 加载顺序；
 5. 执行 HybridCLR P2-P8 E2E；
-6. 验证旧 Player 与新热更新 DLL 的兼容策略。
+6. 验证当前 Player 与当前热更新 DLL 的完整启动链。
 
 ### 11.4 Runtime 发布门禁
 
@@ -546,10 +546,10 @@ Runtime 接入前必须先决定 `Aop` 程序集属于：
 ```text
 Unity compile
   -> ILPostProcessor
-  -> HybridCLR GenerateAll
+  -> HybridCLR DLL / Il2CppDef / link / AOT Strip
   -> MethodBridge generation
-  -> hot-update DLL compile/sync
-  -> AOT metadata
+  -> AOT generic reference
+  -> hot-update DLL / AOT metadata sync
   -> YooAsset build
   -> IL2CPP Player
   -> Standalone/Android smoke

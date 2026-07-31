@@ -52,7 +52,7 @@
 | Config Table System | Medium | PLANNED — Luban integration, auto-generated classes, fast ID lookup. |
 | Audio Manager | Low-Medium | PLANNED — BGM/SFX/Voice channels, volume control, source pooling. |
 | Singleton/ISystem Infrastructure | Low | DONE — VContainer + ISystem + [CoreSystem] + AsImplementedInterfaces() |
-| Build Pipeline (构建打包管线) | High | DONE — S0-S9 十阶段全量构建管线；`KJBuildPipeline` 编排器 + 续跑标记 + 差量检测 + CI 无头入口；`StageDependencyTracker` + `BuildStagePanel` 可视化管理；经 F1-F6 Review 修正 + 4 轮运行修复 |
+| Build Pipeline (构建打包管线) | High | DONE — BuildProfile-only P0-P9；`BuildPipelineRunner` 使用 SHA-256 内容指纹、依赖级联和跨版本/平台缓存；P2 HybridCLR 六子步骤、P3 单一同步、P4 YooAsset 增量；Dashboard/CI 支持显式强制全量 |
 
 ### Common Modules (expected in mature framework)
 

@@ -102,6 +102,35 @@ namespace Boot.Editor.Build.Tests
         }
 
         [Test]
+        public void BuildProfile_HybridClrHash_IgnoresRuntimeOnlySettings()
+        {
+            var profile = ScriptableObject.CreateInstance<BuildProfile>();
+            string before = profile.ComputeHybridClrProfileHash();
+
+            profile.CdnBaseUrl = "https://cdn.example.invalid";
+            profile.EnableRuntimeLog = !profile.EnableRuntimeLog;
+            profile.SmokeTimeoutSec = 300;
+
+            Assert.AreEqual(before, profile.ComputeHybridClrProfileHash());
+            profile.DevelopmentBuild = !profile.DevelopmentBuild;
+            Assert.AreNotEqual(before, profile.ComputeHybridClrProfileHash());
+        }
+
+        [Test]
+        public void BuildProfile_AssetHash_TracksPackageInputsOnly()
+        {
+            var profile = ScriptableObject.CreateInstance<BuildProfile>();
+            string before = profile.ComputeAssetBuildProfileHash();
+
+            profile.SmokeTimeoutSec = 300;
+            profile.EnableRuntimeLog = !profile.EnableRuntimeLog;
+            Assert.AreEqual(before, profile.ComputeAssetBuildProfileHash());
+
+            profile.PackageName = "ExpansionPackage";
+            Assert.AreNotEqual(before, profile.ComputeAssetBuildProfileHash());
+        }
+
+        [Test]
         public void BuildPaths_DerivesExpectedDirectories()
         {
             var profile = ScriptableObject.CreateInstance<BuildProfile>();
@@ -112,7 +141,8 @@ namespace Boot.Editor.Build.Tests
             Assert.AreEqual("BuildBackup/TestPaths", paths.ArchiveRoot);
             Assert.AreEqual(Path.Combine("BuildBackup/TestPaths", "artifacts"), paths.ArtifactsDir);
             Assert.AreEqual(Path.Combine("BuildBackup/TestPaths", "reports"), paths.ReportsDir);
-            Assert.AreEqual(Path.Combine("BuildBackup/TestPaths", "state"), paths.StateDir);
+            Assert.AreEqual(Path.Combine("BuildBackup/TestPaths", "state", "StandaloneWindows64"), paths.StateDir);
+            Assert.AreEqual(Path.Combine("Library", "KJBuild", "New Profile", "cache", "StandaloneWindows64"), paths.CacheDir);
         }
 
         [Test]

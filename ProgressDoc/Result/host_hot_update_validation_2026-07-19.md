@@ -27,7 +27,7 @@ MissingMethodException: Microsoft.Extensions.Logging.Logger::Log<Core.Systems.Sy
 
 ### 验证状态
 
-待一键打包（含 P2 GenerateAll）→ 设备验证 MissingMethodException 消除。
+待通过 Dashboard 打包（P2 按六子步骤内容指纹自动生成）→ 设备验证 MissingMethodException 消除。
 
 ## 后续步骤
 

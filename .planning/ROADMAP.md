@@ -22,9 +22,9 @@
 | LOG-AI-01 运行日志落盘与会话清单 | `Framework/RuntimeLog/` + `Boot/` + `Core/Logging/` | 独立 RuntimeLog session writer；Boot 早期安装；Core 接入 GameLog/ILogger/ZLogger；输出 JSONL、session 清单、latest 指针 |
 | LOG-AI-02 首版日志收集与 AI 分析入口 | `Assets/Scripts/Core.Editor/Logging/` | `KJ/Runtime Logs/*` 菜单：打开 latest、生成摘要、导出诊断包、清理本地日志 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
-| HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；日常 smoke 走 `Prepare Runtime Assets And Boot`，完整 Editor 闭环走 `Generate All Sync And Prepare Boot`，生产构建统一走 Dashboard P0-P9 |
+| HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；Editor Play 准备走 `Prepare Runtime Assets And Boot`，生产构建统一走 Dashboard P0-P9 的内容感知增量流程 |
 | HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
-| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | BuildProfile-only 配置；`BuildPipelineRunner` Plan 驱动 P0-P9；Profile/Input/Tool/Output/StageVersion fingerprint 与产物/事务依赖级联失效；`BuildTransaction` 回滚 AssetConfig/Defines/ScriptingBackend/build flags/Android Export Project；YooAsset/HybridCLR/Player/Verify/Smoke/Report 全链路。EditMode 74/74 全绿；Android APK E2E 多次通过。Dashboard 中文化 + 热更补丁发布按钮 + 设备选择安装。BuildLogger 统一构建日志（GameLog + Console 双写）。 |
+| Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | BuildProfile-only 配置；`BuildPipelineRunner` Plan 驱动 P0-P9；1.1.0 使用 SHA-256 内容指纹、跨版本/平台隔离缓存和依赖级联；P2 拆分 HybridCLR 六子步骤，P3 不重复编译，P4 复用未变化 YooAsset bundle；Dashboard/CI 可显式强制全量。`BuildTransaction` 回滚配置与 build flags；YooAsset/HybridCLR/Player/Verify/Smoke/Report 全链路。 |
 | AOT 泛型修复 (ZLogger) | `Assets/Scripts/Core/Logging/SimpleLogger.cs` | `SimpleLogger<T>` 替代 `Logger<T>` 注册为 `ILogger<>` 实现，将泛型 `Log<TState>` 展开为字符串调非泛型 `ILogger.Log(string)`，绕过 IL2CPP AOT 侧 `Microsoft.Extensions.Logging.Logger` 泛型实例化边界。待设备验证。 |
 | AOP-PERF-01 打包耗时监控雏形 | `Assets/Framework/Aop/` + `Assets/Scripts/Boot.Editor/Build/Telemetry/` | Editor-only 显式 Observability 首版：单调时钟 Span/session、父子关系、有界 Collector 和故障隔离；监控 P2/P3/P4/P6 内部关键步骤；性能明细进入 build_report JSON/Markdown schema 1.1.0。Unity 编译与定向 EditMode 14/14 通过，真实打包报告待 E2E；Runtime 开放前必须完成 HybridCLR 归属评审。 |
 | Object Pool & Cache 重构 | `Framework/Pool/` + `Framework/Cache/` | `BoundedStore<TKey,TValue>` 替代旧 `Cache`（Put 覆盖两步 Remove+Add、Clear/Remove/淘汰统一 onEvicted、GetOrAdd single-flight、TTL 读路径清理）；`IStoreEvictionPolicy`/`IStoreExpirationPolicy` + `LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`；`ObjectPool<T>` 保持 lock 并发安全，`CollectionPool` 使用 `SingleThreadObjectPool<T>` 主线程热路径；`GameObjectPool` 五字典合并 `PrefabPoolState`+实例库存策略 `IInstanceRecyclePolicy`+反向索引污染检测+[MainThread] 断言；`PoolService.cs` DI 桥接；相关 EditMode 单测全绿 |
@@ -41,7 +41,7 @@
 | Build Pipeline Unity 编译 | Done | Boot.Build.Editor + Tests asmdef | BuildProfile-only 重构后 Unity 编译无错误 |
 | Build Pipeline EditMode | Done | Profile/Transaction/Registry/Report | 74/74 全绿：BuildProfile/BuildPaths/BuildStageRegistry/BuildReportData/BuildTransaction + BoundedStore/GameObjectPool/ObjectPool + HYB-03 15 边界 + ModelLifecycle/RuntimeLog/SystemManager/TestKit |
 | AOP 打包耗时监控 | Android E2E Done | Framework.Aop + P2/P3/P4/P6 + Report | Unity 编译与定向测试 14/14；Android 完整构建报告已验证真实性能 Span、失败状态和 JSON/Markdown 输出 |
-| Build Pipeline Android E2E | Done | P0-P9 | Dashboard P0-P9 多次通过（含 P2 GenerateAll 全量 + P5-P7 Host 基线增量），78.3MB APK；AOT 链验证通过（BootLoader→YooAsset→HybridCLR→Boot→Core→VContainer），但 ZLogger MissingMethodException 未消除（`SimpleLogger<T>` 架构修复待设备验证） |
+| Build Pipeline 1.1 Android E2E | Next | P0-P9 + Report | 依次执行强制全量基线、无变更默认构建、普通热更代码变更构建；确认缓存命中、子步骤 Span、APK 内容与启动链正确 |
 | Build Pipeline Standalone E2E | Next | P0-P9 | 使用默认 BuildProfile 跑一次完整 Standalone IL2CPP 构建与 smoke |
 | Player 打包 smoke | Done (AOT chain) | Boot + HybridCLR + YooAsset + Core | AOT 侧验证通过（AOT metadata/DLL 加载、Hot-update files current、Handing control to hot-update Boot layer、ProjectBootstrapper registration ready）。热更层（Core Systems init、ModelLifecycle、AssetSystem Ready）待 ZLogger AOT 修复后验证 |
 | 热更新行为 smoke | Next | Core/General/Project DLL + 资源 | 基线 APK → 1.0.1 热更补丁发布 → 不重装重启验证 |
@@ -61,7 +61,7 @@
 | Object Pool | Low-Medium | `Framework/Pool/` | Framework.Asset | ✅ 代码已重构完成（见上方"已完成"）；`PoolService.cs` DI 桥接；`BoundedStore` 替代旧 `Cache`；Pool/Cache 相关 EditMode 单测全绿 |
 | PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和注册链路去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
 | LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Framework/Log.Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则；跨层入口才放 `Assets/Editor/` |
-| CI 打包脚本与产物管理 | Low-Medium | 待定（可能 `ci/` 或 `Assets/Editor/`） | Build Pipeline | 代码已有 `BuildFromCommandLine()`（Boot.Editor.Build.KJBuildPipeline），待规划：① 封装为 `ci/build.ps1` 一键脚本（自动定位 Unity 路径、传参、捕获退出码）；② 产物输出路径规范（APK/IPA/Standalone 放到哪里）；③ 版本号/环境自动注入策略；④ 与外部 CI（Jenkins/蓝盾）对接方式 |
+| CI 打包脚本与产物管理 | Low-Medium | 待定（可能 `ci/` 或 `Assets/Editor/`） | Build Pipeline | CI 入口为 `Boot.Editor.Build.BuildCommandLine.Run`，待规划：① 封装为 `ci/build.ps1` 一键脚本（自动定位 Unity 路径、传参、捕获退出码）；② 产物输出路径规范（APK/IPA/Standalone 放到哪里）；③ 版本号/环境自动注入策略；④ 与外部 CI（Jenkins/蓝盾）对接方式 |
 
 ### 配置与数据
 

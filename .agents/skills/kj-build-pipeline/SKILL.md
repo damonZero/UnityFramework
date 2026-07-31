@@ -18,12 +18,9 @@ metadata:
 - 配置：`BuildProfile`
 - 执行：`BuildPipelineRunner`
 - Stage：P0-P9 `IBuildStage`
-- 增量依据：`state/{StageId}.fingerprint.json`
+- 增量依据：`Library/KJBuild/{ProfileName}/cache/{Platform}/{StageId}.fingerprint.json`
 - 临时项目修改：`BuildTransaction`
 - 报告：`BuildReportData` + `BuildReportWriter`
-
-不要恢复或新增 `BuildConfig`、旧 `BuildReport`、`StageDependencyTracker`、
-`.markers`、bool mask 或手动选择部分 Stage 的兼容逻辑。
 
 ## 目录
 
@@ -68,8 +65,8 @@ Assets/Scripts/Boot.Editor/Build/
 ```text
 P0 Plan         — 校验 Profile、BuildPlan、输出目录
 P1 Preflight    — HybridCLR、平台、BootScene、AssetConfig、Android/Formal 预检
-P2 Generate     — HybridCLR GenerateAll、link.xml
-P3 HybridCLR    — 编译热更 DLL、AOT metadata、同步 .dll.bytes
+P2 Generate     — DLL、Il2CppDef、link、AOT Strip、MethodBridge、AOT 泛型引用增量生成
+P3 HybridCLR    — 同步已验证的 DLL/AOT metadata 为 .dll.bytes
 P4 Assets       — YooAsset RawFileBuildPipeline → StreamingAssets
 P5 ApplyConfig  — 事务化写 AssetConfig.Mode 和 Scripting Defines
 P6 Player       — 事务化切 IL2CPP/build flags，BuildPipeline.BuildPlayer
@@ -78,7 +75,7 @@ P8 Smoke        — Standalone/Android 多里程碑启动验证
 P9 Report       — Editor/Runtime 日志归档；Runner 随后写正式报告
 ```
 
-硬顺序：P3 → P4 → P5 → P6 → P7 → P8 → P9。
+硬顺序：P2 → P3 → P4 → P6，P5 必须在 P6 前应用配置。
 
 ## BuildProfile
 
@@ -167,14 +164,14 @@ HybridCLR 热更新程序集边界。
 
 当前监控点：
 
-- P2：HybridCLR GenerateAll
-- P3：清理输出、编译热更新 DLL、同步资源、AssetDatabase Refresh
+- P2：DLL 编译、Il2CppDef、link.xml、AOT Strip、MethodBridge、AOT 泛型引用
+- P3：清理过期文件、同步资源、AssetDatabase Refresh
 - P4：清理 StreamingAssets、YooAsset package build、AssetDatabase Refresh
 - P6：AssetDatabase Refresh、BuildPipeline.BuildPlayer
 
 YooAsset builtin 根必须取 `BundleBuilderHelper.GetStreamingAssetsRoot()`，当前真包路径为
 `Assets/StreamingAssets/yoo/{PackageName}`。P3 必须复用
-`KJHybridClrBuildTools.SyncExistingOutputs()` 精确同步当前平台的 10+3 DLL。
+`KJHybridClrBuildTools.SyncExistingOutputs()` 精确同步当前平台的已配置 DLL，且不得重复编译。
 当前 `DefaultPackage` 只有 `PackRawFile` 收集器，因此 P4 必须使用
 `RawFileBuildPipeline + EBundleType.RawBundle`；不得用
 `ScriptableBuildPipeline + AssetBundle` 生成类型错误的 manifest。
@@ -188,19 +185,17 @@ Runtime smoke 默认读取 `boot.log` 与 `latest.jsonl`。必须命中：
 
 ## 当前验证状态
 
-- Unity Editor 编译：已通过（2026-07-19，含 Aop/Boot.Build.Editor/Tests）
-- 旧配置/报告/marker/mask 文件：已删除
-- AOP/Build Pipeline 定向 EditMode：14/14 全绿
-- Android P0-P9 APK 端到端构建：已通过（2026-07-19，RunId `20260719_131655_9b8295750`）
-- Android + ADB 设备 Runtime smoke：待执行（本轮 Dev 无在线设备，optional smoke 通过）
+- Unity Editor 编译与 TestRunner：用户已确认无错误（2026-07-31）
+- Android 1.1 E2E：待执行“强制全量、无变更、普通热更变化”三轮耗时与缓存验证
+- Android + ADB Runtime smoke：随 1.1 E2E 验证
 - P0-P9 Standalone 端到端构建：待执行
-- Odin Dashboard 手工验证：待执行
+- Odin Dashboard：默认自动增量，支持显式强制全量
 
 ## 修改要求
 
 修改管线代码时同步：
 
-- `AGENTS.md`
+- `.agentscfg/instructions/BASE.md`
 - `.planning/STATE.md`
 - `.planning/ROADMAP.md`
 - `ProgressDoc/Result/hybridclr_workflow.md` §4

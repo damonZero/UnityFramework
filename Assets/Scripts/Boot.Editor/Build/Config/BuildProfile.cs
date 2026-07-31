@@ -165,13 +165,7 @@ namespace Boot.Editor.Build
             return $"{dir}/KJ{ext}";
         }
 
-        public string GetReportDir() => $"{GetOutputDir()}/reports";
-
         public string GetArchiveDir() => $"{GetOutputDir()}/artifacts";
-
-        public string GetLogsDir() => $"{GetOutputDir()}/logs";
-
-        public string GetStateDir() => $"{GetOutputDir()}/state";
 
         /// <summary>
         /// 生成不可变快照哈希 —— 用于指纹计算。
@@ -193,9 +187,8 @@ namespace Boot.Editor.Build
             sb.Append(PackageName); sb.Append('|');
             sb.Append(Channel); sb.Append('|');
             sb.Append(PackageId); sb.Append('|');
-            // Runtime asset config is fingerprinted by P5 through the profile asset itself.
-            // Keep this slot stable so CDN-only changes do not invalidate P2/P3/P4.
-            sb.Append(""); sb.Append('|');
+            sb.Append(AssetMode); sb.Append('|');
+            sb.Append(CdnBaseUrl); sb.Append('|');
             sb.Append(SmokeRequired);
             foreach (var d in ExtraScriptingDefines ?? Array.Empty<string>())
                 { sb.Append('|'); sb.Append(d); }
@@ -203,6 +196,35 @@ namespace Boot.Editor.Build
             using var sha = System.Security.Cryptography.SHA256.Create();
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
             byte[] hash = sha.ComputeHash(bytes);
+            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Only settings that affect HybridCLR generated code. Runtime logging, smoke and CDN
+        /// settings must not invalidate the expensive HybridCLR cache.
+        /// </summary>
+        public string ComputeHybridClrProfileHash()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(Platform).Append('|')
+                .Append(DevelopmentBuild).Append('|')
+                .Append(ScriptDebugging).Append('|')
+                .Append(Environment).Append('|')
+                .Append(EnableGm).Append('|')
+                .Append(EnableDebugUi);
+            foreach (string define in ExtraScriptingDefines ?? Array.Empty<string>())
+                sb.Append('|').Append(define);
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            byte[] hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sb.ToString()));
+            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        }
+
+        /// <summary>Settings that change the YooAsset package contents or manifest.</summary>
+        public string ComputeAssetBuildProfileHash()
+        {
+            string value = $"{Platform}|{VersionName}|{PackageName}|{AssetDownloadTag}";
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            byte[] hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(value));
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
 

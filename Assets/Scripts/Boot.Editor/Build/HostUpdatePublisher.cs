@@ -10,7 +10,7 @@ using YooAsset.Editor;
 namespace Boot.Editor.Build
 {
     /// <summary>
-    /// 热更补丁发布工具。不执行 HybridCLR GenerateAll 或 BuildPlayer。
+    /// 热更补丁发布工具。不执行 P2 HybridCLR 生成或 BuildPlayer。
     /// </summary>
     public static class HostUpdatePublisher
     {
@@ -44,7 +44,7 @@ namespace Boot.Editor.Build
                 FileNameStyle = EFileNameStyle.HashName,
                 VerifyBuildingResult = true,
                 BundledCopyOption = EBundledCopyOption.ClearAndCopyAll,
-                ClearBuildCacheFiles = true,
+                ClearBuildCacheFiles = false,
             };
 
             var result = new RawFileBuildPipeline().Run(parameters, true);

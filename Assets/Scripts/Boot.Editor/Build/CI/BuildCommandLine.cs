@@ -29,7 +29,7 @@ namespace Boot.Editor.Build
                     profile.Platform = (BuildTarget)Enum.Parse(typeof(BuildTarget), args.Platform);
 
                 BuildLogger.Info($"[BuildCI] ========== CI BUILD STARTED: {profile.ProfileName} ==========");
-                var report = KJBuildPipeline.Build(profile);
+                var report = KJBuildPipeline.Build(profile, args.ForceFullRebuild);
 
                 int exitCode = report.AllPassed
                     ? (int)Framework.BuildPipeline.CI.BuildExitCode.Success
@@ -61,6 +61,8 @@ namespace Boot.Editor.Build
                     args.Version = cliArgs[++i];
                 else if (cliArgs[i] == "-outputRoot" && i + 1 < cliArgs.Length)
                     args.OutputRoot = cliArgs[++i];
+                else if (cliArgs[i] == "-full")
+                    args.ForceFullRebuild = true;
             }
 
             return args;
@@ -73,5 +75,6 @@ namespace Boot.Editor.Build
         public string Platform;
         public string Version;
         public string OutputRoot;
+        public bool ForceFullRebuild;
     }
 }

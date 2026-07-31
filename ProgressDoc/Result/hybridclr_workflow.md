@@ -59,7 +59,7 @@ sequenceDiagram
 
 ## 3. 生成文件与存储位置
 
-在使用顶部自动化菜单（`KJ -> HybridCLR -> Generate All Sync And Prepare Boot`）构建时，文件的生成和流转如下：
+生产构建由 `KJ -> Build -> Dashboard` 驱动。P2 会按内容指纹自动判断六个 HybridCLR 子步骤，只有输入或输出变化的子步骤才重新生成；需要忽略全部缓存时显式勾选“强制全量重建”。文件的生成和流转如下：
 
 ### 3.1 原始编译输出（HybridCLR 默认目录）
 HybridCLR 编译后产生的临时文件默认位于项目根目录：
@@ -86,10 +86,20 @@ HybridCLR 编译后产生的临时文件默认位于项目根目录：
 | `KJ → Build → Dashboard` | Odin Dashboard：Profile 查看、预检、构建、Stage/报告/诊断 |
 
 当前权威配置源是 `Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset`。
-旧 `BuildConfig.cs` / `BuildConfig.asset` / `BuildReport.cs` / `StageDependencyTracker.cs`
-以及 `.markers` / mask 续跑机制已删除。增量跳过统一由
-`BuildPipelineRunner` 写入 `state/{StageId}.fingerprint.json` 后按输入、工具、
-Profile 和输出指纹判断。
+增量跳过统一由 `BuildPipelineRunner` 按输入、工具、Profile 和输出的 SHA-256 内容指纹判断。跨版本、
+按平台隔离的 Stage 指纹位于 `Library/KJBuild/{ProfileName}/cache/{Platform}/`；版本化
+`state/` 只保存本次构建计划，不再承担可复用缓存。
+
+默认构建是自动增量模式：
+
+- P2 显式执行热更 DLL 编译、Il2CppDef、link.xml、AOT Strip、MethodBridge、AOT 泛型引用六个子步骤并分别记录 Span。
+- 热更代码变化会先编译 DLL 并生成 link.xml；只有 link/AOT 壳/包依赖/桥接敏感输入变化时才执行昂贵的 AOT Strip 或 MethodBridge。
+- P3 只同步 P2 已验证的 DLL/AOT metadata，不再重复编译热更 DLL。
+- P4 监控完整 `Assets/GameRes/` 与 `BundleCollectorSetting.asset`；默认保留 YooAsset build cache，只重建变化内容。
+- 输入未变但缓存输出被修改或缺失时，输出内容校验会自动使对应 Stage 及其下游失效。
+- Dashboard 勾选「强制全量重建」或 CI 传 `-full` 时忽略所有 Stage/HybridCLR 子步骤缓存，并清理 YooAsset build cache。
+
+管线版本升级到 1.1.0 后，第一次构建用于建立新缓存，仍会执行完整生成；后续构建才体现增量收益。
 
 ### 4.2 构建产物
 
@@ -109,7 +119,7 @@ adb logcat -s Unity:V YooAsset:V Framework:V Boot:V  # 监听日志
 
 详见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`（设计文档 + 实施记录）。
 
-v2 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPipelineV2_开发验证计划.md`。
+1.1 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPipelineV2_开发验证计划.md`。
 
 ### 4.5 当前实现要点
 
@@ -124,4 +134,4 @@ v2 开发执行与验收计划见 `ProgressDoc/Discuss/资源系统/Hy3_BuildPip
 - **Smoke 与日志系统强化**：Runtime smoke 必须收集 `boot.log`、`latest.jsonl`、`latest.session.json`；Formal/Audit 不允许因缺 adb/缺设备而静默通过。
 - **事务回滚**：`BuildTransaction` 统一快照并回滚 `AssetConfig`、Scripting Defines、ScriptingBackend、Editor build flags。
 - **指纹级联**：Stage 实现以 `IBuildStage.Version` 参与指纹；本轮执行的产物或事务依赖会强制下游执行，防止 P3 更新后 P4/P6 误用旧包。
-- **打包耗时监控**：Editor-only、非 auto-reference 的 `Framework.Aop` 提供单调时钟 Span/session 和有界 Collector；P2 GenerateAll、P3 HybridCLR 编译同步、P4 YooAsset 构建、P6 BuildPlayer 等关键步骤通过 `BuildTelemetry` 显式采集。Collector 失败与构建隔离，明细按耗时排序写入 JSON/Markdown；2026-07-19 Android P0-P9 RunId `20260719_131655_9b8295750` 已验证真实数据。当前不进入 Player，不改变 HybridCLR 程序集边界。
+- **打包耗时监控**：Editor-only、非 auto-reference 的 `Framework.Aop` 提供单调时钟 Span/session 和有界 Collector；P2 的 DLL 编译、Il2CppDef、link.xml、AOT Strip、MethodBridge、AOT 泛型引用，以及 P3 同步、P4 YooAsset、P6 BuildPlayer 均通过 `BuildTelemetry` 显式采集。Collector 失败与构建隔离，明细按耗时排序写入 JSON/Markdown；2026-07-19 Android P0-P9 RunId `20260719_131655_9b8295750` 是改造前全量基线，1.1.0 增量基线待重新采集。

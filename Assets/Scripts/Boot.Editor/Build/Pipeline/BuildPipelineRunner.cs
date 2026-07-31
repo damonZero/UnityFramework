@@ -19,6 +19,7 @@ namespace Boot.Editor.Build
     /// </summary>
     public class BuildPipelineRunner
     {
+        private const string PipelineVersion = "1.1.0";
         private readonly BuildContext _ctx;
         private readonly List<StageExecutionResult> _stageResults = new List<StageExecutionResult>();
         private bool _allPassed = true;
@@ -71,7 +72,7 @@ namespace Boot.Editor.Build
                     }
 
                     var planEntry = _ctx.Plan.Entries.Find(e => e.StageId == stage.Id);
-                    var result = ExecuteStage(stage, planEntry?.WillSkip ?? false);
+                    var result = ExecuteStage(stage, planEntry);
 
                     if (!result.Passed && stage.Policy.HasFlag(BuildStagePolicy.Required))
                     {
@@ -109,7 +110,7 @@ namespace Boot.Editor.Build
 
         // ===== Stage 执行 =====
 
-        private StageExecutionResult ExecuteStage(IBuildStage stage, bool planSaysSkip)
+        private StageExecutionResult ExecuteStage(IBuildStage stage, BuildPlanEntry planEntry)
         {
             BuildLogger.Info($"[BuildPipelineRunner] === {stage.Id}: {stage.DisplayName} ===");
             long startedTimestamp = Stopwatch.GetTimestamp();
@@ -123,10 +124,11 @@ namespace Boot.Editor.Build
 
             try
             {
-                if (planSaysSkip)
+                if (planEntry?.WillSkip == true)
                 {
                     result.Status = StageStatus.Skipped;
-                    result.SkipReason = "Plan indicated skip";
+                    result.SkipReason = planEntry.SkipHumanReason;
+                    BuildLogger.Info($"[BuildPipelineRunner] {stage.Id} CACHED: {result.SkipReason}");
                     _stageResults.Add(result);
                     return result;
                 }
@@ -185,13 +187,19 @@ namespace Boot.Editor.Build
             foreach (var stage in stages)
             {
                 var previous = LoadPreviousFingerprint(stage.Id);
-                var decision = stage.CanSkip(_ctx, previous);
+                var decision = _ctx.ForceFullRebuild
+                    ? BuildSkipDecision.DoNotSkip("Manual full rebuild requested")
+                    : stage.CanSkip(_ctx, previous);
                 if (decision.CanSkip)
                 {
-                    var current = ComputeStageFingerprint(stage, includeOutputs: false);
+                    var current = ComputeStageFingerprint(stage, includeOutputs: true);
                     if (!current.Matches(previous))
                     {
                         decision = BuildSkipDecision.DoNotSkip("Input, tool, profile, or pipeline fingerprint changed");
+                    }
+                    else if (!string.Equals(current.OutputsHash, previous.OutputsHash, StringComparison.Ordinal))
+                    {
+                        decision = BuildSkipDecision.DoNotSkip("Cached output content changed");
                     }
                 }
 
@@ -236,7 +244,7 @@ namespace Boot.Editor.Build
 
         private BuildStageFingerprint LoadPreviousFingerprint(string stageId)
         {
-            string fingerprintPath = Path.Combine(_ctx.Paths.StateDir, $"{stageId}.fingerprint.json");
+            string fingerprintPath = Path.Combine(_ctx.Paths.CacheDir, $"{stageId}.fingerprint.json");
             if (!File.Exists(fingerprintPath)) return null;
             try
             {
@@ -252,7 +260,7 @@ namespace Boot.Editor.Build
 
             try
             {
-                string fingerprintPath = Path.Combine(_ctx.Paths.StateDir, $"{stage.Id}.fingerprint.json");
+                string fingerprintPath = Path.Combine(_ctx.Paths.CacheDir, $"{stage.Id}.fingerprint.json");
                 File.WriteAllText(fingerprintPath, JsonUtility.ToJson(fp, true));
             }
             catch (Exception ex)
@@ -264,7 +272,8 @@ namespace Boot.Editor.Build
         private BuildStageFingerprint ComputeStageFingerprint(IBuildStage stage, bool includeOutputs)
         {
             var inputs = stage.GetInputs(_ctx);
-            inputs.ProfileHash = _ctx.Profile.ComputeProfileHash();
+            if (string.IsNullOrEmpty(inputs.ProfileHash))
+                inputs.ProfileHash = _ctx.Profile.ComputeProfileHash();
             inputs.WithToolVersion("Unity", Application.unityVersion);
 
             var outputs = stage.GetExpectedOutputs(_ctx);
@@ -272,7 +281,7 @@ namespace Boot.Editor.Build
             return new BuildStageFingerprint
             {
                 StageId = stage.Id,
-                PipelineVersion = "1.0.0",
+                PipelineVersion = PipelineVersion,
                 StageVersion = stage.Version,
                 ProfileHash = inputs.ProfileHash,
                 InputsHash = HashInputs(inputs),
@@ -322,7 +331,7 @@ namespace Boot.Editor.Build
                 var fi = new FileInfo(path);
                 sb.Append("file:").Append(normalized).Append('|')
                     .Append(fi.Length).Append('|')
-                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                    .Append(ComputeFileHash(path)).Append('\n');
                 return;
             }
 
@@ -339,8 +348,15 @@ namespace Boot.Editor.Build
                 var fi = new FileInfo(file);
                 sb.Append("file:").Append(file.Replace('\\', '/')).Append('|')
                     .Append(fi.Length).Append('|')
-                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                    .Append(ComputeFileHash(file)).Append('\n');
             }
+        }
+
+        private static string ComputeFileHash(string path)
+        {
+            using var stream = File.OpenRead(path);
+            using var sha = SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
         }
 
         private static string Sha256(string text)
@@ -361,7 +377,7 @@ namespace Boot.Editor.Build
             {
                 SchemaVersion = "1.1.0",
                 RunId = _ctx.RunId,
-                PipelineVersion = "1.0.0",
+                PipelineVersion = PipelineVersion,
                 ProfileName = _ctx.Profile?.ProfileName,
                 Platform = _ctx.Profile?.Platform.ToString(),
                 Environment = _ctx.Profile?.Environment.ToString(),
@@ -571,7 +587,7 @@ namespace Boot.Editor.Build
     {
         public string SchemaVersion = "1.1.0";
         public string RunId;
-        public string PipelineVersion = "1.0.0";
+        public string PipelineVersion = "1.1.0";
         public string ProfileName;
         public string Platform;
         public string Environment;

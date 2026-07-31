@@ -18,7 +18,7 @@
 - **属性优先**：能组合 Odin 属性就不写 `CustomEditor`/`PropertyDrawer`
 - **无副作用**：`[ShowInInspector]` getter 不触发逻辑、`[Button]` 回调不做 Runtime 状态修改
 - **性能**：`[ShowInInspector]` getter 不重计算；`[ValueDropdown]` 数据源缓存；`[TableList]` 超 100 项加分页
-- **现有工具不强制迁移**：`BuildStagePanel`、`RuntimeLogEditorTools`、`KJHybridClrBuildTools` 保持现状，新增/重写时再用 Odin
+- **现有工具不强制迁移**：`RuntimeLogEditorTools`、`KJHybridClrBuildTools` 保持现状，新增/重写时再用 Odin；构建界面统一使用 `BuildDashboardWindow`
 - `#if UNITY_EDITOR` 不应散落——Editor 逻辑放 `*.Editor.asmdef`
 
 ## 参考

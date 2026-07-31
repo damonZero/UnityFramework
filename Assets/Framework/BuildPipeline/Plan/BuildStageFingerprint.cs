@@ -14,7 +14,7 @@ namespace Framework.BuildPipeline.Plan
         public string StageId;
 
         /// <summary>Pipeline 版本</summary>
-        public string PipelineVersion = "1.0.0";
+        public string PipelineVersion = "1.1.0";
 
         /// <summary>Stage 自身版本（代码变更时递增）</summary>
         public int StageVersion = 1;

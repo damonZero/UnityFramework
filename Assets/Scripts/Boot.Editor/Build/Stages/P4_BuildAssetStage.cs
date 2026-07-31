@@ -17,7 +17,7 @@ namespace Boot.Editor.Build
     {
         public override string Id => "P4.Assets";
         public override string DisplayName => "Build YooAsset Bundles";
-        public override int Version => 3;
+        public override int Version => 4;
         public override int Order => 4;
         public override string Category => "YooAsset";
         public override IReadOnlyList<string> DependsOn { get; } = new[] { "P3.HybridCLR" };
@@ -25,9 +25,13 @@ namespace Boot.Editor.Build
             BuildStagePolicy.Required | BuildStagePolicy.ProducesArtifacts;
 
         public override BuildStageInputs GetInputs(BuildContext context)
-            => new BuildStageInputs()
-                .WithSourcePaths("Assets/GameRes/HotUpdate/")
+        {
+            var inputs = new BuildStageInputs()
+                .WithSourcePaths("Assets/GameRes/", "Assets/BundleCollectorSetting.asset")
                 .WithDependsOn("P3.HybridCLR");
+            inputs.ProfileHash = context.Profile.ComputeAssetBuildProfileHash();
+            return inputs;
+        }
 
         public override BuildStageOutputs GetExpectedOutputs(BuildContext context)
         {
@@ -70,7 +74,7 @@ namespace Boot.Editor.Build
                 FileNameStyle = EFileNameStyle.HashName,
                 VerifyBuildingResult = true,
                 BundledCopyOption = EBundledCopyOption.ClearAndCopyAll,
-                ClearBuildCacheFiles = true,
+                ClearBuildCacheFiles = context.ForceFullRebuild,
             };
 
             var pipeline = new RawFileBuildPipeline();

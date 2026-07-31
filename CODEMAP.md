@@ -101,17 +101,15 @@ References: `Boot`, `Asset`, `Framework.Asset.Editor`, `HybridCLR.Editor`, `YooA
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
-| `KJHybridClrBuildTools.cs` | `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` | `static KJHybridClrBuildTools` | `KJ/HybridCLR/*` menu commands: Prepare/Compile/Generate/Sync/Validate | HybridCLR, YooAsset Editor |
-| `KJBuildPipeline.cs` | `Assets/Scripts/Boot.Editor/Build/KJBuildPipeline.cs` | `static KJBuildPipeline` | S0–S9 stage orchestrator. `Build()` / `BuildWithMask()` / `IncrementalBuild()`. `KJ/Build/*` menu. | Build stages |
-| `StageDependencyTracker.cs` | `Assets/Scripts/Boot.Editor/Build/StageDependencyTracker.cs` | `StageDependencyTracker` | Change detection engine. Monitors `Assets/Scripts/**/*.cs` (S1/S2), `Assets/GameRes/HotUpdate/**` (S4), `Assets/Resources/AssetConfig.asset` (S5). Cascade: S1→S2→S3→S4→S6, S5→S6 independent. | none |
-| `BuildStagePanel.cs` | `Assets/Scripts/Boot.Editor/Build/BuildStagePanel.cs` | `BuildStagePanel : EditorWindow` | Visual build stage manager. Auto-detection checkboxes + "增量构建"/"全量构建" buttons. | KJBuildPipeline |
-| `BuildConfig.cs` | `Assets/Scripts/Boot.Editor/Build/BuildConfig.cs` | `BuildConfig : ScriptableObject` | Serializable build configuration: Platform, BuildType, output paths. | none |
-| `StageBuildYooAsset.cs` | `Assets/Scripts/Boot.Editor/Build/StageBuildYooAsset.cs` | (static methods) | YooAsset production build via `ScriptableBuildPipeline` → `StreamingAssets/`. | YooAsset.Editor |
-| `StageApplyConfig.cs` | `Assets/Scripts/Boot.Editor/Build/StageApplyConfig.cs` | (static methods) | Direct YAML write `AssetConfig.Mode = Offline` + SetDirty/SaveAssets/Refresh + rollback. | none |
-| `StageBuildPlayer.cs` | `Assets/Scripts/Boot.Editor/Build/StageBuildPlayer.cs` | (static methods) | `BuildPipeline.BuildPlayer` with IL2CPP + Android. | UnityEditor |
-| `StageSmokeRun.cs` | `Assets/Scripts/Boot.Editor/Build/StageSmokeRun.cs` | (static methods) | ADB install + logcat capture + `latest.jsonl` boot chain verification. | ADB |
-| `StageValidateArtifacts.cs` | `Assets/Scripts/Boot.Editor/Build/StageValidateArtifacts.cs` | (static methods) | Verify APK exists, StreamingAssets contains bundles. | none |
-| `PlayerBuildPrivatePathValidator.cs` | `Assets/Scripts/Boot.Editor/Build/PlayerBuildPrivatePathValidator.cs` | `PlayerBuildPrivatePathValidator` | Blocks Player builds when Build Settings/Resources/StreamingAssets contain `_` prefix segments. | none |
+| `KJHybridClrBuildTools.cs` | `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` | `static KJHybridClrBuildTools` | Editor Play asset preparation, sync and validation menus | HybridCLR, YooAsset Editor |
+| `KJBuildPipeline.cs` | `Assets/Scripts/Boot.Editor/Build/KJBuildPipeline.cs` | `static KJBuildPipeline` | BuildProfile-only facade for default incremental or explicit full P0-P9 builds | BuildPipelineRunner |
+| `BuildPipelineRunner.cs` | `Assets/Scripts/Boot.Editor/Build/Pipeline/BuildPipelineRunner.cs` | `BuildPipelineRunner` | Plans and executes P0-P9; SHA-256 fingerprints, dependency invalidation, rollback and reports | Framework.BuildPipeline |
+| `BuildProfile.cs` | `Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.cs` | `BuildProfile : ScriptableObject` | Single configuration source for environment, platform, build, YooAsset, smoke and output | UnityEditor |
+| `P2_GenerateStage.cs` | `Assets/Scripts/Boot.Editor/Build/Stages/P2_GenerateStage.cs` | `P2_GenerateStage` | HybridCLR DLL/Il2CppDef/link/AOT Strip/MethodBridge/AOT generic reference generation with substep cache | HybridCLR.Editor |
+| `P3_HybridCLRStage.cs` | `Assets/Scripts/Boot.Editor/Build/Stages/P3_HybridCLRStage.cs` | `P3_HybridCLRStage` | Synchronizes and verifies already-generated DLL/AOT metadata assets | KJHybridClrBuildTools |
+| `P4_BuildAssetStage.cs` | `Assets/Scripts/Boot.Editor/Build/Stages/P4_BuildAssetStage.cs` | `P4_BuildAssetStage` | Incremental YooAsset RawFile production build to StreamingAssets | YooAsset.Editor |
+| `BuildDashboardWindow.cs` | `Assets/Scripts/Boot.Editor/Build/UI/BuildDashboardWindow.cs` | `BuildDashboardWindow` | Single manual build UI; default content validation plus explicit full rebuild | Odin Editor |
+| `BuildCommandLine.cs` | `Assets/Scripts/Boot.Editor/Build/CI/BuildCommandLine.cs` | `BuildCommandLine` | Single batchmode entry; supports `-profile` and `-full` | BuildPipelineRunner |
 
 ### Layer: Core (Assembly: `KJ.Core`, Namespace: `Core`)
 
@@ -280,16 +278,15 @@ References: Log (`noEngineReferences=true`)
 
 ### HybridCLR Editor Tooling
 - `Assets/Scripts/Boot.Editor/HybridCLR/KJHybridClrBuildTools.cs` provides `KJ/HybridCLR/*` menus.
-- `Assets/Scripts/Boot.Editor/Build/PlayerBuildPrivatePathValidator.cs` blocks `_` prefix in build paths.
 - `Prepare Runtime Assets And Boot` is the normal smoke-test path for Editor Play.
 - `Prepare YooAsset Editor Simulate Package` rebuilds the editor-simulate virtual package.
-- `Generate All And Sync` is the full formal-build preparation (heavy).
+- Production builds use the Dashboard P0-P9 pipeline; P2 validates six HybridCLR substeps independently.
 
-### Build Pipeline (KJ/Build/* menus)
-- S0: Environment Check → S1: Compile HotUpdate DLLs → S2: Generate AOT Metadata → S3: Sync to HotUpdate → S4: Build YooAsset → S5: Apply Config → S6: Build Player → S7: Validate → S8: Smoke → S9: Post-Build
-- Stage markers in `Build/Android/` prevent re-running completed stages.
-- `StageDependencyTracker` does change detection for incremental builds.
-- `BuildStagePanel` (`KJ → Build → Build Stage Manager...`) provides visual control.
+### Build Pipeline (`KJ/Build/Dashboard`)
+- P0 Plan → P1 Preflight → P2 Generate → P3 HybridCLR Sync → P4 Assets → P5 ApplyConfig → P6 Player → P7 Verify → P8 Smoke → P9 Report.
+- `Library/KJBuild/{ProfileName}/cache/{Platform}/` stores SHA-256 Stage and P2 substep fingerprints.
+- Default builds validate changes automatically; the Dashboard and CI `-full` option explicitly ignore caches.
+- P3 never recompiles DLLs; P4 monitors all GameRes and preserves YooAsset build cache unless full rebuild is selected.
 
 ### YooAsset Editor Rules
 - `Assets/Framework/Asset.Editor/YooAsset/KJAssetIgnoreRule.cs` ignores `_` prefix path segments.
@@ -480,4 +477,4 @@ AOT-only: `Launcher` (never in hotUpdateAssemblies).
 
 ---
 
-*End of Codemap — aligned to code as of 2026-07-08*
+*End of Codemap — build pipeline section aligned to code as of 2026-07-31*

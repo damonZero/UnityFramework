@@ -41,6 +41,9 @@ namespace Boot.Editor.Build
         /// <summary>是否已请求取消</summary>
         public bool IsCancellationRequested { get; set; }
 
+        /// <summary>忽略阶段和 HybridCLR 子步骤缓存，执行完整重建。</summary>
+        public bool ForceFullRebuild { get; set; }
+
         public void AddIssue(BuildIssue issue)
         {
             Issues.Add(issue);

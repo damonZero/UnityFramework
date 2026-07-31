@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v4.10.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-07-19T15:00:00.000Z"
+last_updated: "2026-07-31T00:00:00.000Z"
 ---
 
 # Project State: KJ Unity Framework
@@ -38,12 +38,12 @@ last_updated: "2026-07-19T15:00:00.000Z"
 - [x] HYB-01: HybridCLR 最小加载闭环代码落地（Boot 加载 AOT metadata + Core/General/Project DLL 后反射调用 ProjectStartup；Unity Editor/Player 验证待 HYB-02 工具链）
 - [x] HYB-02A: 热更构建同步工具（`KJ/HybridCLR/*` Editor 菜单：生成/编译 HybridCLR 产物，同步 `.dll.bytes` RawFile，维护 YooAsset collector，回写打开的 Entry 序列化配置；日常 smoke 与完整构建前生成已拆分；工具归属 `Assets/Scripts/Boot.Editor/HybridCLR/`）
 - [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
-- [x] PKG-00: 构建打包全流程管线设计（S0–S9 全阶段编排，见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`）
+- [x] PKG-00: 构建打包全流程管线设计（BuildProfile-only P0-P9 编排，见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`）
 - [x] PKG-01: KJBuildPipeline 编排器入口（`Build(BuildProfile)` + 默认 Profile 菜单 + CI）
 - [x] PKG-02: YooAsset 生产构建 Stage（当前 `DefaultPackage` 为纯 RawFile，使用 `RawFileBuildPipeline + RawBundle` → StreamingAssets；与旧 `EditorSimulateBuildInvoker` 不同 API）
 - [x] PKG-03: AssetConfig.Mode 直接 YAML 写入 + 回滚（`StageApplyConfig.cs`：设 Offline 后保存三连，构建完成后 `RollbackAssetConfig()` 恢复 Editor 状态）
 - [x] PKG-04: BuildPlayer + Gradle 编译（`StageBuildPlayer.cs`：IL2CPP Android）
-- [x] PKG-05: fingerprint 增量构建（`BuildPipelineRunner`：Profile/Input/Tool/Output 指纹；成功后写 `state/{StageId}.fingerprint.json`）
+- [x] PKG-05: fingerprint 增量构建（`BuildPipelineRunner`：Profile/Input/Tool/Output SHA-256 内容指纹；跨版本、按平台隔离缓存写入 `Library/KJBuild/{Profile}/cache/{Platform}/`）
 - [x] PKG-06: 构建管理界面（Odin Dashboard 单一人工入口；不提供手动 mask/marker）
 - [x] PKG-07: APK 冒烟验证（`StageSmokeRun.cs`：ADB 安装 + logcat 监听 + `latest.jsonl` 启动链验证）
 - [x] PKG-08: 产物校验（`StageValidateArtifacts.cs`：APK 存在 + StreamingAssets 内容完整性）
@@ -67,7 +67,7 @@ last_updated: "2026-07-19T15:00:00.000Z"
 - [x] PLATFORM-03: SimpleLogger<T> 替换 Logger<T>（Core 层新增 `SimpleLogger<T>` 实现 `ILogger<T>`，将泛型 `Log<TState>` 展开为字符串后调非泛型 `ILogger.Log(string)`，绕过 AOT 侧 `Microsoft.Extensions.Logging.Logger` 的泛型实例化边界）。
 - [x] PLATFORM-04: `.gitignore` 生成产物规则（屏蔽 `GameRes/HotUpdate/**/*.bytes`、`StreamingAssets/yoo/`、`*.csproj`、`TestResults.xml`，防止构建生成物混入版本库）。
 - [x] PKG-16: P8 Smoke 设备解析强化（`ResolveDevice` 先验证指定设备是否在线，不在线则自动回落检测第一个在线设备，不再写死 MuMu 地址）。
-- [x] PKG-17: KJBuildPipeline 扩展 CI 入口（`BuildP2ThenHostBaseline` — P2 GenerateAll + P3-P7 完整链路；`BuildHostBaselineFromCommandLine` — 跳过 P2 的 Host 基线）。
+- [x] PKG-18: 构建管线 1.1.0 内容感知增量优化（P2 拆分 DLL/Il2CppDef/link/AOT Strip/MethodBridge/AOTGenericReference 子步骤缓存；P3 删除重复编译；P4 全 GameRes + collector 指纹并默认保留 YooAsset build cache；Dashboard/CI 支持强制全量）。用户确认 Editor 编译与 TestRunner 无报错；真实“全量基线→无变更增量→热更代码增量”耗时待 E2E 采集。
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -101,8 +101,8 @@ Assets/Scripts/
 │   │   ├── Stages/
 │   │   │   ├── P0_PlanStage.cs        ← P0: Profile/BuildPlan/输出目录
 │   │   │   ├── P1_PreflightStage.cs   ← P1: 环境与约束预检
-│   │   │   ├── P2_GenerateStage.cs    ← P2: HybridCLR GenerateAll
-│   │   │   ├── P3_HybridCLRStage.cs   ← P3: DLL/AOT metadata 编译同步
+│   │   │   ├── P2_GenerateStage.cs    ← P2: HybridCLR 六子步骤内容感知增量生成
+│   │   │   ├── P3_HybridCLRStage.cs   ← P3: 已验证 DLL/AOT metadata 同步（不重复编译）
 │   │   │   ├── P4_BuildAssetStage.cs  ← P4: YooAsset 生产构建
 │   │   │   ├── P5_ApplyConfigStage.cs ← P5: 事务化运行时配置
 │   │   │   ├── P6_BuildPlayerStage.cs ← P6: IL2CPP Player 构建
@@ -363,17 +363,14 @@ Phase 2 规划：
 
 ## 最新验证记录
 
+- 2026-07-31: **PKG-18 构建管线 1.1.0 增量优化落地**：P2 拆分并缓存 CompileDll/Il2CppDef/link.xml/AOT Strip/MethodBridge/AOTGenericReference；Stage 输入输出改用 SHA-256 内容指纹并跨版本、按平台缓存；P3 删除重复 DLL 编译；P4 默认复用 YooAsset build cache；Dashboard/CI 增加显式全量模式。用户确认 Editor 编译与 TestRunner 无报错；真实增量耗时待 E2E 报告。
 - 2026-07-20: **PLATFORM-01~04 落地**：构建管线全部 19 个文件统一使用 `BuildLogger`（GameLog + Unity Console 双写）；Dashboard 中文化并集成热更补丁发布按钮和设备安装勾选；`SimpleLogger<T>` 实现落地 Core 层，`CoreContainerRegistration` 改用 `SimpleLogger<>` 替代 `Logger<>` 注册 `ILogger<>`，从架构层面绕过 IL2CPP AOT 泛型实例化边界。
 - 2026-07-19: **BUGFIX-05/06 修复**：YooAsset Sandbox/Builtin 文件系统参数修复——`BootLoader` 和 `AssetRuntime` 中 `CreateDefaultBuiltinFileSystemParameters()` 和 `CreateDefaultSandboxFileSystemParameters()` 不再错误地把 `packageName` 当 `packageRoot` 传递，解决设备端 Host 模式 "Read-only file system" 错误。P8 ADB pull 路径修复——`pull PATH/Runtime localDir` 导致文件嵌套一层，改为 `pull PATH/Runtime/. localDir` 展平。设备验证：BootLoader→YooAsset→HybridCLR→Boot→Core→VContainer AOT 链全部通过（AOT metadata/DLL 加载、Hot-update files current、Handing control to hot-update Boot layer、ProjectBootstrapper registration ready）。但 MissingMethodException `Logger.Log<TState>` 未消除（Architecture 层面：`Logger<T>` 在 AOT 侧 DLL，HybridCLR 无法穿透其泛型实例化）。
-- 2026-07-19: **Android P0-P9 E2E 通过**：Dashboard 构建多次通过（含 P2 GenerateAll 全量 + P5-P7 Host 基线增量）。修复 P4/P7 YooAsset `StreamingAssets/yoo` 路径、P6 Gradle Export 状态泄漏、P3 AOT 清理与重复同步实现、StageVersion 与下游级联失效。
 - 2026-07-19: **AOP-PERF-01 打包耗时监控雏形落地**：新增 `Aop.asmdef` 纯 C# 单调时钟 Span、session、父子关系、有界内存 Collector 和故障隔离；`BuildPipelineRunner` 管理会话并将 P2/P3/P4/P6 内部步骤写入 `BuildReportData.PerformanceSpans`，JSON/Markdown schema 升至 1.1.0；Unity batchmode 编译通过，`Boot.Editor.Build.Tests` 14/14 全绿（含 5 个 AOP/报告新用例）。完整 P0-P9 打包耗时数据仍待 Standalone/Android E2E。
-- 2026-07-10: **构建管线单架构收敛 + Unity 编译通过**：删除旧 `BuildConfig.cs/.asset`、旧 `BuildReport.cs`、`StageDependencyTracker.cs`、marker/mask 入口；配置统一为 `BuildProfile`，执行统一为 `BuildPipelineRunner` P0-P9；实现真实 Profile/Input/Tool/Output fingerprint；`BuildConfigTransaction` 重命名并强化为 `BuildTransaction`，统一回滚 AssetConfig、Defines、ScriptingBackend、Editor build flags；修复 P0 初始化、P9 报告顺序、Formal/Audit mandatory smoke、测试 asmdef 引用。用户确认 Unity 编译无错误。待 EditMode、Standalone P0-P9 E2E、Android ADB smoke。
-- 2026-07-09: **构建管线工业级重构落地**：PKG-09~PKG-14 全部代码完成 + Unity 编译通过。删除旧 S0-S9 static 方法（StagePreFlightCheck/StageGenerateAll/StageCompile/StageSync/StageBuildYooAsset/StageApplyConfig/StageBuildPlayer/StageValidateArtifacts/StageSmokeRun/StageReport + AndroidToolResolver + PlayerBuildPrivatePathValidator）。`KJBuildPipeline.cs` 重写为委托 `BuildPipelineRunner`，`BuildDashboardWindow` 新增 Odin 六视图面板；兼容 `BuildStagePanel` 后于 2026-07-17 删除，人工入口收敛为 Dashboard。
-- 2026-07-08: 构建打包全流程管线 PKG-00~08 落地：`KJBuildPipeline.cs` S0–S9 全阶段编排、`StageBuildYooAsset` 生产构建（`ScriptableBuildPipeline`，非旧 `EditorSimulateBuildInvoker`）、`StageApplyConfig` YAML 直写 `AssetConfig.Mode=Offline`+回滚、`StageBuildPlayer` IL2CPP Android、`StageValidateArtifacts` 产物校验、`StageSmokeRun` ADB 冒烟验证、`StageDependencyTracker` 变更检测级联、`BuildStagePanel` 可视化管理面板、`BuildConfig` 构建配置。
+- 2026-07-10: **构建管线单架构收敛 + Unity 编译通过**：配置统一为 `BuildProfile`，执行统一为 `BuildPipelineRunner` P0-P9；实现真实 Profile/Input/Tool/Output fingerprint；`BuildTransaction` 统一回滚 AssetConfig、Defines、ScriptingBackend、Editor build flags；修复 P0 初始化、P9 报告顺序、Formal/Audit mandatory smoke、测试 asmdef 引用。用户确认 Unity 编译无错误。待 EditMode、Standalone P0-P9 E2E、Android ADB smoke。
 - 2026-07-08: BUGFIX-01 — 修复 YooAsset APK EditorFileSystem 错误：`StageApplyConfig` 从 ScriptableObject API（SetDirty+SaveAssets）改为 YAML 正则直写 `Mode: 0→Mode: 1` + `ImportAsset(ForceSynchronousImport)`，消除 `AssetDatabase.Refresh` 竞态。
 - 2026-07-08: BUGFIX-02 — 修复 BuiltinFileSystem URI 格式错误：`BootLoader` 不再传 `packageName` 给 `CreateDefaultBuiltinFileSystemParameters`，改用无参重载取 `GetDefaultBuiltinPackageRoot()` 自动计算 `jar:file://` 路径。
 - 2026-07-08: DOC-01 — 文档对齐：更新 `CODEMAP.md`（HYB-03 裂变后文件路径/启动流/依赖矩阵）、`AGENTS.md`（新增构建管线章节）、`STATE.md`（新增 PKG-* 和 BUGFIX-* 项）、`hybridclr_workflow.md` §4（构建管线入口）。
-- 2026-07-08: 全量构建已在 Gradle 编译阶段（S1 MethodBridge 迭代 10/10）；`maxMethodBridgeGenericIteration` 保持 10 层（参考旧项目 `KJBuildSettings.cs`）。
 - 2026-07-07: HYB-03 热更边界裂变已实现并验证。EditMode 全工程 **45/45 全绿**。
 - 2026-07-05: 用户确认 Unity 编译与 Editor Play 无报错。
 

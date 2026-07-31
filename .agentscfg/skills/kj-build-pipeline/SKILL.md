@@ -3,7 +3,7 @@ name: kj-build-pipeline
 description: >
   KJ 构建打包全流程管线（Boot.Build.Editor + Framework.BuildPipeline）。覆盖 P0-P9 IBuildStage 插件化管线（Plan→Preflight→Generate→HybridCLR→BuildAsset→ApplyConfig→BuildPlayer→Verify→Smoke→Report）、BuildProfile 多环境配置（Dev/QA/Profiling/Audit/Formal）、BuildPipelineRunner Plan 驱动编排器 + 事务系统、BuildIssue 结构化诊断 + BuildErrorCodes 稳定错误码、SmokeLogParser 多里程碑冒烟判定、FormalLeakageVerifier 发布包泄露检查、BuildDashboardWindow Odin 六视图面板、BuildCommandLine CI 无头入口。触发场景：Player 打包、CI 构建、增量构建排查、Profile 配置、冒烟调试、产物校验、AI 诊断。
 metadata:
-  doc: ProgressDoc/Discuss/Hy3_构建打包全流程管线_需求分析与设计.md
+  doc: ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md
   layer: Boot.Editor + Framework.BuildPipeline
   asmdef: Boot.Build.Editor, Framework.BuildPipeline
 ---
@@ -39,7 +39,7 @@ Assets/Framework/BuildPipeline/              — 纯契约程序集
 
 Assets/Scripts/Boot.Editor/Build/              — Editor 执行层
 ├── Config/
-│   ├── BuildProfile.cs                        — ScriptableObject 多环境配置（替代旧 BuildConfig）
+│   ├── BuildProfile.cs                        — ScriptableObject 多环境唯一配置源
 │   ├── BuildProfileValidator.cs               — Formal/Audit 强约束校验
 │   └── BuildProfileSet.cs                     — Profile 集合
 ├── Pipeline/
@@ -51,12 +51,12 @@ Assets/Scripts/Boot.Editor/Build/              — Editor 执行层
 │   ├── BuildStagePolicy.cs                    — Stage 策略标志
 │   ├── BuildStageRegistry.cs                  — Stage 注册/排序/依赖验证
 │   ├── BuildPipelineRunner.cs                 — Plan 驱动编排器 + 报告写入
-│   └── BuildConfigTransaction.cs              — 事务系统（文件/PlayerSettings snapshot + rollback）
+│   └── BuildTransaction.cs                    — 事务系统（文件/PlayerSettings snapshot + rollback）
 ├── Stages/
 │   ├── P0_PlanStage.cs                        — P0 计划生成
 │   ├── P1_PreflightStage.cs                   — P1 环境预检
-│   ├── P2_GenerateStage.cs                    — P2 HybridCLR 生成
-│   ├── P3_HybridCLRStage.cs                   — P3 编译 DLL + AOT metadata + 同步
+│   ├── P2_GenerateStage.cs                    — P2 HybridCLR 六子步骤内容感知增量生成
+│   ├── P3_HybridCLRStage.cs                   — P3 同步已验证 DLL + AOT metadata
 │   ├── P4_BuildAssetStage.cs                  — P4 YooAsset 生产构建
 │   ├── P5_ApplyConfigStage.cs                 — P5 写入运行时配置（事务化）
 │   ├── P6_BuildPlayerStage.cs                 — P6 Unity Player 构建
@@ -72,10 +72,6 @@ Assets/Scripts/Boot.Editor/Build/              — Editor 执行层
 │   └── BuildDashboardWindow.cs                — OdinMenuEditorWindow 六视图面板
 ├── CI/
 │   └── BuildCommandLine.cs                    — batchmode 入口
-├── BuildConfig.cs                             — 旧构建配置（保留兼容）
-├── BuildReport.cs                             — 旧报告结构（保留兼容）
-├── BuildStagePanel.cs                         — 旧 EditorWindow（保留，跳转 Dashboard）
-├── StageDependencyTracker.cs                  — 差量检测引擎（已更新为 P0-P9 ID）
 └── KJBuildPipeline.cs                         — 编排器入口（委托 BuildPipelineRunner）
 ```
 
@@ -84,9 +80,9 @@ Assets/Scripts/Boot.Editor/Build/              — Editor 执行层
 ```
 P0  Plan              — 验证 Profile、生成 BuildPlan、初始化输出目录
 P1  Preflight         — 全维度预检（HC 运行时/平台/BootScene/AssetConfig/IL2CPP/Android/Formal）
-P2  Generate          — HybridCLR GenerateAll + link.xml 校验
-P3  HybridCLR         — 编译热更 DLL + AOT metadata + 同步 .dll.bytes + 清理过期文件
-P4  BuildAsset        — YooAsset ScriptableBuildPipeline 生产构建 → StreamingAssets
+P2  Generate          — CompileDll/Il2CppDef/link/AOT Strip/MethodBridge/AOTGenericReference 增量生成
+P3  HybridCLR         — 同步已验证热更 DLL + AOT metadata 为 .dll.bytes
+P4  BuildAsset        — YooAsset RawFileBuildPipeline 增量构建 → StreamingAssets
 P5  ApplyConfig       — 事务化 AssetConfig YAML 写入 + ScriptingDefines（按环境）
 P6  BuildPlayer       — BuildPipeline.BuildPlayer(IL2CPP) + Android 工具链
 P7  Verify            — Player/StreamingAssets/DLL 数量校验 + Formal 泄露检查
@@ -94,11 +90,11 @@ P8  Smoke             — 多里程碑冒烟（Launcher→YooAsset→HybridCLR�
 P9  Report            — 复制 Editor.log + Runtime 日志到归档目录
 ```
 
-**排序硬约束**：P3→P4→P6（DLL 先编译同步 → YooAsset 打包 → BuildPlayer 嵌入）。P5→P6（配置落盘后才构建）。
+**排序硬约束**：P2→P3→P4→P6（DLL 先编译生成 → 同步 → YooAsset 打包 → BuildPlayer 嵌入）。P5→P6（配置落盘后才构建）。
 
-## 双配置模型
+## 配置模型
 
-### BuildProfile（新，推荐）
+### BuildProfile（唯一配置源）
 `Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset`
 
 环境驱动：Dev/QA/Profiling/Audit/Formal。覆盖平台、签名、日志、Smoke、输出路径。
@@ -120,9 +116,6 @@ P9  Report            — 复制 Editor.log + Runtime 日志到归档目录
 - `DevelopmentBuild=false`, `ScriptDebugging=false`, `EnableGm=false`, `EnableDebugUi=false`
 - Android 签名必填
 
-### BuildConfig（旧，保留兼容）
-路径 `Assets/Scripts/Boot.Editor/Build/BuildConfig.asset`。菜单入口继续使用此配置，内部委托给 `BuildPipelineRunner`。
-
 ## 入口与调用方式
 
 ### Editor 菜单
@@ -130,41 +123,28 @@ P9  Report            — 复制 Editor.log + Runtime 日志到归档目录
 ```
 KJ/
 ├── Build/
-│   ├── Dashboard                                — Odin 六视图面板（Profile/Plan/Stage/Reports/Artifacts/Diagnostics）
-│   ├── Full Player Build & Validate             — 全量构建（清除标记后跑全部 P0-P9）
-│   ├── Incremental Build (Auto-detect changes)  — 差量构建（自动检测变更）
-│   ├── Build Stage Manager...                   — 旧 EditorWindow 面板（跳转 Dashboard）
-│   ├── Clear All Stage Markers                  — 清除全部标记
-│   ├── Create BuildConfig                       — 创建 BuildConfig.asset
-│   └── Create Build Profile                     — 创建 BuildProfile.asset
-├── HybridCLR/                                   — 保留：14 个开发内循环菜单项（不变）
+│   └── Dashboard                                — 默认自动增量；可勾选“强制全量重建”
+├── HybridCLR/                                   — Editor Play 准备与维护菜单；不提供无条件聚合全量生成入口
 ```
 
 ### CI 无头入口
 
 ```bash
-# 通过 BuildConfig（兼容旧方式）
-Unity -batchmode -quit -executeMethod Boot.Editor.Build.KJBuildPipeline.BuildFromCommandLine \
-  -platform:Android -development:true -version:1.0.0
-
-# 通过 BuildProfile（新方式）
+# 默认自动增量
 Unity -batchmode -quit -executeMethod Boot.Editor.Build.BuildCommandLine.Run \
   -profile Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset \
-  -mode Full -outputRoot BuildBackup
+  -outputRoot BuildBackup
+
+# 显式忽略所有 Stage/HybridCLR/YooAsset 缓存
+Unity -batchmode -quit -executeMethod Boot.Editor.Build.BuildCommandLine.Run \
+  -profile Assets/Scripts/Boot.Editor/Build/Config/BuildProfile.asset -full
 ```
 
 ### 代码调用
 
 ```csharp
-// 通过 BuildConfig + Runner
-var config = AssetDatabase.LoadAssetAtPath<BuildConfig>(configPath);
-var report = KJBuildPipeline.Build(config);                     // 全量
-var report = KJBuildPipeline.IncrementalBuild(config);          // 差量检测
-
-// 通过 BuildProfile + Runner（新架构）
-var context = new BuildContext { Profile = profile };
-var runner = new BuildPipelineRunner(context);
-var reportData = runner.Run();
+var report = KJBuildPipeline.Build(profile);                    // 默认自动增量
+var fullReport = KJBuildPipeline.Build(profile, true);          // 强制全量
 ```
 
 ## IBuildStage 接口
@@ -188,7 +168,7 @@ public interface IBuildStage
 }
 ```
 
-## BuildConfigTransaction 事务系统
+## BuildTransaction 事务系统
 
 覆盖所有项目状态修改：AssetConfig YAML、PlayerSettings defines、Android 签名。
 
@@ -247,19 +227,32 @@ AI 原则：AI 不读 Unity Console 截图，只读取固定路径结构化文�
 
 ## 增量构建与续跑
 
-### 标记文件
-`Build/{Platform}/.markers/.{StageId}.done`
+管线版本 1.1.0 使用内容指纹，不使用仅记录完成状态或依赖 mtime 的缓存：
 
-### 差量检测
-`StageDependencyTracker` 对比标记文件 mtime 与输入文件 mtime，StageNames 使用 P0-P9 ID。
+- Stage 指纹：`Library/KJBuild/{ProfileName}/cache/{Platform}/{StageId}.fingerprint.json`
+- P2 子步骤缓存：同目录 `hybridclr_generation_cache.json`
+- 输入/输出均按 SHA-256 内容校验；`.meta` 忽略，文件只改时间不会失效，输出被篡改会自动重建。
+- 缓存与版本化归档分离，因此只升 `VersionName/VersionCode` 不会丢 HybridCLR 缓存；Android/Standalone 缓存物理隔离。
+- 本轮将执行的 `ProducesArtifacts` / `Transactional` Stage 会级联使下游执行。
 
-排除规则：`*.Editor/` 目录变更不触发热更相关 Stage 重跑。`.meta` 忽略。
+P2 子步骤策略：
+
+| 子步骤 | 默认执行条件 |
+|---|---|
+| CompileDll + link.xml | P2 热更源码/Profile/工具输入变化 |
+| AOT Strip | link.xml、AOT 壳、包依赖、Player/HybridCLR 设置变化，或 AOT metadata 缺失 |
+| MethodBridge | AOT DLL、Development/defines、P/Invoke/反向 P/Invoke/calli 敏感源码变化 |
+| AOTGenericReference | 热更 DLL 或 AOT DLL 内容变化 |
+| P3 同步 | P2 执行或同步产物缺失/变化 |
+| P4 YooAsset | `Assets/GameRes`、collector、包版本或 P3 产物变化；默认保留 YooAsset build cache |
+
+第一次运行 1.1.0 会建立新缓存并执行完整生成。Dashboard 勾选“强制全量重建”或 CI 使用 `-full` 会忽略缓存。
 
 ## 已知坑点
 
 1. **AssetConfig.Mode 序列化**：YAML 直写（Regex 替换），`ImportAsset(ForceSynchronousImport)`
 2. **BootLoader packageName 误传**：`CreateDefaultBuiltinFileSystemParameters()` 必须无参重载
-3. **MethodBridge 泛型迭代**：`maxMethodBridgeGenericIteration: 10`，已缓存 ~355MB 文件，不涉及新泛型时可跳过 P2
+3. **MethodBridge 泛型迭代**：`maxMethodBridgeGenericIteration: 10`，不得直接降低；1.1.0 通过 AOT/桥接敏感输入缓存跳过无关重算
 4. **Android Gradle 兼容**：Export Project 后需修复 Gradle/compileSdk
 5. **P4 前置清理**：清空 `StreamingAssets/{PackageName}/` 旧产物
 
@@ -267,7 +260,7 @@ AI 原则：AI 不读 Unity Console 截图，只读取固定路径结构化文�
 
 1. **日常开发用 KJ/HybridCLR 菜单**（秒级），出包验证用 **KJ/Build 菜单**（分钟到小时级）
 2. **先 Standalone** 打通全链路，再上 Android
-3. **增量优先**：日常用 `Incremental Build`，仅首次/清除标记后全量
+3. **增量优先**：Dashboard 默认自动增量；仅首次建立缓存、工具链升级、正式基线或缓存排障时勾选“强制全量重建”
 4. **Smoke 失败读双日志**：`boot.log`（AOT 阶段）+ `latest.jsonl`（热更阶段）
-5. **新增 Stage**：(1) 实现 `IBuildStage`；(2) 在 `BuildStageRegistry` 注册；(3) 更新 `StageDependencyTracker.StageNames`；(4) 更新本 skill
+5. **新增 Stage**：(1) 实现 `IBuildStage`；(2) 在 `BuildStageRegistry` 注册；(3)声明精确输入/输出与 Profile hash；(4) 更新本 skill
 6. **Formal/Audit 出包前**先过 `BuildProfileValidator.Validate()`
