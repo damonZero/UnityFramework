@@ -61,6 +61,20 @@ namespace Boot.Editor.Build
                 }
             });
 
+            // 1b. 清理 YooAsset 包输出目录（Bundles/{Platform}/{Package}/{version}）。
+            // YooAsset 3.0.3 的 TaskPrepare 要求输出目录不存在（ErrorCode115），
+            // 增量构建（ClearBuildCacheFiles=false）不会自动清，残留会导致构建失败。
+            BuildTelemetry.Measure("P4.CleanPackageOutput", "YooAsset", () =>
+            {
+                string outputRoot = BundleBuilderHelper.GetDefaultBuildOutputRoot();
+                string packageOutputDir = Path.Combine(outputRoot, buildTarget.ToString(), packageName, profile.VersionName);
+                if (Directory.Exists(packageOutputDir))
+                {
+                    Directory.Delete(packageOutputDir, true);
+                    BuildLogger.Info($"[P4] Cleaned YooAsset package output: {packageOutputDir}");
+                }
+            });
+
             // 2. YooAsset 生产构建
             var buildParams = new RawFileBuildParameters
             {
