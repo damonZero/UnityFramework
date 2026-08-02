@@ -331,7 +331,7 @@ namespace Boot.Editor.Build
                 var fi = new FileInfo(path);
                 sb.Append("file:").Append(normalized).Append('|')
                     .Append(fi.Length).Append('|')
-                    .Append(ComputeFileHash(path)).Append('\n');
+                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
                 return;
             }
 
@@ -348,15 +348,8 @@ namespace Boot.Editor.Build
                 var fi = new FileInfo(file);
                 sb.Append("file:").Append(file.Replace('\\', '/')).Append('|')
                     .Append(fi.Length).Append('|')
-                    .Append(ComputeFileHash(file)).Append('\n');
+                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
             }
-        }
-
-        private static string ComputeFileHash(string path)
-        {
-            using var stream = File.OpenRead(path);
-            using var sha = SHA256.Create();
-            return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
         }
 
         private static string Sha256(string text)
