@@ -28,6 +28,8 @@
 | AOT 泛型修复 (ZLogger) | `Assets/Scripts/Core/Logging/SimpleLogger.cs` | `SimpleLogger<T>` 替代 `Logger<T>` 注册为 `ILogger<>` 实现，将泛型 `Log<TState>` 展开为字符串调非泛型 `ILogger.Log(string)`，绕过 IL2CPP AOT 侧 `Microsoft.Extensions.Logging.Logger` 泛型实例化边界。待设备验证。 |
 | AOP-PERF-01 打包耗时监控雏形 | `Assets/Framework/Aop/` + `Assets/Scripts/Boot.Editor/Build/Telemetry/` | Editor-only 显式 Observability 首版：单调时钟 Span/session、父子关系、有界 Collector 和故障隔离；监控 P2/P3/P4/P6 内部关键步骤；性能明细进入 build_report JSON/Markdown schema 1.1.0。Unity 编译与定向 EditMode 14/14 通过，真实打包报告待 E2E；Runtime 开放前必须完成 HybridCLR 归属评审。 |
 | Object Pool & Cache 重构 | `Framework/Pool/` + `Framework/Cache/` | `BoundedStore<TKey,TValue>` 替代旧 `Cache`（Put 覆盖两步 Remove+Add、Clear/Remove/淘汰统一 onEvicted、GetOrAdd single-flight、TTL 读路径清理）；`IStoreEvictionPolicy`/`IStoreExpirationPolicy` + `LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`；`ObjectPool<T>` 保持 lock 并发安全，`CollectionPool` 使用 `SingleThreadObjectPool<T>` 主线程热路径；`GameObjectPool` 五字典合并 `PrefabPoolState`+实例库存策略 `IInstanceRecyclePolicy`+反向索引污染检测+[MainThread] 断言；`PoolService.cs` DI 桥接；相关 EditMode 单测全绿 |
+| CDN 发布集成 | `Assets/Scripts/Boot.Editor/Build/`（`P10_PublishCdnStage.cs` + `HostUpdatePublisher.cs` + `BuildProfile.cs`）| 构建后可选发布到 CDN（`PublishToCdn` 勾选）；`P10_PublishCdnStage` 复用 P4 产物发布到 `Server/Res/CDN/Android/DefaultPackage`（相对仓库根 KJ 解析）；`server.py` Web 根 `Server/Res`；Host 模式设备从 CDN 下载最新热更资源 |
+| 热更闭环验证 | Boot + HybridCLR + YooAsset + Core/General/Project | AOT 泛型修复（补 `Microsoft.Extensions.Logging` AOT metadata）后热更完整走通：CDN 发布 → 设备版本检测（1.0.0→1.0.1→1.0.2）→ 增量下载 → 新代码运行（`Hot-update runtime marker: v1.0.2`）；设备端启动链全通、零错误 |
 
 ---
 
@@ -43,11 +45,10 @@
 | AOP 打包耗时监控 | Android E2E Done | Framework.Aop + P2/P3/P4/P6 + Report | Unity 编译与定向测试 14/14；Android 完整构建报告已验证真实性能 Span、失败状态和 JSON/Markdown 输出 |
 | Build Pipeline 1.1 Android E2E | Next | P0-P9 + Report | 依次执行强制全量基线、无变更默认构建、普通热更代码变更构建；确认缓存命中、子步骤 Span、APK 内容与启动链正确 |
 | Build Pipeline Standalone E2E | Next | P0-P9 | 使用默认 BuildProfile 跑一次完整 Standalone IL2CPP 构建与 smoke |
-| Player 打包 smoke | Done (AOT chain) | Boot + HybridCLR + YooAsset + Core | AOT 侧验证通过（AOT metadata/DLL 加载、Hot-update files current、Handing control to hot-update Boot layer、ProjectBootstrapper registration ready）。热更层（Core Systems init、ModelLifecycle、AssetSystem Ready）待 ZLogger AOT 修复后验证 |
-| 热更新行为 smoke | Next | Core/General/Project DLL + 资源 | 基线 APK → 1.0.1 热更补丁发布 → 不重装重启验证 |
+| Player 打包 smoke | Done (AOT chain) | Boot + HybridCLR + YooAsset + Core | AOT 侧验证通过（AOT metadata/DLL 加载、Hot-update files current、Handing control to hot-update Boot layer、ProjectBootstrapper registration ready）。热更层（Core Systems init、ModelLifecycle、AssetSystem Ready）已随 AOT 修复验证 |
+| 热更新行为 smoke | Done | Core/General/Project DLL + 资源 | 热更闭环完整验证：基线 APK → 1.0.1 版本热更 → 1.0.2 内容级热更（设备下载增量 1 个文件 → 新代码运行打印 `Hot-update runtime marker: v1.0.2`）；设备端启动链全通、零错误 |
 | 资源加载矩阵 | Next | Framework.Asset + Core.AssetSystem | 验证 RawFile bytes、cached/owned 资源加载、实例化、场景加载/卸载、下载器、Release、UnloadUnused |
-| PlayMode 覆盖 | Next | EditorSimulate / Offline / Host | 已通过 EditorSimulate Play；下一步至少覆盖 Player Offline，Host/CDN 后续用本地 HTTP 或测试服验证 |
-| 热更新行为 smoke | Next | Core/General/Project DLL + 资源 | 修改 Project 层代码/资源后重新同步，验证无需整包；已加载 DLL 替换需重启/下次启动生效 |
+| PlayMode 覆盖 | Done (Host E2E) | EditorSimulate / Offline / Host | 已通过 EditorSimulate Play + Android Host 模式 E2E（CDN 下载热更）；Player Offline 待补 |
 
 ---
 

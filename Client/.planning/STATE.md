@@ -8,8 +8,8 @@ last_updated: "2026-07-31T00:00:00.000Z"
 
 # Project State: KJ Unity Framework
 
-**Last Updated:** 2026-08-01
-**Current Status:** ✅ 分层启动链重构完成（Phase 0-4）。启动链：Boot→Core→General→Project 逐层启动，每层独立 VContainer Scope（Core root → General child → Project child）+ 独立入口 + 失败阻断。Editor Play 三层验证通过。Android P0-P9 E2E 构建多次通过（Dashboard + batchmode）；`SimpleLogger<T>` 替换 `Logger<T>` 解决 IL2CPP ZLogger AOT 泛型实例化边界（待设备验证）；Host 热更闭环（1.0.0→1.0.1）待验证。
+**Last Updated:** 2026-08-02
+**Current Status:** ✅ 分层启动链重构完成（Phase 0-4）+ 热更闭环完整验证 + 仓库统一为 KJ 根（Client+Server 单一仓库）。Android P0-P10 E2E 构建通过（含 CDN 发布 P10）；AOT 泛型修复（补 `Microsoft.Extensions.Logging` AOT metadata）；CDN 发布集成（`PublishToCdn` 可勾选 + `P10_PublishCdnStage`）；热更验证 1.0.0→1.0.1（版本热更）→1.0.2（内容级热更，设备运行新代码打印 `v1.0.2` 标记）全部通过。
 
 ## 进度
 
@@ -69,6 +69,11 @@ last_updated: "2026-07-31T00:00:00.000Z"
 - [x] PLATFORM-04: `.gitignore` 生成产物规则（屏蔽 `GameRes/HotUpdate/**/*.bytes`、`StreamingAssets/yoo/`、`*.csproj`、`TestResults.xml`，防止构建生成物混入版本库）。
 - [x] PKG-16: P8 Smoke 设备解析强化（`ResolveDevice` 先验证指定设备是否在线，不在线则自动回落检测第一个在线设备，不再写死 MuMu 地址）。
 - [x] PKG-18: 构建管线 1.1.0 内容感知增量优化（P2 拆分 DLL/Il2CppDef/link/AOT Strip/MethodBridge/AOTGenericReference 子步骤缓存；P3 删除重复编译；P4 全 GameRes + collector 指纹并默认保留 YooAsset build cache；Dashboard/CI 支持强制全量）。用户确认 Editor 编译与 TestRunner 无报错；真实“全量基线→无变更增量→热更代码增量”耗时待 E2E 采集。
+- [x] AOTFIX-01: `Logger.Log<TState>` AOT 泛型缺失根因（`Main.unity` 的 `aotMetadataAssemblies` 缺 `Microsoft.Extensions.Logging`，导致 HybridCLR 无法解析组合 Logger 泛型方法 → MissingMethodException）。修复：补全 `BootStartupSettings.aotMetadataAssemblies` 名单 + `SyncExistingOutputs` 自动同步 Boot 场景配置（`SyncBootSceneStartupConfig` 事务化：打开→应用→保存→恢复原场景），防未来 `patchAOTAssemblies` 变更再漏。
+- [x] CDN-01: CDN 发布集成到构建管线（`PublishToCdn` 可勾选 + `CdnServerRoot` 相对仓库根 + `P10_PublishCdnStage` 复用 P4 产物发布到 `Server/Res/CDN`；`HostUpdatePublisher` 路径修复为相对仓库根 + `PublishFromBuildOutput` 轻量发布；`server.py` Web 根改 `Server/Res`）。
+- [x] REPO-01: 仓库统一重构（KJ 根作为单一 git 仓库，remote=UnityFramework；Unity 工程迁入 `Client/`，服务器代码迁入 `Server/`，CDN 内容 `Server/Res/CDN` gitignore；`Client/.git` 升为 KJ 根 `.git` 保留 UnityFramework 历史；`Server/.git` 移除并入根仓库；manifest.json UPM 第三方包恢复修复）。
+- [x] HOTFIX-01: P8 Smoke 里程碑文案修复（`[BootLoader] all DLLs loaded` → `[BootLoader] Handing control`，与 BootLoader 实际日志对齐，否则启动成功也误判失败）。
+- [x] HOTUPD-01: 热更闭环完整验证（CDN 发布 → 设备版本检测 1.0.0→1.0.1→1.0.2 → 增量下载 `Downloading hot-update files: 1` → 新代码运行打印 `[Project] Hot-update runtime marker: v1.0.2`；设备端启动链全通、零错误；热更验证标记日志保留在 `ProjectLayerEntrypoint.PostStart`）。
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -109,7 +114,8 @@ Assets/Scripts/
 │   │   │   ├── P6_BuildPlayerStage.cs ← P6: IL2CPP Player 构建
 │   │   │   ├── P7_VerifyStage.cs      ← P7: 静态产物/Formal 校验
 │   │   │   ├── P8_SmokeStage.cs       ← P8: Standalone/Android Runtime smoke
-│   │   │   └── P9_ReportStage.cs      ← P9: 日志归档
+│   │   │   ├── P9_ReportStage.cs      ← P9: 日志归档
+│   │   │   └── P10_PublishCdnStage.cs ← 🆕 P10: CDN 发布（PublishToCdn 可勾选，复用 P4 产物 → Server/Res/CDN）
 │   │   ├── Config/
 │   │   │   ├── BuildProfile.cs        ← 🆕 ScriptableObject 环境/平台/签名/日志/冒烟/输出配置
 │   │   │   ├── BuildProfileValidator.cs ← 🆕 Formal/Audit 强约束校验规则

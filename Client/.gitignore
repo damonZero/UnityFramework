@@ -39,5 +39,5 @@ Assets/StreamingAssets/yoo/
 TestResults.xml
 
 # Odin Inspector regenerates the Unity.Mathematics module on each Unity open
-Assets/Framework/1External/Sirenix/Odin Inspector/Modules/Unity.Mathematics/
+Assets/Framework/1External/Sirenix/Odin Inspector/Modules/Unity.Mathematics*
 

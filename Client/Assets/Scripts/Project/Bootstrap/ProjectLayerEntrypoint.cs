@@ -1,4 +1,5 @@
 using System;
+using Framework.Log;
 using Microsoft.Extensions.Logging;
 using VContainer.Unity;
 
@@ -30,6 +31,8 @@ namespace Project.Bootstrap
             if (_modelStartupStatus.IsLoaded)
             {
                 ProjectLayerEntrypointLog.ProjectReady(_logger);
+                // 热更内容标记：发布新补丁后此日志应显示最新补丁版本号（验证内容级热更）。
+                GameLog.Info("[Project] Hot-update runtime marker: v1.0.2", "Project.Bootstrap");
                 return;
             }
 
