@@ -16,9 +16,18 @@ namespace Boot.Editor.Build
     ///
     /// 判断逻辑与 <see cref="BuildPipelineRunner.GeneratePlan"/> 保持一致：
     /// 指纹对比（Profile/Inputs/Tools）+ 输出存在性 + 依赖级联。
+    ///
+    /// 性能：结果带缓存（<see cref="Inspect"/> 传入同一 Profile 且其哈希未变时返回缓存），
+    /// 避免 Dashboard 每次 Repaint 都做全目录 SHA-256。Profile 变化或手动调用
+    /// <see cref="Invalidate"/> 时重新计算。
     /// </summary>
     public static class BuildCachePreview
     {
+        private static List<StageCacheStatus> _cached;
+        private static BuildProfile _cachedProfile;
+        private static string _cachedProfileHash;
+        private static bool _dirty = true;
+
         /// <summary>单个 Stage 的缓存状态</summary>
         public sealed class StageCacheStatus
         {
@@ -33,8 +42,47 @@ namespace Boot.Editor.Build
         /// <summary>Pipeline 版本（与 Runner 保持一致）</summary>
         private const string PipelineVersion = "1.1.0";
 
-        /// <summary>对当前 Profile 预检所有 Stage 的缓存状态。</summary>
+        /// <summary>使缓存失效（Profile 变更、构建完成后调用），下次 Inspect 重新计算。</summary>
+        public static void Invalidate()
+        {
+            _cached = null;
+            _cachedProfile = null;
+            _cachedProfileHash = null;
+            _dirty = true;
+        }
+
+        /// <summary>对当前 Profile 预检所有 Stage 的缓存状态（带缓存）。</summary>
         public static List<StageCacheStatus> Inspect(BuildProfile profile)
+        {
+            if (profile == null)
+            {
+                Invalidate();
+                return new List<StageCacheStatus>();
+            }
+
+            string profileHash = SafeProfileHash(profile);
+
+            // 缓存命中条件：Profile 引用相同且哈希未变（Profile 字段未改）
+            if (!_dirty && ReferenceEquals(_cachedProfile, profile)
+                && string.Equals(_cachedProfileHash, profileHash, StringComparison.Ordinal))
+            {
+                return _cached ?? new List<StageCacheStatus>();
+            }
+
+            _cachedProfile = profile;
+            _cachedProfileHash = profileHash;
+            _dirty = false;
+            _cached = Compute(profile);
+            return _cached;
+        }
+
+        private static string SafeProfileHash(BuildProfile profile)
+        {
+            try { return profile.ComputeProfileHash(); }
+            catch { return string.Empty; }
+        }
+
+        private static List<StageCacheStatus> Compute(BuildProfile profile)
         {
             var result = new List<StageCacheStatus>();
             if (profile == null)

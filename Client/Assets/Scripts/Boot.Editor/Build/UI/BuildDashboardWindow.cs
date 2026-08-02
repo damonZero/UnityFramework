@@ -95,6 +95,7 @@ namespace Boot.Editor.Build
             _profile = profile;
             _lastReport = null;
             _lastError = null;
+            BuildCachePreview.Invalidate(); // Profile 切换 → 缓存状态重算
             RememberSelectedProfile();
             TryLoadLatestReport();
             Repaint();
@@ -225,6 +226,7 @@ namespace Boot.Editor.Build
             finally
             {
                 _isBuilding = false;
+                BuildCachePreview.Invalidate(); // 构建完成，缓存状态已变化，下次展示重算
                 ForceMenuTreeRebuild();
                 Repaint();
             }
@@ -269,6 +271,7 @@ namespace Boot.Editor.Build
             finally
             {
                 _isPublishing = false;
+                BuildCachePreview.Invalidate(); // 发布完成，缓存状态可能变化
                 ForceMenuTreeRebuild();
                 Repaint();
             }
@@ -685,6 +688,9 @@ namespace Boot.Editor.Build
         public sealed class StageView
         {
             private readonly BuildDashboardWindow _window;
+            private List<StageEntry> _cachedEntries;
+            private BuildProfile _cachedProfile;
+            private string _cachedProfileHash;
 
             public StageView(BuildDashboardWindow window)
             {
@@ -697,39 +703,67 @@ namespace Boot.Editor.Build
             {
                 get
                 {
-                    var statuses = BuildCachePreview.Inspect(_window._profile);
-                    if (statuses.Count == 0) return "无 Profile";
-                    int hit = statuses.Count(s => s.CacheHit);
-                    int run = statuses.Count - hit;
+                    var entries = GetCachedEntries();
+                    if (entries == null || entries.Count == 0) return "无 Profile";
+                    int hit = entries.Count(e => e.Cache == "命中");
+                    int run = entries.Count - hit;
                     return $"{hit} 个阶段缓存命中（跳过），{run} 个阶段需重跑";
                 }
             }
 
             [ShowInInspector, TableList(IsReadOnly = true, AlwaysExpanded = true)]
-            public List<StageEntry> Stages
-            {
-                get
-                {
-                    var statuses = BuildCachePreview.Inspect(_window._profile);
-                    var byId = statuses.ToDictionary(s => s.StageId);
+            public List<StageEntry> Stages => GetCachedEntries();
 
-                    return BuildStageRegistry.GetAll()
-                        .Select(stage =>
-                        {
-                            bool cacheHit = byId.TryGetValue(stage.Id, out var status) && status.CacheHit;
-                            return new StageEntry
-                            {
-                                Order = stage.Order,
-                                Id = stage.Id,
-                                Name = stage.DisplayName,
-                                Category = stage.Category,
-                                Policy = FormatPolicy(stage.Policy),
-                                Cache = cacheHit ? "命中" : "重跑",
-                                CacheReason = byId.TryGetValue(stage.Id, out var st) ? st.Reason : "",
-                            };
-                        })
-                        .ToList();
+            /// <summary>
+            /// 返回缓存的 StageEntry 列表。只在 Profile 或其哈希变化时重算，
+            /// 避免 Odin 每次 Repaint 都触发全目录指纹扫描（导致卡死）。
+            /// </summary>
+            private List<StageEntry> GetCachedEntries()
+            {
+                var profile = _window._profile;
+                if (profile == null)
+                {
+                    _cachedEntries = null;
+                    return _cachedEntries;
                 }
+
+                string profileHash = SafeProfileHash(profile);
+                if (_cachedEntries != null && ReferenceEquals(_cachedProfile, profile)
+                    && string.Equals(_cachedProfileHash, profileHash, StringComparison.Ordinal))
+                {
+                    return _cachedEntries;
+                }
+
+                _cachedProfile = profile;
+                _cachedProfileHash = profileHash;
+
+                var statuses = BuildCachePreview.Inspect(profile);
+                var byId = new Dictionary<string, BuildCachePreview.StageCacheStatus>();
+                foreach (var s in statuses) byId[s.StageId] = s;
+
+                _cachedEntries = BuildStageRegistry.GetAll()
+                    .Select(stage =>
+                    {
+                        bool cacheHit = byId.TryGetValue(stage.Id, out var status) && status.CacheHit;
+                        return new StageEntry
+                        {
+                            Order = stage.Order,
+                            Id = stage.Id,
+                            Name = stage.DisplayName,
+                            Category = stage.Category,
+                            Policy = FormatPolicy(stage.Policy),
+                            Cache = cacheHit ? "命中" : "重跑",
+                            CacheReason = byId.TryGetValue(stage.Id, out var st) ? st.Reason : "",
+                        };
+                    })
+                    .ToList();
+                return _cachedEntries;
+            }
+
+            private static string SafeProfileHash(BuildProfile profile)
+            {
+                try { return profile.ComputeProfileHash(); }
+                catch { return string.Empty; }
             }
 
             private static string FormatPolicy(BuildStagePolicy policy)
