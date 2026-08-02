@@ -706,8 +706,9 @@ namespace Boot.Editor.Build
                     var entries = GetCachedEntries();
                     if (entries == null || entries.Count == 0) return "无 Profile";
                     int hit = entries.Count(e => e.Cache == "命中");
-                    int run = entries.Count - hit;
-                    return $"{hit} 个阶段缓存命中（跳过），{run} 个阶段需重跑";
+                    int run = entries.Count(e => e.Cache == "重跑");
+                    int always = entries.Count(e => e.Cache == "总是执行");
+                    return $"🟢 {hit} 命中 · 🟡 {run} 需重跑 · ⚪ {always} 总是执行";
                 }
             }
 
@@ -744,7 +745,14 @@ namespace Boot.Editor.Build
                 _cachedEntries = BuildStageRegistry.GetAll()
                     .Select(stage =>
                     {
-                        bool cacheHit = byId.TryGetValue(stage.Id, out var status) && status.CacheHit;
+                        bool has = byId.TryGetValue(stage.Id, out var status);
+                        string cacheLabel;
+                        if (has && status.AlwaysRuns)
+                            cacheLabel = "总是执行";
+                        else if (has && status.CacheHit)
+                            cacheLabel = "命中";
+                        else
+                            cacheLabel = "重跑";
                         return new StageEntry
                         {
                             Order = stage.Order,
@@ -752,8 +760,8 @@ namespace Boot.Editor.Build
                             Name = stage.DisplayName,
                             Category = stage.Category,
                             Policy = FormatPolicy(stage.Policy),
-                            Cache = cacheHit ? "命中" : "重跑",
-                            CacheReason = byId.TryGetValue(stage.Id, out var st) ? st.Reason : "",
+                            Cache = cacheLabel,
+                            CacheReason = has ? status.Reason : "",
                         };
                     })
                     .ToList();
@@ -893,10 +901,13 @@ namespace Boot.Editor.Build
             [TableColumnWidth(220), LabelText("缓存说明")]
             public string CacheReason;
 
-            /// <summary>缓存状态颜色：命中=绿，需重跑=黄。</summary>
-            private UnityEngine.Color CacheColor => Cache == "命中"
-                ? new UnityEngine.Color(0.30f, 0.78f, 0.40f, 1f)
-                : new UnityEngine.Color(0.95f, 0.75f, 0.25f, 1f);
+            /// <summary>缓存状态颜色：命中=绿，需重跑=黄，总是执行=灰。</summary>
+            private UnityEngine.Color CacheColor => Cache switch
+            {
+                "命中" => new UnityEngine.Color(0.30f, 0.78f, 0.40f, 1f),
+                "总是执行" => new UnityEngine.Color(0.55f, 0.55f, 0.55f, 1f),
+                _ => new UnityEngine.Color(0.95f, 0.75f, 0.25f, 1f),
+            };
         }
 
         [Serializable]

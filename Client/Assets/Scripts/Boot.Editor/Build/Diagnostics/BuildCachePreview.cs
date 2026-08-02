@@ -37,6 +37,9 @@ namespace Boot.Editor.Build
             public bool CacheHit;      // true=缓存命中，可跳过；false=需重跑
             public string Reason;      // 人类可读原因
             public string Category;
+
+            /// <summary>true=该 Stage 策略为 AlwaysRun/NoSkip，总是执行（不适用缓存）。</summary>
+            public bool AlwaysRuns;
         }
 
         /// <summary>Pipeline 版本（与 Runner 保持一致）</summary>
@@ -97,6 +100,8 @@ namespace Boot.Editor.Build
 
             foreach (var stage in stages)
             {
+                bool alwaysRuns = (stage.Policy & BuildStagePolicy.AlwaysRun) != 0
+                                  || (stage.Policy & BuildStagePolicy.NoSkip) != 0;
                 bool canSkip = TryDecideSkip(ctx, stage, willSkipById, out string reason);
                 willSkipById[stage.Id] = canSkip;
 
@@ -106,8 +111,9 @@ namespace Boot.Editor.Build
                     DisplayName = stage.DisplayName,
                     Order = stage.Order,
                     CacheHit = canSkip,
-                    Reason = reason,
+                    Reason = alwaysRuns ? "策略总是执行" : reason,
                     Category = stage.Category,
+                    AlwaysRuns = alwaysRuns,
                 });
             }
 
