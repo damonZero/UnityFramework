@@ -39,5 +39,8 @@ MonoBehaviour:
   SmokeRequired: 0
   SmokeDeviceSerial:
   SmokeTimeoutSec: 120
-  OutputRoot: 
+  PublishToCdn: 1
+  CdnServerRoot: Server/Res/CDN/Android/DefaultPackage
+  CdnPublishVersion:
+  OutputRoot:
   KeepLastBuildCount: 5
