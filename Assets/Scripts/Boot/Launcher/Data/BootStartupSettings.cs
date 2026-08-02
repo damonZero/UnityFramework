@@ -22,7 +22,7 @@ namespace Boot
         private string assetDownloadTag;
 
         [SerializeField]
-        private string startupTypeName = "Project.Bootstrap.ProjectStartup, Project";
+        private string startupTypeName = "Core.Bootstrap.CoreStartup, Core";
 
         [SerializeField]
         private string startupMethodName = "Start";

@@ -85,17 +85,16 @@ namespace Tests.EditMode
         [Test]
         public void BootAssemblyEntry_ConstructorSetsProperties()
         {
-            var e = new Boot.BootAssemblyEntry("Boot", "Boot.dll", "res/Boot", "assets/Boot");
+            var e = new Boot.BootAssemblyEntry("Boot", "Boot.dll", "assets/Boot");
             Assert.That(e.AssemblyName, Is.EqualTo("Boot"));
             Assert.That(e.FileName, Is.EqualTo("Boot.dll"));
-            Assert.That(e.ResourcesPath, Is.EqualTo("res/Boot"));
             Assert.That(e.AssetPath, Is.EqualTo("assets/Boot"));
         }
 
         [Test]
         public void BootMetadataEntry_ConstructorSetsProperties()
         {
-            var e = new Boot.BootMetadataEntry("mscorlib", "mscorlib.dll", null, "assets/mscorlib");
+            var e = new Boot.BootMetadataEntry("mscorlib", "mscorlib.dll", "assets/mscorlib");
             Assert.That(e.AssemblyName, Is.EqualTo("mscorlib"));
             Assert.That(e.FileName, Is.EqualTo("mscorlib.dll"));
             Assert.That(e.AssetPath, Is.EqualTo("assets/mscorlib"));
@@ -238,6 +237,77 @@ namespace Tests.EditMode
             var missing = expected.Where(e => !loaded.Contains(e)).ToList();
             Assert.That(missing, Is.Empty,
                 "Hot-update assemblies missing from the loaded AppDomain: " + string.Join(", ", missing));
+        }
+
+        // ── 分层启动链反射契约（layered-startup-chain.md）──
+
+        [Test]
+        public void BootStartupSettings_DefaultStartupTypeIsCore()
+        {
+            // 分层启动链 Phase 1：Boot 的正式入口必须是 Core，不再直接调用 Project。
+            var s = new Boot.BootStartupSettings();
+            Assert.That(s.StartupTypeName,
+                Is.EqualTo("Core.Bootstrap.CoreStartup, Core"),
+                "BootStartupSettings default startupTypeName must point to CoreStartup.");
+        }
+
+        [Test]
+        public void CoreStartup_HasStaticStartTakingIAssetRuntime()
+        {
+            var t = typeof(Core.Bootstrap.CoreStartup);
+            var m = t.GetMethod("Start", BindingFlags.Public | BindingFlags.Static, null,
+                new[] { typeof(Framework.Asset.IAssetRuntime) }, null);
+            Assert.That(m, Is.Not.Null,
+                "Core.Bootstrap.CoreStartup.Start(IAssetRuntime) must exist for Boot reflection.");
+        }
+
+        [Test]
+        public void CoreStartup_HasStaticResetForRepair()
+        {
+            // Repair 场景：Entry 反射 CoreStartup.Reset() 销毁 scope 后重建完整启动链。
+            var t = typeof(Core.Bootstrap.CoreStartup);
+            var m = t.GetMethod("Reset", BindingFlags.Public | BindingFlags.Static, null,
+                System.Array.Empty<System.Type>(), null);
+            Assert.That(m, Is.Not.Null,
+                "Core.Bootstrap.CoreStartup.Reset() must exist for Entry.Repair reflection.");
+        }
+
+        [Test]
+        public void GeneralStartup_HasStaticStartTakingLifetimeScope()
+        {
+            var t = typeof(General.Bootstrap.GeneralStartup);
+            var m = t.GetMethod("Start", BindingFlags.Public | BindingFlags.Static, null,
+                new[] { typeof(VContainer.Unity.LifetimeScope) }, null);
+            Assert.That(m, Is.Not.Null,
+                "General.Bootstrap.GeneralStartup.Start(LifetimeScope) must exist for Core reflection.");
+        }
+
+        [Test]
+        public void ProjectStartup_HasStaticStartTakingLifetimeScope()
+        {
+            var t = typeof(Project.Bootstrap.ProjectStartup);
+            var m = t.GetMethod("Start", BindingFlags.Public | BindingFlags.Static, null,
+                new[] { typeof(VContainer.Unity.LifetimeScope) }, null);
+            Assert.That(m, Is.Not.Null,
+                "Project.Bootstrap.ProjectStartup.Start(LifetimeScope) must exist for General reflection.");
+        }
+
+        [Test]
+        public void CoreDoesNotReferenceGeneralOrProject()
+        {
+            // 依赖方向红线：Core 不编译期引用 General/Project（层间靠反射）。
+            var coreAsm = typeof(Core.Bootstrap.CoreStartup).Assembly;
+            var referenced = coreAsm.GetReferencedAssemblies().Select(a => a.Name).ToList();
+            Assert.That(referenced, Does.Not.Contain("General"));
+            Assert.That(referenced, Does.Not.Contain("Project"));
+        }
+
+        [Test]
+        public void GeneralDoesNotReferenceProject()
+        {
+            var generalAsm = typeof(General.Bootstrap.GeneralStartup).Assembly;
+            var referenced = generalAsm.GetReferencedAssemblies().Select(a => a.Name).ToList();
+            Assert.That(referenced, Does.Not.Contain("Project"));
         }
     }
 }

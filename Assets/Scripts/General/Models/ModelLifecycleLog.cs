@@ -20,6 +20,10 @@ namespace General
         [ZLoggerMessage(LogLevel.Error, "[ModelLifecycle] Load 失败: {name}")]
         internal static partial void ModelLoadFailed(ILogger logger, string name, Exception e);
 
+        [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information), Conditional(GameLogSymbols.Warning), Conditional(GameLogSymbols.Error)]
+        [ZLoggerMessage(LogLevel.Error, "[ModelLifecycle] Resolve 失败: {name}")]
+        internal static partial void ModelResolveFailed(ILogger logger, string name, Exception e);
+
         [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information)]
         [ZLoggerMessage(LogLevel.Information, "[ModelLifecycle] Unload {name}")]
         internal static partial void ModelUnloaded(ILogger logger, string name);

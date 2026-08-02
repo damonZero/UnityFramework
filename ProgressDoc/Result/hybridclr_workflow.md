@@ -50,7 +50,7 @@ sequenceDiagram
 这里挂载了 `Entry` 脚本，其中的 `StartupSettings` (即 `BootStartupSettings`) 配置了：
 * **`AotMetadataAssemblies`**: 包含了所有生成的元数据配置列表（AssemblyName 和对应的 AssetPath）。
 * **`HotUpdateAssemblies`**: 包含了所有热更代码的配置列表。
-* **`StartupTypeName` / `StartupMethodName`**: 指定加载完 Boot 后，业务的正式启动入口点（默认 `Project.Bootstrap.ProjectStartup, Project`，方法 `Start`）。
+* **`StartupTypeName` / `StartupMethodName`**: 指定加载完 Boot 后，业务的正式启动入口点（默认 `Core.Bootstrap.CoreStartup, Core`，方法 `Start`；分层启动链 Core → General → Project）。
 
 ### 2.3 YooAsset 资源收集配置
 *由 `KJHybridClrBuildTools.cs` 自动管理*

@@ -94,8 +94,50 @@ namespace Boot.Editor.HybridCLR
             AssetDatabase.Refresh();
             EnsureYooAssetCollector(GetConfiguredAssetPackageName());
 
+            // 同步文件后，把 patchAOTAssemblies / hotUpdateAssemblies 名单写回 Boot 场景的
+            // startupSettings，确保 BootLoader 实际加载的程序集与配置一致。
+            // 之前这里只复制 .dll.bytes 文件，Main.unity 的 aotMetadataAssemblies 配置会停留在
+            // 旧状态（例如漏掉新增的 Microsoft.Extensions.Logging），导致 AOT 泛型方法未加载。
+            SyncBootSceneStartupConfig();
+
             Debug.Log(
                 $"[KJHybridClrBuildTools] Synced {hotUpdateEntries.Count} hot-update assemblies and {metadataEntries.Count} AOT metadata assemblies for {target}.");
+        }
+
+        /// <summary>
+        /// 事务化地把 HybridCLR 配置（patchAOTAssemblies / hotUpdateAssemblies）写回 Boot 场景的
+        /// startupSettings 并保存，完成后恢复原来的活动场景。供自动同步流程调用，
+        /// 与手动入口 <see cref="PrepareBootScene"/> 共享 <see cref="ApplyToOpenEntry"/> 逻辑。
+        /// </summary>
+        private static void SyncBootSceneStartupConfig()
+        {
+            if (!File.Exists(ToProjectPath(BootScenePath)))
+                throw new FileNotFoundException("Boot scene was not found.", BootScenePath);
+
+            var activeScene = SceneManager.GetActiveScene();
+            var activeScenePath = activeScene.IsValid() ? activeScene.path : null;
+
+            try
+            {
+                OpenBootScene();
+                ApplyToOpenEntry();
+
+                var scene = SceneManager.GetActiveScene();
+                if (!EditorSceneManager.SaveScene(scene))
+                    throw new InvalidOperationException($"Failed to save boot scene: {BootScenePath}");
+                AssetDatabase.SaveAssets();
+
+                Debug.Log("[KJHybridClrBuildTools] Synced boot scene startup config (aotMetadata/hotUpdate entries).");
+            }
+            finally
+            {
+                // 恢复调用前的活动场景，避免影响构建管线后续阶段。
+                if (!string.IsNullOrEmpty(activeScenePath) &&
+                    !string.Equals(activeScenePath, BootScenePath, StringComparison.Ordinal))
+                {
+                    EditorSceneManager.OpenScene(activeScenePath, OpenSceneMode.Single);
+                }
+            }
         }
 
         private static void ApplyToOpenEntry()
@@ -116,7 +158,7 @@ namespace Boot.Editor.HybridCLR
                 throw new InvalidOperationException("Boot.Entry.startupSettings serialized property was not found.");
 
             startupSettings.FindPropertyRelative("assetDownloadTag").stringValue = HotUpdateTag;
-            startupSettings.FindPropertyRelative("startupTypeName").stringValue = "Project.Bootstrap.ProjectStartup, Project";
+            startupSettings.FindPropertyRelative("startupTypeName").stringValue = "Core.Bootstrap.CoreStartup, Core";
             startupSettings.FindPropertyRelative("startupMethodName").stringValue = "Start";
             ApplyMetadataEntries(startupSettings.FindPropertyRelative("aotMetadataAssemblies"), metadataEntries);
             ApplyAssemblyEntries(startupSettings.FindPropertyRelative("hotUpdateAssemblies"), hotUpdateEntries);

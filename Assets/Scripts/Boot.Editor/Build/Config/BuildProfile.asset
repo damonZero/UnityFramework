@@ -28,7 +28,7 @@ MonoBehaviour:
   ExtraScriptingDefines: []
   PackageName: DefaultPackage
   AssetDownloadTag: hotupdate
-  StartupTypeName: Project.Bootstrap.ProjectStartup, Project
+  StartupTypeName: Core.Bootstrap.CoreStartup, Core
   StartupMethodName: Start
   CdnBaseUrl: http://10.0.2.2:8080/CDN/Android/DefaultPackage
   AssetMode: 2

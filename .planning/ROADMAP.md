@@ -12,7 +12,7 @@
 | 模块 | 位置 | 说明 |
 |------|------|------|
 | Boot 启动协议 | `Boot/` | Entry + 序列化启动配置 + 最小启动更新 UI。Boot 只做资源/代码更新和反射启动，不引用 VContainer/Core/General/Project。 |
-| VContainer DI | `Project/Bootstrap/` + `Core/Bootstrap/` + `Core/Systems/` | `ProjectStartup` 创建正式 VContainer root，`CoreStartupContext` 串联 Core → General → Project 注册 |
+| VContainer DI | `Core/Bootstrap/` + `General/Bootstrap/` + `Project/Bootstrap/` | 分层启动链：`CoreStartup` 创建 Core root scope（VContainer 根），`CoreLayerEntrypoint` 反射启动 General（child scope），`GeneralLayerEntrypoint` 反射启动 Project（child scope）；每层独立注册/生命周期/失败阻断 |
 | Event 基础层 | `Framework/Event/` + `Core/Systems/` + `Core/Bootstrap/` | 统一 `[GameEvent]` 标记和类型扫描；MessagePipe 是当前 broker 注册后端 |
 | ISystem + SystemManager | `Core/` | `ISystem` / `ITickableSystem` + `[CoreSystem]` 属性扫描 + `SystemManager` Priority 排序 → Init/Shutdown + VContainer Tick 驱动 |
 | IModel + ModelLifecycle | `General/` | `IModel` / `[Model]` + `ModelLifecycle` Priority 排序 → Core 启动成功后 `IPostStartable.PostStart()` Load / Dispose Unload |

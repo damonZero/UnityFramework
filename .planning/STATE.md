@@ -8,11 +8,12 @@ last_updated: "2026-07-31T00:00:00.000Z"
 
 # Project State: KJ Unity Framework
 
-**Last Updated:** 2026-07-20
-**Current Status:** ✅ Phase 0 完成，🔄 Phase 1 稳定性验证中。Android P0-P9 E2E 构建多次通过（Dashboard + batchmode）；BootLoader→YooAsset→HybridCLR→Boot→Core→VContainer 启动链 AOT 侧验证通过；构建管线 BuildLogger 统一日志落地；Dashboard 中文化 + 热更补丁按钮就绪；`SimpleLogger<T>` 替换 `Logger<T>` 解决 IL2CPP ZLogger AOT 泛型实例化边界（待设备验证）；Host 热更闭环（1.0.0→1.0.1）待验证。
+**Last Updated:** 2026-08-01
+**Current Status:** ✅ 分层启动链重构完成（Phase 0-4）。启动链：Boot→Core→General→Project 逐层启动，每层独立 VContainer Scope（Core root → General child → Project child）+ 独立入口 + 失败阻断。Editor Play 三层验证通过。Android P0-P9 E2E 构建多次通过（Dashboard + batchmode）；`SimpleLogger<T>` 替换 `Logger<T>` 解决 IL2CPP ZLogger AOT 泛型实例化边界（待设备验证）；Host 热更闭环（1.0.0→1.0.1）待验证。
 
 ## 进度
 
+- [x] LAYER-00: 分层启动链重构 Phase 0-4（每层独立 Scope/入口/生命周期；Boot→Core→General→Project 逐层启动；失败阻断；ModelLifecycle 切 `IReadOnlyList<Type>` 契约防双加载；Boot 异常可观察 + TargetInvocationException 解包）—— Editor Play 三层验证通过
 - [x] 需求讨论完成
 - [x] 命名规范确定（Core=System，业务=Model）
 - [x] FOUND-01: Boot Layer (Entry + serialized startup settings + minimal update UI hook)
@@ -77,7 +78,7 @@ last_updated: "2026-07-31T00:00:00.000Z"
 Assets/Scripts/
 ├── Boot/
 │   ├── KJ.Boot.asmdef           ← 热更程序集（HYB-03 裂变后）。引用 Asset/Log/RuntimeLog/UniTask/AssetShared/YooAsset/Launcher；不引用 VContainer/HybridCLR.Runtime/Core/General/Pool/Cache/Event/MessagePipe
-│   ├── BootUpdateRunner.cs      ← 热更入口：被 Launcher 反射启动；资源版本检查/清单更新/下载/AOT metadata/Assembly.Load，反射 Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)，并回放早期日志
+│   ├── BootUpdateRunner.cs      ← 热更入口：被 Launcher 反射启动；资源版本检查/清单更新/下载/AOT metadata/Assembly.Load，反射 Core.Bootstrap.CoreStartup.Start(IAssetRuntime)（分层启动链 Phase 1+），并回放早期日志；RunAsync 内 catch 异常 → Repair UI（Phase 4）
 │   ├── BootRuntimeLogBootstrap.cs ← 热更层早期 RuntimeLog session 安装；Core/ZLogger 尚未接管前也能落盘
 │   └── Launcher/                      → KJ.Launcher.asmdef (AOT Shell，HYB-03 裂变新增)
 │       ├── KJ.Launcher.asmdef         ← 仅引用 UniTask/YooAsset/HybridCLR.Runtime/AssetShared；硬约束：不引用任何 Framework/热更程序集
@@ -95,7 +96,7 @@ Assets/Scripts/
 │           └── BootRemoteService.cs   ← AOT 侧 IRemoteService（死锁修复点）
 
 ├── Boot.Editor/
-│   ├── Boot.Editor.asmdef       ← Editor-only，引用 Boot + Asset + Framework.BuildPipeline + Framework.Asset.Editor + Framework.External.Sirenix.Odin.Editor + HybridCLR.Editor + YooAsset + YooAsset.Editor + AssetShared + Launcher（共 10）
+│   ├── Boot.Editor.asmdef       ← Editor-only，引用 Boot + Log + Asset + Framework.BuildPipeline + Framework.Asset.Editor + Framework.External.Sirenix.Odin.Editor + HybridCLR.Editor + YooAsset + YooAsset.Editor + AssetShared + Launcher（共 11）
 │   ├── Build/
 │   │   ├── KJBuildPipeline.cs         ← BuildProfile-only 构建入口 + KJ/Build/* 菜单
 │   │   ├── Stages/
@@ -144,10 +145,13 @@ Assets/Scripts/
 │   │   ├── RuntimeLogBootstrap.cs       ← Core 侧 RuntimeLog session 创建/补全：Unity 信息、资源信息、路径、frame provider
 │   │   └── RuntimeLogLoggerProvider.cs  ← Microsoft.Extensions.Logging provider，把 ILogger<T>/ZLoggerMessage 写入同一 JSONL session
 │   ├── Bootstrap/
+│   │   ├── CoreStartup.cs            ← Boot 反射入口（分层启动链 Phase 1），Start(IAssetRuntime)
+│   │   ├── CoreLifetimeScope.cs      ← Core root scope（VContainer 根，只配置 Core）
+│   │   ├── CoreLayerEntrypoint.cs    ← Core 启动入口（IPostStartable，检查 ICoreStartupStatus 后反射启动 General）
+│   │   ├── CoreLayerEntrypointLog.cs
 │   │   ├── CoreStartupContext.cs
 │   │   ├── CoreTypeRegistration.cs
-│   │   ├── CoreContainerRegistration.cs
-│   │   └── CoreBootstrapStage.cs
+│   │   └── CoreContainerRegistration.cs
 │   ├── Systems/
 │   │   ├── ISystem.cs              ← ISystem + ITickableSystem 接口
 │   │   ├── SystemManager.cs        ← 系统生命周期管理器（VContainer 驱动）
@@ -169,8 +173,11 @@ Assets/Scripts/
 ├── General/
 │   ├── KJ.General.asmdef       ← 引用 Core+Event+Log+MessagePipe+MessagePipe.VContainer+VContainer+VContainer.Unity+ZLinq（共 8）；不引用 Project
 │   ├── Bootstrap/
-│   │   ├── GeneralContainerRegistration.cs
-│   │   └── GeneralBootstrapStage.cs
+│   │   ├── GeneralStartup.cs            ← Core 反射入口（分层启动链 Phase 2），Start(LifetimeScope)
+│   │   ├── GeneralLifetimeScope.cs      ← Core child scope，只配置 General 事件/模型/ModelLifecycle
+│   │   ├── GeneralLayerEntrypoint.cs    ← General 启动入口（IPostStartable，检查 IModelStartupStatus 后反射启动 Project）
+│   │   ├── GeneralLayerEntrypointLog.cs
+│   │   └── GeneralContainerRegistration.cs
 │   └── Models/
 │       ├── IModel.cs
 │       ├── ModelAttribute.cs
@@ -179,10 +186,10 @@ Assets/Scripts/
 └── Project/
     ├── KJ.Project.asmdef       ← 引用 Asset+Core+General+Event+Log+MessagePipe+MessagePipe.VContainer+VContainer+VContainer.Unity（共 9）；可引用所有下层
     └── Bootstrap/
-        ├── ProjectStartup.cs        ← Boot 反射调用的正式热更入口，接收 IAssetRuntime
-        ├── ProjectLifetimeScope.cs  ← VContainer root，串联 Core→General→Project 注册，并复用 Boot AssetRuntime
-        ├── ProjectBootstrapper.cs   ← 静态 Project 注册入口
-        └── ProjectBootstrapStage.cs
+        ├── ProjectStartup.cs        ← General 层反射调用的 Project 入口（分层启动链 Phase 3），Start(LifetimeScope)，CreateChild 创建 Project scope
+        ├── ProjectLifetimeScope.cs  ← General child scope，只配置 Project 事件/模型/ModelLifecycle
+        ├── ProjectLayerEntrypoint.cs ← Project 启动入口（IPostStartable，检查 IModelStartupStatus）
+        └── ProjectLayerEntrypointLog.cs
 
 Assets/Editor/
 └── .gitkeep                     ← 仅保留跨层 Editor 工具占位；模块工具放各自 `*.Editor/`

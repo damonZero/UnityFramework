@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -33,7 +34,34 @@ namespace Boot
             if (_isRunning)
                 return;
 
+            // Repair 需要重新走完整启动链。若 Core/General/Project scope 已创建（此前部分启动成功），
+            // 先反射销毁 Core root scope（连带子 scope），重置静态引用，避免防重入拦截重建。
+            // Boot 不编译期引用 Core，用与 Start 相同的反射契约。
+            TryResetHotUpdateScope();
+
             RunStartupAsync().Forget();
+        }
+
+        /// <summary>
+        /// 反射调用 <c>Core.Bootstrap.CoreStartup.Reset()</c> 销毁并重置 Core root scope。
+        /// 仅当热更层已加载（程序集存在）时执行；失败静默（Repair 后 Start 会兜底重建）。
+        /// </summary>
+        private static void TryResetHotUpdateScope()
+        {
+            const string startupTypeName = "Core.Bootstrap.CoreStartup, Core";
+            try
+            {
+                var type = Type.GetType(startupTypeName, throwOnError: false);
+                var method = type?.GetMethod("Reset",
+                    BindingFlags.Public | BindingFlags.Static);
+                if (method != null)
+                    method.Invoke(null, Array.Empty<object>());
+            }
+            catch
+            {
+                // Reset 失败不阻塞 Repair；RunStartupAsync 会尝试重建。
+                BootStartupLog.Warn("[Entry] CoreStartup.Reset failed during Repair (scope may be stale).");
+            }
         }
 
         private async UniTaskVoid RunStartupAsync()

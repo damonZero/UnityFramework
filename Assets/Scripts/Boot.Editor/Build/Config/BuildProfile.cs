@@ -81,7 +81,7 @@ namespace Boot.Editor.Build
         public string AssetDownloadTag = "hotupdate";
 
         [Tooltip("启动类型全名")]
-        public string StartupTypeName = "Project.Bootstrap.ProjectStartup, Project";
+        public string StartupTypeName = "Core.Bootstrap.CoreStartup, Core";
 
         [Tooltip("启动方法名")]
         public string StartupMethodName = "Start";

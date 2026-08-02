@@ -1,20 +1,43 @@
-using Framework.Asset;
+using MessagePipe;
+using VContainer.Unity;
 
 namespace Project.Bootstrap
 {
+    /// <summary>
+    /// Project 层反射入口（分层启动链 Phase 3）。
+    /// 被 General 层 <see cref="General.Bootstrap.GeneralLayerEntrypoint"/> 反射调用。
+    /// 从父 scope 容器解析 MessagePipeOptions（Core 已注册，见分层启动计划 §0.1），
+    /// 存入 <see cref="ProjectLifetimeScope.PendingMessagePipeOptions"/> 供 Configure 消费；
+    /// 再通过父 scope 的 CreateChild 创建 Project 子 scope。
+    /// </summary>
     public static class ProjectStartup
     {
-        private static ProjectLifetimeScope _rootScope;
+        private static ProjectLifetimeScope _scope;
 
-        public static void Start(IAssetRuntime bootAssetRuntime = null)
+        public static void Start(LifetimeScope parentScope)
         {
-            if (_rootScope != null)
+            if (_scope != null)
                 return;
 
-            var root = new UnityEngine.GameObject("ProjectLifetimeScope");
-            UnityEngine.Object.DontDestroyOnLoad(root);
-            ProjectLifetimeScope.PendingBootAssetRuntime = bootAssetRuntime;
-            _rootScope = root.AddComponent<ProjectLifetimeScope>();
+            if (parentScope == null)
+                throw new System.ArgumentNullException(nameof(parentScope));
+
+            // 从父容器解析唯一消息域配置（Project 不重复 RegisterMessagePipe）。
+            var options = parentScope.Container.Resolve(typeof(MessagePipeOptions)) as MessagePipeOptions;
+            if (options == null)
+                throw new System.InvalidOperationException(
+                    "MessagePipeOptions not resolvable from parent scope. Core must RegisterMessagePipe.");
+            ProjectLifetimeScope.PendingMessagePipeOptions = options;
+
+            _scope = parentScope.CreateChild<ProjectLifetimeScope>(childScopeName: nameof(ProjectLifetimeScope));
+        }
+
+        /// <summary>
+        /// 显式重置 Project scope 静态引用（Repair 场景，由 Core root 销毁级联触发）。
+        /// </summary>
+        public static void Reset()
+        {
+            _scope = null;
         }
     }
 }

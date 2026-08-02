@@ -10,7 +10,7 @@
 - 商业级质量：接口设计合理、边界情况处理、可扩展
 - 依赖方向固定为 `Boot <- Core <- General <- Project`，下层不得依赖上层
 - Boot 层保持最小依赖，只保留稳定启动壳、Entry 序列化更新配置、资源/代码更新和正式入口反射调用能力
-- 启动采用 Boot 反射调用热更层正式入口；Project 创建 VContainer root，并静态串联 Core → General → Project 注册
+- 启动采用 Boot 反射调用热更层正式入口（分层启动链）；CoreStartup 创建 VContainer root scope，General/Project 为其 child scope
 - 依赖注入采用 VContainer，MessagePipe 作为当前类型安全事件后端
 - 稳定底层模块下沉到 `Assets/Framework/`，上层通过统一接口访问，不直接绑定第三方实现
 - Core 使用 System，业务层使用 Model + ViewModel，不引入业务 System
@@ -20,7 +20,7 @@
 
 1. 建立基于 VContainer 的 Core/General/Project 分层容器注册体系
 2. 建立 Boot 层稳定启动协议：Entry 序列化启动配置 + 热更入口反射调用
-3. 建立无 prefab 启动链：ProjectStartup 创建正式 VContainer root，并按 Core → General → Project 注册
+3. 建立无 prefab 启动链（分层启动链）：CoreStartup 创建正式 VContainer root，CoreLayerEntrypoint/GeneralLayerEntrypoint 逐层反射启动 General/Project child scope
 4. 建立 Core Architecture：`ISystem`、`[CoreSystem]`、`SystemManager`
 5. 建立类型安全事件注册：`Framework.Event.GameEventAttribute` + 当前 MessagePipe `IPublisher<T>` / `ISubscriber<T>` 后端
 6. 删除旧式 `EventId + object payload` 事件总线设计

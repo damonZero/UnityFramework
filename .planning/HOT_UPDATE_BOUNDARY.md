@@ -161,8 +161,12 @@ Entry
   -> download required resources
   -> load AOT supplemental metadata
   -> load Core/General/Project hot-update assemblies
-  -> reflect Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
-  -> Project creates the VContainer root and registers Core -> General -> Project
+  -> reflect Core.Bootstrap.CoreStartup.Start(IAssetRuntime)
+  -> CoreStartup creates the Core root VContainer scope
+  -> CoreLayerEntrypoint (IPostStartable) reflects GeneralStartup.Start(coreScope)
+  -> GeneralStartup creates General child scope via CreateChild
+  -> GeneralLayerEntrypoint (IPostStartable) reflects ProjectStartup.Start(generalScope)
+  -> ProjectStartup creates Project child scope via CreateChild
 ```
 
 Target sequence after a future Boot split:
@@ -175,7 +179,7 @@ BootLoader (AOT Launcher) / Entry
   -> Boot checks/downloads resources and remaining DLLs
   -> classify restart requirement
   -> load Core/General/Project
-  -> reflect Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
+  -> reflect Core.Bootstrap.CoreStartup.Start(IAssetRuntime)
 ```
 
 Boot must not create VContainer, MessagePipe, Core, General, or Project objects
@@ -234,7 +238,7 @@ limited to update operations. Login, account SDK flow, server list, and role
 selection are General/Project business flows, not Boot or Core logic.
 
 Boot initializes a minimal `Framework.Asset.IAssetRuntime` for update work and
-passes that same instance to `ProjectStartup`. Core must register the handed-off
+passes that same instance to `CoreStartup`. Core must register the handed-off
 runtime instead of creating a second YooAsset runtime.
 
 HYB-02:

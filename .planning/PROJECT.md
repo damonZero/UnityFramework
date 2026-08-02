@@ -23,7 +23,7 @@ Boot <- Core <- General <- Project
 ```
 
 Boot 层必须保持最小依赖，只承担稳定启动壳、最小更新界面、资源版本检查、清单/资源下载、热更 DLL/AOT metadata 加载，以及反射调用正式游戏入口。Boot 不引用 Core/General/Project，不创建正式游戏容器。
-HybridCLR 边界见 `.planning/HOT_UPDATE_BOUNDARY.md`：当前工具默认把 `Core` / `General` / `Project` 作为正式运行时热更程序集；`Boot` 与 `Framework/*` 作为启动加载器和稳定契约保持极薄、稳定。C# 层改动不等同于必须换包；已加载程序集的新 DLL 需要重启 APP/下次启动生效，真正换包仅限 native/player/HybridCLR 底层加载机制或旧包缺少加载能力。目标形态是把 Boot 拆成极薄 BootLoader 和可热更但更新后需重启/下次启动生效的 `Boot.Update`。Boot 必须先完成资源/代码更新，再反射调用热更层的 `Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)`。
+HybridCLR 边界见 `.planning/HOT_UPDATE_BOUNDARY.md`：当前工具默认把 `Core` / `General` / `Project` 作为正式运行时热更程序集；`Boot` 与 `Framework/*` 作为启动加载器和稳定契约保持极薄、稳定。C# 层改动不等同于必须换包；已加载程序集的新 DLL 需要重启 APP/下次启动生效，真正换包仅限 native/player/HybridCLR 底层加载机制或旧包缺少加载能力。目标形态是把 Boot 拆成极薄 BootLoader 和可热更但更新后需重启/下次启动生效的 `Boot.Update`。Boot 必须先完成资源/代码更新，再反射调用热更层的 `Core.Bootstrap.CoreStartup.Start(IAssetRuntime)`（分层启动链）。
 
 启动流程由 Entry 的序列化启动配置驱动，Boot 完成更新后再进入热更层正式组合根：
 
@@ -33,11 +33,15 @@ Entry
   -> Framework.Asset 最小资源运行时
   -> 资源版本检查/清单更新/下载/修复
   -> HybridCLR AOT metadata + Core/General/Project DLL
-  -> Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
-  -> Project 创建 VContainer root 并按 Core -> General -> Project 注册
+  -> Core.Bootstrap.CoreStartup.Start(IAssetRuntime)
+  -> CoreStartup 创建 Core root VContainer scope
+  -> CoreLayerEntrypoint 反射 GeneralStartup.Start(coreScope)
+  -> GeneralStartup 创建 General child scope（CreateChild）
+  -> GeneralLayerEntrypoint 反射 ProjectStartup.Start(generalScope)
+  -> ProjectStartup 创建 Project child scope（CreateChild）
 ```
 
-依赖注入主体通过 VContainer 在 Core / General / Project 各阶段逐步注册。Boot 不参与正式容器构建；`ProjectStartup` 创建 VContainer root，并通过 `CoreStartupContext` 传递注册上下文。
+依赖注入主体通过 VContainer 分层 scope 逐步注册（分层启动链）。Boot 不参与正式容器构建；`CoreStartup` 创建 Core root VContainer scope，General/Project 为其 child scope，通过 `LayerStartupReflector` 反射层间启动。
 
 每层对应一个 .asmdef 文件，实现编译隔离。
 

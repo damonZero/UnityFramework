@@ -243,10 +243,10 @@ Assets/
 │   ├── Boot/          # Entry point, initialization
 │   ├── Core/          # Framework core systems
 │   │   ├── Architecture/  # SystemManager, CoreSystemAttribute, events
-│   │   ├── Bootstrap/     # CoreContainerRegistration, CoreBootstrapStage
+│   │   ├── Bootstrap/     # CoreStartup, CoreLifetimeScope, CoreLayerEntrypoint, CoreContainerRegistration, CoreBootstrapStage, CoreTypeRegistration, LayerStartupReflector
 │   │   └── Asset/         # AssetSystem (YooAsset integration)
-│   ├── General/       # Shared utilities, Model lifecycle
-│   └── Project/       # Game-specific code
+│   ├── General/       # Shared utilities, Model lifecycle, GeneralStartup/LifetimeScope/LayerEntrypoint
+│   └── Project/       # Game-specific code, ProjectStartup/LifetimeScope/LayerEntrypoint
 ├── Resources/         # Unity Resources (minimal use — only AssetConfig)
 ├── StreamingAssets/   # Config tables, hot update DLLs
 ├── Plugins/           # Third-party DLLs

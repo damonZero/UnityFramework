@@ -82,6 +82,18 @@ namespace Boot
             var config = Resources.Load<AssetConfig>("AssetConfig");
             if (config == null)
                 throw new InvalidOperationException("[BootLoader] AssetConfig not found at Resources/AssetConfig. Create Assets/Resources/AssetConfig.asset.");
+
+            // 编辑器下强制 EditorSimulate：Editor 用本地模拟包，避免配置为 Host 时
+            // 连不上 CDN 导致启动失败；运行时（Player）才按 AssetConfig.Mode 走真实模式。
+            // 用运行时副本，不污染 Resources 里的 AssetConfig.asset 资产本身。
+#if UNITY_EDITOR
+            if (config.Mode != AssetConfig.PlayMode.EditorSimulate)
+            {
+                BootStartupLog.Info($"[BootLoader] Editor forcing AssetConfig.Mode EditorSimulate (was {config.Mode})");
+                config = UnityEngine.Object.Instantiate(config);
+                config.Mode = AssetConfig.PlayMode.EditorSimulate;
+            }
+#endif
             return config;
         }
 

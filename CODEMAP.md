@@ -13,7 +13,7 @@ KJ is a Unity client game framework implementing a strict 4-layer unidirectional
 
 **Core pattern:** `ISystem` + `[CoreSystem]` attribute for Core-layer systems, `IModel` + `[Model]` attribute for business-layer models. Lifecycle is driven by VContainer DI.
 
-**Bootstrap pattern (HYB-03 implemented):** AOT `Launcher` (`KJ.Launcher.asmdef`) is the ultra-minimal native entry — it initializes YooAsset, loads hot-update DLLs, loads HybridCLR AOT metadata, then reflects into the hot-update `Boot.BootUpdateRunner`. The hot-update `Boot` (`KJ.Boot.asmdef`) handles resource version check, manifest update, download, and hands off `IAssetRuntime` to `Project.Bootstrap.ProjectStartup`. Project creates the formal VContainer root and registers Core → General → Project. C# layer changes are classified separately from package updates: if a managed DLL was already loaded, replacement normally takes effect after restart/next launch; a package update is reserved for native/player/HybridCLR loading-mechanism changes or old packages that lack the needed loader path.
+**Bootstrap pattern (HYB-03 + layered-startup-chain):** AOT `Launcher` (`KJ.Launcher.asmdef`) is the ultra-minimal native entry — it initializes YooAsset, loads hot-update DLLs, loads HybridCLR AOT metadata, then reflects into the hot-update `Boot.BootUpdateRunner`. The hot-update `Boot` (`KJ.Boot.asmdef`) handles resource version check, manifest update, download, and hands off `IAssetRuntime` to `Core.Bootstrap.CoreStartup` (layered startup chain Phase 1). Each layer owns an independent VContainer scope: `CoreStartup` creates the Core root scope, `CoreLayerEntrypoint` (IPostStartable) reflects `GeneralStartup` to create the General child scope, `GeneralLayerEntrypoint` reflects `ProjectStartup` to create the Project child scope. Failure at one layer blocks the next. C# layer changes are classified separately from package updates: if a managed DLL was already loaded, replacement normally takes effect after restart/next launch; a package update is reserved for native/player/HybridCLR loading-mechanism changes or old packages that lack the needed loader path.
 
 ---
 
@@ -90,14 +90,14 @@ Note: **Hot-update assembly** loaded by Launcher. No longer references `HybridCL
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
-| `BootUpdateRunner.cs` | `Assets/Scripts/Boot/BootUpdateRunner.cs` | `BootUpdateRunner : IDisposable` | Hot-update startup entry. Reflect-launched by Launcher. Initializes `IAssetRuntime`, requests version, updates manifest, downloads, loads AOT metadata + DLLs, reflects into `ProjectStartup`. Replays early logs. | `Framework.Asset`, `Framework.RuntimeLog` |
+| `BootUpdateRunner.cs` | `Assets/Scripts/Boot/BootUpdateRunner.cs` | `BootUpdateRunner : IDisposable` | Hot-update startup entry. Reflect-launched by Launcher. Initializes `IAssetRuntime`, requests version, updates manifest, downloads, loads AOT metadata + DLLs, reflects into `Core.Bootstrap.CoreStartup` (layered startup chain). Replays early logs. RunAsync catches startup exceptions → Repair UI (Phase 4). | `Framework.Asset`, `Framework.RuntimeLog` |
 | `BootRuntimeLogBootstrap.cs` | `Assets/Scripts/Boot/BootRuntimeLogBootstrap.cs` | `static BootRuntimeLogBootstrap` | Installs `Framework.RuntimeLog.RuntimeLogSession` before Core/ZLogger exists. | `Framework.Log`, `Framework.RuntimeLog`, `UnityEngine` |
 | `HybridClrReflection.cs` | `Assets/Scripts/Boot/HybridClrReflection.cs` | `HybridClrReflection` | Reflection wrapper around `HybridCLR.RuntimeApi` (Boot does not reference HybridCLR.Runtime directly). | none |
 
 ### Boot.Editor (Assembly: `Boot.Editor`, Editor-only)
 
 Asmdef: `Assets/Scripts/Boot.Editor/Boot.Editor.asmdef`
-References: `Boot`, `Asset`, `Framework.Asset.Editor`, `HybridCLR.Editor`, `YooAsset`, `YooAsset.Editor`, `AssetShared`, `Launcher` (8)
+References: `Boot`, `Log`, `Asset`, `Framework.BuildPipeline`, `Framework.Asset.Editor`, `Framework.External.Sirenix.Odin.Editor`, `HybridCLR.Editor`, `YooAsset`, `YooAsset.Editor`, `AssetShared`, `Launcher` (11)
 
 | File | Path | Key Types | Description | Dependencies |
 |------|------|-----------|-------------|-------------|
@@ -123,8 +123,11 @@ References: Asset, AssetShared, Event, Pool, Cache, Log, RuntimeLog, VContainer,
 | `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework.Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath`. Creates `GameObjectPool`. Exposes `CollectionPool.RentList<>()` shortcuts. Priority=110. |
 | `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` | Marks a Core system class for reflection-based DI registration. |
 | `CoreTypeRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs` | `static CoreTypeRegistration` | Reflection scanner: `[GameEvent]` → MessageBroker, `[CoreSystem]` → `AsSelf().AsImplementedInterfaces()`. |
-| `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry: `RegisterCoreServices()` → MessagePipe + CoreTypes + SystemManager. |
-| `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `static CoreBootstrapStage` | Registers Core into `CoreStartupContext`. |
+| `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry: `RegisterCoreServices()` → MessagePipe + CoreTypes + SystemManager + CoreLayerEntrypoint. |
+| `CoreStartup.cs` | `Assets/Scripts/Core/Bootstrap/CoreStartup.cs` | `static CoreStartup` | Boot-reflected entry (layered startup chain Phase 1). `Start(IAssetRuntime)`, creates Core root scope. |
+| `CoreLifetimeScope.cs` | `Assets/Scripts/Core/Bootstrap/CoreLifetimeScope.cs` | `CoreLifetimeScope : LifetimeScope` | VContainer root scope. Registers Core services only. |
+| `CoreLayerEntrypoint.cs` | `Assets/Scripts/Core/Bootstrap/CoreLayerEntrypoint.cs` | `CoreLayerEntrypoint : IPostStartable, IDisposable` | Checks `ICoreStartupStatus`, reflects `GeneralStartup` to create General scope. |
+| `CoreBootstrapStage.cs` | `Assets/Scripts/Core/Bootstrap/CoreBootstrapStage.cs` | `static CoreBootstrapStage` | Thin orchestrator: `CoreLifetimeScope.Configure` → `RegisterCoreServices(assetRuntime)`. |
 | `CoreStartupContext.cs` | `Assets/Scripts/Core/Bootstrap/CoreStartupContext.cs` | `CoreStartupContext` | Carries `IContainerBuilder` and `MessagePipeOptions`. |
 
 #### Asset System (Core.Asset namespace)
@@ -156,9 +159,13 @@ References: Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, Message
 |------|------|-----------|-------------|
 | `IModel.cs` | `Assets/Scripts/General/Models/IModel.cs` | `IModel` (interface) | Business lifecycle: `int Priority`, `void Load()`, `void Unload()`. |
 | `ModelAttribute.cs` | `Assets/Scripts/General/Models/ModelAttribute.cs` | `ModelAttribute : Attribute` | Marks business class for DI registration as `IModel`. |
-| `ModelLifecycle.cs` | `Assets/Scripts/General/Models/ModelLifecycle.cs` | `ModelLifecycle : IPostStartable, IDisposable` | Priority-sorted Load/Unload lifecycle. Checks `ICoreStartupStatus`. |
-| `GeneralContainerRegistration.cs` | `Assets/Scripts/General/Bootstrap/GeneralContainerRegistration.cs` | `static GeneralContainerRegistration` | `RegisterBusinessLayer()`: scans `[GameEvent]` + `[Model]`. |
-| `GeneralBootstrapStage.cs` | `Assets/Scripts/General/Bootstrap/GeneralBootstrapStage.cs` | `static GeneralBootstrapStage` | Registers General business layer via `CoreStartupContext`. |
+| `ModelLifecycle.cs` | `Assets/Scripts/General/Models/ModelLifecycle.cs` | `ModelLifecycle : IPostStartable, IDisposable, IModelStartupStatus` | Load/Unload lifecycle over scoped `IReadOnlyList<Type>` contract + `IObjectResolver` (prevents cross-scope model duplication). Checks `ICoreStartupStatus`. |
+| `ModelScanner.cs` | `Assets/Scripts/General/Models/ModelScanner.cs` | `static ModelScanner` | Scans `[Model]` types in an assembly → `Type[]`. |
+| `IModelStartupStatus.cs` | `Assets/Scripts/General/Models/IModelStartupStatus.cs` | `IModelStartupStatus` (interface) | Model load status: `IsLoaded`, `HasFailures`, `FailedModelNames`. Implemented by `ModelLifecycle`. |
+| `GeneralContainerRegistration.cs` | `Assets/Scripts/General/Bootstrap/GeneralContainerRegistration.cs` | `static GeneralContainerRegistration` | `RegisterBusinessEvents` / `RegisterModels` / `RegisterModelLifecycle` (per-layer). |
+| `GeneralStartup.cs` | `Assets/Scripts/General/Bootstrap/GeneralStartup.cs` | `static GeneralStartup` | Core-reflected entry. `Start(LifetimeScope)`, resolves MessagePipeOptions, `CreateChild<GeneralLifetimeScope>()`. |
+| `GeneralLifetimeScope.cs` | `Assets/Scripts/General/Bootstrap/GeneralLifetimeScope.cs` | `GeneralLifetimeScope : LifetimeScope` | Core child scope. Registers General events/models/ModelLifecycle only. |
+| `GeneralLayerEntrypoint.cs` | `Assets/Scripts/General/Bootstrap/GeneralLayerEntrypoint.cs` | `GeneralLayerEntrypoint : IPostStartable, IDisposable` | Checks `IModelStartupStatus`, reflects `ProjectStartup` to create Project scope. |
 
 ### Layer: Project (Assembly: `KJ.Project`, Namespace: `Project`)
 
@@ -167,10 +174,9 @@ References: Asset, Core, General, Event, Log, VContainer, VContainer.Unity, Mess
 
 | File | Path | Key Types | Description |
 |------|------|-----------|-------------|
-| `ProjectStartup.cs` | `Assets/Scripts/Project/Bootstrap/ProjectStartup.cs` | `static ProjectStartup` | Formal hot-update entry called by Boot via reflection. Receives `IAssetRuntime`, creates VContainer root. |
-| `ProjectLifetimeScope.cs` | `Assets/Scripts/Project/Bootstrap/ProjectLifetimeScope.cs` | `ProjectLifetimeScope : LifetimeScope` | Formal VContainer root. Consumes pending Boot asset runtime, registers Core→General→Project. |
-| `ProjectBootstrapper.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapper.cs` | `static ProjectBootstrapper` | Project layer registration hook. |
-| `ProjectBootstrapStage.cs` | `Assets/Scripts/Project/Bootstrap/ProjectBootstrapStage.cs` | `static ProjectBootstrapStage` | Registers Project business layer. |
+| `ProjectStartup.cs` | `Assets/Scripts/Project/Bootstrap/ProjectStartup.cs` | `static ProjectStartup` | General-reflected entry (layered startup chain Phase 3). `Start(LifetimeScope)`, resolves MessagePipeOptions, `CreateChild<ProjectLifetimeScope>()`. |
+| `ProjectLifetimeScope.cs` | `Assets/Scripts/Project/Bootstrap/ProjectLifetimeScope.cs` | `ProjectLifetimeScope : LifetimeScope` | General child scope. Registers Project events/models/ModelLifecycle only. |
+| `ProjectLayerEntrypoint.cs` | `Assets/Scripts/Project/Bootstrap/ProjectLayerEntrypoint.cs` | `ProjectLayerEntrypoint : IPostStartable, IDisposable` | Checks `IModelStartupStatus`, marks Project startup complete. |
 
 ### Framework: Pool (Assembly: `KJ.Pool`, Namespace: `Framework.Pool`)
 
@@ -222,9 +228,9 @@ References: UniTask, YooAsset, Log, AssetShared (4)
 
 ### Framework: AssetShared (Assembly: `KJ.AssetShared`, Namespace: `Framework.Asset`)
 
-Asmdef: `Assets/Framework/AssetShared/AssetShared.asmdef`
+Asmdef: `Assets/Framework/AssetShared/Framework.AssetShared.asmdef` (asmdef `name` field: `AssetShared`)
 References: (none — zero external dependencies)
-Purpose: Holds `AssetConfig` / `AssetConstants` so both AOT Launcher and hot-update layer can reference them across the boundary.
+Purpose: Holds `AssetConfig` / `AssetConstants` (migrated from `Framework/Asset/` in HYB-03) so both AOT Launcher and hot-update layer can reference them across the boundary.
 
 | File | Path | Key Types | Description |
 |------|------|-----------|-------------|
@@ -273,7 +279,8 @@ References: Log (`noEngineReferences=true`)
 ### Boot/Launcher Startup
 - `Entry` (AOT) is the only MonoBehaviour entry point in `Assets/Scripts/Boot/Launcher/`.
 - `BootLoader` (AOT) initializes YooAsset, loads DLLs, reflects `Boot.BootUpdateRunner`.
-- `BootUpdateRunner` (HotUpdate) performs resource/code update, reflects `ProjectStartup`.
+- `BootUpdateRunner` (HotUpdate) performs resource/code update, reflects `Core.Bootstrap.CoreStartup` (layered startup chain).
+- `CoreStartup` → Core root scope → `CoreLayerEntrypoint` reflects `GeneralStartup` → General child scope → `GeneralLayerEntrypoint` reflects `ProjectStartup` → Project child scope.
 - `IBootStartupView` is optional and only supports update progress, status, and repair visibility.
 
 ### HybridCLR Editor Tooling
@@ -321,16 +328,19 @@ References: Log (`noEngineReferences=true`)
 | `AssetSystem` | `Core.Asset` | 100 | `ISystem` | `IAssetRuntime`, `IPublisher<AssetSystemReadyEvent>` |
 | `PoolService` | `Core` | 110 | `ISystem` | `IAssetSystem` |
 
-### Registration Flow
+### Registration Flow (layered startup chain)
 
 1. **CoreContainerRegistration.RegisterCoreServices(builder)**
-   - `RegisterMessagePipe()` → `RegisterCoreTypes(CoreAssembly)` → `RegisterEntryPoint<SystemManager>()`
+   - `RegisterMessagePipe()` → `RegisterCoreTypes(CoreAssembly)` → `RegisterEntryPoint<SystemManager>()` → `RegisterEntryPoint<CoreLayerEntrypoint>()`
+   - `RegisterMessagePipe` registers `MessagePipeOptions` as a resolvable Singleton (single message domain, §0.1); child scopes resolve the same instance.
 2. **CoreTypeRegistration.RegisterCoreTypes(builder, options, assemblies)**
    - `RegisterGameEvents()` — scans `[GameEvent]` structs → `RegisterMessageBroker<T>()`
    - `RegisterSystems()` — scans `[CoreSystem]` classes → `AsSelf().AsImplementedInterfaces()`
-3. **GeneralContainerRegistration.RegisterBusinessLayer(builder, options, assemblies)**
-   - Scans `[GameEvent]` + `[Model]` in General/Project assemblies
-   - `Register<ModelLifecycle>(Singleton).AsSelf().AsImplementedInterfaces()`
+3. **GeneralLifetimeScope / ProjectLifetimeScope Configure** (per layer)
+   - `RegisterBusinessEvents(options, layerAssembly)` — only that layer's `[GameEvent]`, no `RegisterMessagePipe`
+   - `RegisterModels(layerAssembly)` — scans `[Model]` → registers `IReadOnlyList<Type>` scoped contract + instances
+   - `RegisterModelLifecycle()` — `Register<ModelLifecycle>(Singleton).AsSelf().AsImplementedInterfaces()`
+   - `RegisterEntryPoint<XxxLayerEntrypoint>()`
 
 ---
 
@@ -372,22 +382,21 @@ BootUpdateRunner.Start(BootBridge) (HotUpdate Boot)
   |-- Downloads resources
   |-- Loads AOT metadata (supplemental)
   |-- Loads Core/General/Project hot-update DLLs via Assembly.Load
-  |-- Reflects Project.Bootstrap.ProjectStartup.Start(IAssetRuntime)
+  |-- Reflects Core.Bootstrap.CoreStartup.Start(IAssetRuntime)
   |
   v
-ProjectStartup.Start()
-  |-- Creates ProjectLifetimeScope GameObject
+CoreStartup.Start(IAssetRuntime) (layered startup chain Phase 1)
+  |-- Creates CoreLifetimeScope GameObject
   |-- VContainer Configure(builder)
-       |-- CoreBootstrapStage → RegisterCoreServices(bootAssetRuntime)
+       |-- CoreContainerRegistration → RegisterCoreServices(bootAssetRuntime)
        |     |-- Reuse RuntimeLog session, register ZLogger + ILogger<T>
        |     |-- Install GameLogBridge(runtimeLogSession, logger)
-       |     |-- builder.RegisterMessagePipe()
+       |     |-- builder.RegisterMessagePipe()  (single message domain, §0.1)
        |     |-- builder.RegisterCoreTypes(options, CoreAssembly)
        |     |-- builder.RegisterEntryPoint<SystemManager>()
-       |-- GeneralBootstrapStage → RegisterBusinessLayer(options, GeneralAssembly)
-       |-- ProjectBootstrapStage → ProjectBootstrapper.Configure(builder, options)
+       |     |-- builder.RegisterEntryPoint<CoreLayerEntrypoint>()
 
-[VContainer finalizes container]
+[VContainer finalizes Core container]
   |
   v
 SystemManager.Start() → InitAll()
@@ -396,9 +405,25 @@ SystemManager.Start() → InitAll()
   |-- 3. PoolService (Priority=110) — injects PoolDependencies, creates GameObjectPool
   |-- Publishes AppStartedEvent if all succeeded
 
-[VContainer IPostStartable → ModelLifecycle.LoadAll()]
+[IPostStartable → CoreLayerEntrypoint.PostStart()]  (layered startup chain Phase 2)
+  |-- checks ICoreStartupStatus; on failure blocks General
+  |-- reflects General.Bootstrap.GeneralStartup.Start(coreScope)
+       |-- resolves MessagePipeOptions from Core container
+       |-- coreScope.CreateChild<GeneralLifetimeScope>() → General child scope
+            |-- registers General events/models/ModelLifecycle/GeneralLayerEntrypoint
+
+[IPostStartable → GeneralLayerEntrypoint.PostStart()]  (layered startup chain Phase 3)
+  |-- checks IModelStartupStatus; on failure blocks Project
+  |-- reflects Project.Bootstrap.ProjectStartup.Start(generalScope)
+       |-- resolves MessagePipeOptions from parent container
+       |-- generalScope.CreateChild<ProjectLifetimeScope>() → Project child scope
+            |-- registers Project events/models/ModelLifecycle/ProjectLayerEntrypoint
+
+[IPostStartable → ProjectLayerEntrypoint.PostStart()]
+  |-- checks IModelStartupStatus, marks Project startup complete
+
 [Unity main loop → SystemManager Tick/LateTick/FixedTick dispatch]
-[Application quit → SystemManager.ShutdownAll() → reverse priority]
+[Application quit → VContainer disposes Project → General → Core scopes (reverse order)]
 ```
 
 ---

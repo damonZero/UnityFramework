@@ -46,6 +46,11 @@ namespace Core.Bootstrap
             builder.Register(typeof(SimpleLogger<>), Lifetime.Singleton).As(typeof(ILogger<>));
 
             // ── MessagePipe ──
+            // 消息域由 Core scope 统一建立（分层启动计划 §0.1）。
+            // RegisterMessagePipe 内部已把 MessagePipeOptions 注册为可解析 Singleton，
+            // General/Project 子 scope 通过 parentScope.Container.Resolve(typeof(MessagePipeOptions))
+            // 拿到同一 options，注册本层 broker 到同一个消息域。此处不要再 RegisterInstance，
+            // 否则 VContainer 报 Conflict implementation type。
             var options = builder.RegisterMessagePipe();
 
             // ── Framework Asset ──
@@ -69,6 +74,9 @@ namespace Core.Bootstrap
             // ── Core Types (scans [CoreSystem] types including GameLogBridge) ──
             builder.RegisterCoreTypes(options, typeof(CoreContainerRegistration).Assembly);
             builder.RegisterEntryPoint<SystemManager>();
+            // Core 层启动入口：SystemManager（IStartable）先 Init 全部系统，
+            // CoreLayerEntrypoint（IPostStartable）在其后反射启动 General。
+            builder.RegisterEntryPoint<CoreLayerEntrypoint>();
             return options;
         }
 

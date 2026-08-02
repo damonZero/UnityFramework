@@ -44,11 +44,24 @@ namespace Boot
             _view?.SetRepairVisible(false);
             _view?.SetProgress(0f);
 
-            BootRuntimeLogBootstrap.EnsureInstalled(_settings);
-            ReplayEarlyLogs();
-            await UpdateAssetsAsync();
-            StartGame();
-            RuntimeLogManager.Flush();
+            try
+            {
+                BootRuntimeLogBootstrap.EnsureInstalled(_settings);
+                ReplayEarlyLogs();
+                await UpdateAssetsAsync();
+                StartGame();
+                RuntimeLogManager.Flush();
+            }
+            catch (System.Exception e)
+            {
+                // 热更层启动失败必须可观察：记录日志 + 通知启动 UI 显示修复。
+                // 不能让异常在 Forget() 中静默丢失（Phase 4 异常所有权）。
+                GameLog.Error($"[Boot] Startup failed: {e}", "Boot");
+                _view?.SetStatus("Startup failed");
+                _view?.SetRepairVisible(true);
+                // 异常路径也刷新日志缓冲，确保失败原因落盘（AI 可读）。
+                RuntimeLogManager.Flush();
+            }
         }
 
         public void Dispose()
