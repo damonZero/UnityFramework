@@ -1,0 +1,22 @@
+# KJ CDN 热更产物 — 由 KJ 构建管线 (HostUpdatePublisher / P10_PublishCdnStage) 生成，不入库
+# CDN 内容在 Server/Res/CDN 下，由构建管线发布
+Res/CDN/
+Res/OutputCache/
+*.rawfile
+DefaultPackage.version
+DefaultPackage_*.bytes
+DefaultPackage_*.hash
+DefaultPackage_*.report
+OutputCache/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
