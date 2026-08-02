@@ -52,7 +52,7 @@ namespace Boot.Editor.Build
             tree.Config.DrawSearchToolbar = false;
             tree.Add("构建", new BuildView(this));
             tree.Add("配置", new BuildView.ProfileView(this));
-            tree.Add("阶段", new BuildView.StageView());
+            tree.Add("阶段", new BuildView.StageView(this));
             tree.Add("结果", new BuildView.ResultsView(this));
             return tree;
         }
@@ -684,18 +684,53 @@ namespace Boot.Editor.Build
         [HideReferenceObjectPicker]
         public sealed class StageView
         {
-            [Title("P0-P9 构建阶段")]
-            [ShowInInspector, TableList(IsReadOnly = true, AlwaysExpanded = true)]
-            public List<StageEntry> Stages => BuildStageRegistry.GetAll()
-                .Select(stage => new StageEntry
+            private readonly BuildDashboardWindow _window;
+
+            public StageView(BuildDashboardWindow window)
+            {
+                _window = window;
+            }
+
+            [Title("P0-P10 构建阶段 — 缓存预检")]
+            [ShowInInspector, ReadOnly, LabelText("缓存概览")]
+            public string CacheSummary
+            {
+                get
                 {
-                    Order = stage.Order,
-                    Id = stage.Id,
-                    Name = stage.DisplayName,
-                    Category = stage.Category,
-                    Policy = FormatPolicy(stage.Policy),
-                })
-                .ToList();
+                    var statuses = BuildCachePreview.Inspect(_window._profile);
+                    if (statuses.Count == 0) return "无 Profile";
+                    int hit = statuses.Count(s => s.CacheHit);
+                    int run = statuses.Count - hit;
+                    return $"{hit} 个阶段缓存命中（跳过），{run} 个阶段需重跑";
+                }
+            }
+
+            [ShowInInspector, TableList(IsReadOnly = true, AlwaysExpanded = true)]
+            public List<StageEntry> Stages
+            {
+                get
+                {
+                    var statuses = BuildCachePreview.Inspect(_window._profile);
+                    var byId = statuses.ToDictionary(s => s.StageId);
+
+                    return BuildStageRegistry.GetAll()
+                        .Select(stage =>
+                        {
+                            bool cacheHit = byId.TryGetValue(stage.Id, out var status) && status.CacheHit;
+                            return new StageEntry
+                            {
+                                Order = stage.Order,
+                                Id = stage.Id,
+                                Name = stage.DisplayName,
+                                Category = stage.Category,
+                                Policy = FormatPolicy(stage.Policy),
+                                Cache = cacheHit ? "命中" : "重跑",
+                                CacheReason = byId.TryGetValue(stage.Id, out var st) ? st.Reason : "",
+                            };
+                        })
+                        .ToList();
+                }
+            }
 
             private static string FormatPolicy(BuildStagePolicy policy)
             {
@@ -816,8 +851,18 @@ namespace Boot.Editor.Build
             public string Name;
             [TableColumnWidth(100), LabelText("分类")]
             public string Category;
-            [TableColumnWidth(160), LabelText("策略")]
+            [TableColumnWidth(140), LabelText("策略")]
             public string Policy;
+            [TableColumnWidth(70, Resizable = false), LabelText("缓存")]
+            [GUIColor("$CacheColor")]
+            public string Cache;
+            [TableColumnWidth(220), LabelText("缓存说明")]
+            public string CacheReason;
+
+            /// <summary>缓存状态颜色：命中=绿，需重跑=黄。</summary>
+            private UnityEngine.Color CacheColor => Cache == "命中"
+                ? new UnityEngine.Color(0.30f, 0.78f, 0.40f, 1f)
+                : new UnityEngine.Color(0.95f, 0.75f, 0.25f, 1f);
         }
 
         [Serializable]
