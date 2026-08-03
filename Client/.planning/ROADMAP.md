@@ -30,6 +30,8 @@
 | Object Pool & Cache 重构 | `Framework/Pool/` + `Framework/Cache/` | `BoundedStore<TKey,TValue>` 替代旧 `Cache`（Put 覆盖两步 Remove+Add、Clear/Remove/淘汰统一 onEvicted、GetOrAdd single-flight、TTL 读路径清理）；`IStoreEvictionPolicy`/`IStoreExpirationPolicy` + `LruPolicy`/`TtlPolicy`/`CapacityPolicy`/`CompositePolicy`；`ObjectPool<T>` 保持 lock 并发安全，`CollectionPool` 使用 `SingleThreadObjectPool<T>` 主线程热路径；`GameObjectPool` 五字典合并 `PrefabPoolState`+实例库存策略 `IInstanceRecyclePolicy`+反向索引污染检测+[MainThread] 断言；`PoolService.cs` DI 桥接；相关 EditMode 单测全绿 |
 | CDN 发布集成 | `Assets/Scripts/Boot.Editor/Build/`（`P10_PublishCdnStage.cs` + `HostUpdatePublisher.cs` + `BuildProfile.cs`）| 构建后可选发布到 CDN（`PublishToCdn` 勾选）；`P10_PublishCdnStage` 复用 P4 产物发布到 `Server/Res/CDN/Android/DefaultPackage`（相对仓库根 KJ 解析）；`server.py` Web 根 `Server/Res`；Host 模式设备从 CDN 下载最新热更资源 |
 | 热更闭环验证 | Boot + HybridCLR + YooAsset + Core/General/Project | AOT 泛型修复（补 `Microsoft.Extensions.Logging` AOT metadata）后热更完整走通：CDN 发布 → 设备版本检测（1.0.0→1.0.1→1.0.2）→ 增量下载 → 新代码运行（`Hot-update runtime marker: v1.0.2`）；设备端启动链全通、零错误 |
+| Dashboard 缓存预检 | `Assets/Scripts/Boot.Editor/Build/Diagnostics/BuildCachePreview.cs` + `BuildDashboardWindow.cs` | 阶段视图三态缓存状态（🟢命中/🟡重跑/⚪总是执行）；复用 Runner 指纹逻辑不构建判断；结果缓存（Profile 哈希失效）；指纹路径用「大小 + mtime」替代内容 SHA-256（30s→亚秒），Runner 同步保持一致 |
+| P4 增量构建修复 | `Assets/Scripts/Boot.Editor/Build/Stages/P4_BuildAssetStage.cs` | YooAsset 3.0.3 `TaskPrepare` 要求输出目录不存在；增量构建前清理 `Bundles/{Platform}/{Package}/{version}`，修复 ErrorCode115 |
 
 ---
 

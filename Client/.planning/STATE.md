@@ -74,6 +74,10 @@ last_updated: "2026-07-31T00:00:00.000Z"
 - [x] REPO-01: 仓库统一重构（KJ 根作为单一 git 仓库，remote=UnityFramework；Unity 工程迁入 `Client/`，服务器代码迁入 `Server/`，CDN 内容 `Server/Res/CDN` gitignore；`Client/.git` 升为 KJ 根 `.git` 保留 UnityFramework 历史；`Server/.git` 移除并入根仓库；manifest.json UPM 第三方包恢复修复）。
 - [x] HOTFIX-01: P8 Smoke 里程碑文案修复（`[BootLoader] all DLLs loaded` → `[BootLoader] Handing control`，与 BootLoader 实际日志对齐，否则启动成功也误判失败）。
 - [x] HOTUPD-01: 热更闭环完整验证（CDN 发布 → 设备版本检测 1.0.0→1.0.1→1.0.2 → 增量下载 `Downloading hot-update files: 1` → 新代码运行打印 `[Project] Hot-update runtime marker: v1.0.2`；设备端启动链全通、零错误；热更验证标记日志保留在 `ProjectLayerEntrypoint.PostStart`）。
+- [x] DASH-01: Dashboard 阶段缓存预检（`BuildCachePreview` 复用 Runner 指纹逻辑，不构建即判断各 Stage 缓存命中/需重跑；`StageView` 三态显示：🟢命中/🟡重跑/⚪总是执行（AlwaysRun/NoSkip 区分）；缓存按 Profile 哈希失效，构建/发布/切 Profile 后自动刷新）。
+- [x] DASH-02: 缓存预检 Repaint 死锁修复（getter 每次 Repaint 全目录 SHA-256 → 卡死；改为 `BuildCachePreview` 结果缓存 + `StageView.GetCachedEntries` 缓存，仅 Profile 变化时重算）。
+- [x] DASH-03: 指纹性能优化（路径指纹从内容 SHA-256 改为「文件大小 + LastWriteTimeUtc.Ticks」，`BuildCachePreview` 与 `BuildPipelineRunner` 同步；Dashboard 阶段视图 30s → 亚秒；首次构建后重写新格式指纹）。
+- [x] BUGFIX-07: P4 增量构建失败（YooAsset 3.0.3 `TaskPrepare` 要求输出目录不存在，`ClearBuildCacheFiles=false` 时残留 `Bundles/{Platform}/{Package}/{version}` 报 ErrorCode115；P4 构建前清理包输出目录）。
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -134,7 +138,8 @@ Assets/Scripts/
 │   │   │   ├── SmokeLogParser.cs      ← 🆕 多里程碑冒烟判定（boot.log + latest.jsonl）
 │   │   │   ├── FormalLeakageVerifier.cs ← 🆕 Formal/Audit 泄露检查
 │   │   │   ├── BuildAnalyzer.cs       ← 🆕 问题分类/合并/推荐
-│   │   │   └── BuildKnowledgeBase.cs  ← 🆕 常见错误 → 修复建议映射
+│   │   │   ├── BuildKnowledgeBase.cs  ← 🆕 常见错误 → 修复建议映射
+│   │   │   └── BuildCachePreview.cs   ← 🆕 缓存预检（复用 Runner 指纹逻辑，不构建判断 Stage 缓存命中/需重跑）
 │   │   ├── Reports/
 │   │   │   └── (报告写入由 BuildPipelineRunner 内嵌)
 │   │   ├── UI/
