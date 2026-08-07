@@ -208,6 +208,52 @@ function addNewJson(psdPath, layerName, thumbnailPath, tags) {
     return writeJsonHandler(data, true);
 }
 
+// 批量新增公共组件（静默模式：不逐个弹成功提示，成功后统一刷新）
+function addNewJsons(items, tags) {
+    var successCount = 0;
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        /** @type {jsonData} */
+        var data = {
+            'psdPath': item.psdPath,
+            'thumbnailPath': item.thumbnailPath,
+            'tags': tags.length > 0 ? tags.split(' ') : [],
+            'layerName': item.layerName
+        }
+        if (writeJsonHandlerSilent(data)) {
+            successCount++;
+        }
+    }
+    resetCash();
+    return successCount;
+}
+
+// 静默版写入：写入单个 JSON，不弹成功 alert（供批量调用）
+function writeJsonHandlerSilent(jsonData) {
+    var savePath;
+    try {
+        var parentDir = getParentDir(jsonData.thumbnailPath);
+        // JSON 文件名直接用组件名，不再拼接 psd 序号
+        savePath = parentDir + '/' + jsonData.layerName + '.json';
+
+        let regex = new RegExp(rootPath, "i");
+        jsonData.psdPath = jsonData.psdPath.replace(regex, "");
+        jsonData.thumbnailPath = jsonData.thumbnailPath.replace(regex, "");
+
+        var json = JSON.stringify(jsonData, null, 2);
+    } catch (err) {
+        alert(err);
+        return false;
+    }
+    try {
+        fs.writeFileSync(savePath, json);
+    } catch (err) {
+        alert(err);
+        return false;
+    }
+    return true;
+}
+
 function writeJsonHandler(jsonData, isNew, oldJsonPath) {
     var savePath;
     try {

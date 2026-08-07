@@ -79,12 +79,47 @@
 
         var addJsonCfg = function (isRepalce, popupIndex) {
             reset();
-            CSLibrary.evalScript(`getCurLayerInfo("${getCfgPath()}")`, function (jsonInfo) {
+            CSLibrary.evalScript(`getCurLayersInfo("${getCfgPath()}")`, function (jsonInfo) {
                 if (!jsonInfo || !decodeURI(jsonInfo)) {
                     alert('获取图层信息失败，请检查是否选中了正确的组件图层');
                     return;
                 }
                 var decoded = decodeURI(jsonInfo);
+                var tags = '';
+                if (isRepalce) {
+                    tags = $('#modifyTags').val().trim();
+                } else {
+                    tags = $('#inputTags').val().trim();
+                }
+
+                // 批量新增：PS 端返回多行（~ 分隔），每行 psdPath@layerName@thumbnailPath
+                if (decoded.indexOf('~') >= 0) {
+                    var lines = decoded.split('~');
+                    var items = [];
+                    for (var i = 0; i < lines.length; i++) {
+                        var info = lines[i].split('@');
+                        var psdPath = info[0];
+                        var layerName = info[1];
+                        var thumbnailPath = info[2];
+                        if (!psdPath || !layerName || !thumbnailPath) {
+                            continue;
+                        }
+                        items.push({ psdPath: psdPath, layerName: layerName, thumbnailPath: thumbnailPath });
+                    }
+                    if (items.length == 0) {
+                        alert('批量图层信息不完整，未添加任何组件');
+                        return;
+                    }
+                    var count = addNewJsons(items, tags);
+                    alert('批量新增完成：成功 ' + count + ' 个组件');
+                    updateThumbnail();
+                    if (!isRepalce && popupIndex !== undefined && popupIndex !== null) {
+                        layer.close(popupIndex);
+                    }
+                    return;
+                }
+
+                // 单个新增
                 var info = decoded.split('@')
                 var psdPath = info[0];
                 var layerName = info[1];
@@ -93,12 +128,6 @@
                 if (!psdPath || !layerName || !thumbnailPath) {
                     alert('图层信息不完整，无法添加公共组件。返回内容：' + decoded);
                     return;
-                }
-                var tags = '';
-                if (isRepalce) {
-                    tags = $('#modifyTags').val().trim();
-                } else {
-                    tags = $('#inputTags').val().trim();
                 }
                 var success = addNewJson(psdPath, layerName, thumbnailPath, tags);
                 if (success) {

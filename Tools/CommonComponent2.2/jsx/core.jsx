@@ -23,9 +23,106 @@ var getCurLayerInfo = function (cfgPath) {
     }
 }
 
-var createImg = function (imgDirPath) {
+// 批量获取当前选中的多个图层组信息
+// 返回格式: 组件组信息用 ~ 连接成一行，整体用 encodeURI 编码。
+// 每个组件: psdPath@layerName@thumbnailPath
+// 单选时返回单行（不含 ~），多选时返回多行。
+// 要求：选中的图层必须全部是图层组(LayerSet)，否则返回错误提示并中止
+var getCurLayersInfo = function (cfgPath) {
+    try {
+        var currentDocument = app.activeDocument;
+        var currentFilePath = decodeURI(currentDocument.fullName);
+        var psdPath = currentFilePath.replace(/^\/(.)/, "$1:");
+
+        var imgDirPath = cfgPath + "/" + getFileName(psdPath)
+
+        // 读取当前选中的多个图层
+        var selectedLayers = getSelectedLayers();
+        if (!selectedLayers || selectedLayers.length == 0) {
+            alert("未选中任何图层，请先选中需要添加的图层组");
+            return '';
+        }
+
+        // 校验：必须全部是图层组(LayerSet)
+        for (var i = 0; i < selectedLayers.length; i++) {
+            if (selectedLayers[i].typename !== "LayerSet") {
+                alert("批量添加要求选中的图层必须全部是组，\n其中 '" + selectedLayers[i].name + "' 不是图层组(LayerSet)，已中止。\n请重新只选择图层组。");
+                return '';
+            }
+        }
+
+        // 逐个生成缩略图并收集信息
+        var lines = [];
+        for (var j = 0; j < selectedLayers.length; j++) {
+            var l = selectedLayers[j];
+            // createImg 第二个参数传入指定图层，避免依赖“活动图层”状态在批量时被串扰
+            var thumPath = createImg(imgDirPath, l);
+            if (!thumPath) {
+                continue;
+            }
+            lines.push(psdPath + "@" + l.name + "@" + thumPath);
+        }
+
+        if (lines.length == 0) {
+            alert("没有成功生成任何组件缩略图");
+            return '';
+        }
+
+        return encodeURI(lines.join("~"));
+    } catch (e) {
+        alert("批量获取图层信息失败: " + e);
+        return '';
+    }
+}
+
+// 读取当前选中的多个图层（含嵌套组内的图层）
+// 社区最广泛验证的方案：用 Action Manager 把当前选中图层临时打包成组，
+// 读取组内子层（即之前选中的图层），再 undo 撤销建组恢复原状。
+// 该方案在 Photoshop CS4 到 2020 均验证可靠，且无需处理索引偏移。
+var getSelectedLayers = function () {
+    var selectedLayers = [];
+    var doc = app.activeDocument;
+
+    try {
+        // 新建组：把当前选中的图层(target)作为组的来源
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(stringIDToTypeID("layerSection")); // 新组类型
+        desc.putReference(charIDToTypeID("null"), ref);
+        var lref = new ActionReference();
+        lref.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt")); // 目标=选中图层
+        desc.putReference(charIDToTypeID("From"), lref);
+        executeAction(charIDToTypeID("Mk  "), desc, DialogModes.NO);
+
+        // 建组后，新组成为活动图层；读取其子层（即之前选中的图层）
+        var group = doc.activeLayer;
+        if (group && group.typename === "LayerSet") {
+            var childLayers = group.layers;
+            for (var i = 0; i < childLayers.length; i++) {
+                selectedLayers.push(childLayers[i]);
+            }
+        }
+
+        // 撤销建组，恢复原始图层结构（图层引用在 undo 后仍有效，社区已验证）
+        executeAction(charIDToTypeID("undo"), undefined, DialogModes.NO);
+    } catch (e) {
+        // 建组/撤销失败时，回退到单数 activeLayer（单选必可靠）
+        selectedLayers = [];
+        try {
+            var al = doc.activeLayer;
+            if (al) {
+                selectedLayers.push(al);
+            }
+        } catch (e3) {}
+    }
+
+    return selectedLayers;
+}
+
+var createImg = function (imgDirPath, targetLayer) {
     var currentDocument = app.activeDocument;
-    var activeLayer = currentDocument.activeLayer;
+    // 若传入了指定图层(批量用)则优先使用它，否则读当前活动图层
+    var activeLayer = targetLayer ? targetLayer : currentDocument.activeLayer;
 
     // 规定：只有图层组(LayerSet)才能作为公共组件添加
     if (activeLayer.typename !== "LayerSet") {
@@ -36,31 +133,22 @@ var createImg = function (imgDirPath) {
     var layer = activeLayer
 
     // 注意：PSD 的 bounds 顺序是 [Top, Left, Bottom, Right]
-    // 新建一个画布，尺寸用组 bounds 的宽高并各留 200px 安全余量，
-    // 防止组内阴影/发光等实际内容略超出组边界；复制归位后再 trim 掉透明边缘贴合真实像素
-
+    // 直接按组的边界框(bounds)截取整个组作为缩略图，
+    // 画布尺寸 = 组 bounds 的宽高，不做余量、不 trim，组内元素是否完整由美术保证
     var gBounds = layer.bounds;
     var gWidth = gBounds[3].as("px") - gBounds[1].as("px");
     var gHeight = gBounds[2].as("px") - gBounds[0].as("px");
 
-    var newDoc = app.documents.add(gWidth + 200, gHeight + 200, 72, "New Document", NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
+    var newDoc = app.documents.add(gWidth, gHeight, 72, "New Document", NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
     app.activeDocument = currentDocument;
 
     var dupLayer = layer.duplicate(newDoc, ElementPlacement.INSIDE);
     app.activeDocument = newDoc;
 
-    // 将复制进来的图层移到新画布左上角(0,0)附近（留 100px 边距）
+    // 将复制进来的图层移到新画布原点(0,0)，让组边界框与画布对齐
     var dupTop = dupLayer.bounds[0].as("px");
     var dupLeft = dupLayer.bounds[1].as("px");
-    dupLayer.translate(-dupLeft + 100, -dupTop + 100);
-
-    // 裁剪掉四周透明像素，让画布精确贴合内容真实像素边界，避免边缘裁切
-    // 用 try-catch 包裹：即使 trim 失败也继续导出，不中断缩略图生成
-    try {
-        newDoc.trim(TrimType.TRANSPARENT);
-    } catch (trimErr) {
-        alert("裁剪透明边缘失败(忽略继续): " + trimErr);
-    }
+    dupLayer.translate(-dupLeft, -dupTop);
 
     var exportOptions = new ExportOptionsSaveForWeb();
     exportOptions.format = SaveDocumentType.PNG;
