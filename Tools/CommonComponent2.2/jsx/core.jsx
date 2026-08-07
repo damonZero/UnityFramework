@@ -132,12 +132,24 @@ var createImg = function (imgDirPath, targetLayer) {
 
     var layer = activeLayer
 
-    // 注意：PSD 的 bounds 顺序是 [Top, Left, Bottom, Right]
+    // 注意：PSD 的 bounds 数组是 [Left, Top, Right, Bottom]，
+    // 但不同版本/对象可能顺序有差异，这里用 min/max 组合算出与顺序无关的 left/top。
     // 直接按组的边界框(bounds)截取整个组作为缩略图，
     // 画布尺寸 = 组 bounds 的宽高，不做余量、不 trim，组内元素是否完整由美术保证
     var gBounds = layer.bounds;
-    var gWidth = gBounds[3].as("px") - gBounds[1].as("px");
-    var gHeight = gBounds[2].as("px") - gBounds[0].as("px");
+    var g0 = gBounds[0].as("px"), g1 = gBounds[1].as("px"), g2 = gBounds[2].as("px"), g3 = gBounds[3].as("px");
+    var gLeft = Math.min(g0, g2);   // left = 两个 X 坐标的较小者
+    var gTop = Math.min(g1, g3);    // top = 两个 Y 坐标的较小者
+    var gRight = Math.max(g0, g2);
+    var gBottom = Math.max(g1, g3);
+    var gWidth = gRight - gLeft;
+    var gHeight = gBottom - gTop;
+
+    // 保护：组边界框退化(宽高<=0)时无法生成缩略图
+    if (gWidth <= 0 || gHeight <= 0) {
+        alert("组件 '" + layer.name + "' 的边界框尺寸无效(" + gWidth + "x" + gHeight + ")，跳过");
+        return;
+    }
 
     var newDoc = app.documents.add(gWidth, gHeight, 72, "New Document", NewDocumentMode.RGB, DocumentFill.TRANSPARENT);
     app.activeDocument = currentDocument;
@@ -146,8 +158,10 @@ var createImg = function (imgDirPath, targetLayer) {
     app.activeDocument = newDoc;
 
     // 将复制进来的图层移到新画布原点(0,0)，让组边界框与画布对齐
-    var dupTop = dupLayer.bounds[0].as("px");
-    var dupLeft = dupLayer.bounds[1].as("px");
+    // 同样用 min/max 组合读取，避免 bounds 顺序差异导致偏移错误
+    var d0 = dupLayer.bounds[0].as("px"), d1 = dupLayer.bounds[1].as("px"), d2 = dupLayer.bounds[2].as("px"), d3 = dupLayer.bounds[3].as("px");
+    var dupLeft = Math.min(d0, d2);
+    var dupTop = Math.min(d1, d3);
     dupLayer.translate(-dupLeft, -dupTop);
 
     var exportOptions = new ExportOptionsSaveForWeb();
