@@ -89,9 +89,8 @@
                 var psdPath = info[0];
                 var layerName = info[1];
                 var thumbnailPath = info[2];
-                var layerIdx = info[3];
                 // 防御：evalScript 返回非预期内容(如错误信息)时，可能解析不出完整字段，直接拦截
-                if (!psdPath || !layerName || !thumbnailPath || layerIdx === undefined) {
+                if (!psdPath || !layerName || !thumbnailPath) {
                     alert('图层信息不完整，无法添加公共组件。返回内容：' + decoded);
                     return;
                 }
@@ -101,7 +100,7 @@
                 } else {
                     tags = $('#inputTags').val().trim();
                 }
-                var success = addNewJson(psdPath, layerName, thumbnailPath, layerIdx, tags);
+                var success = addNewJson(psdPath, layerName, thumbnailPath, tags);
                 if (success) {
                     // 刷新组件列表，让新增的组件立即显示（无需手动刷新窗口）
                     updateThumbnail();
@@ -131,7 +130,6 @@
             $('#modifyThumbnail').val('');
             $('#modifyTags').val('');
             $('#modifyLayerName').val('');
-            $('#modifyLayerIndex').val('');
         }
 
 
@@ -383,8 +381,6 @@
                                     <input type="text" id="modifyPsdPath">
                                     <div>缩略图路径（推荐通过直接替换图片（同名）来修改）</div>
                                     <input type="text" id="modifyThumbnail">
-                                    <div>公共组件的组在psd中的顺序（从0开始）</div>
-                                    <input type="text" id="modifyLayerIndex">
                                 </div>
                                 <div class="button-container">
                                     <button onClick="replaceJson()">替换</button>
@@ -470,14 +466,6 @@
                     <label class="layui-form-label" style="width: 170px">缩略图路径（推荐通过直接替换图片（同名）来修改）</label>
                     <div class="layui-input-block">
                         <input type="text" name="name" id="modifyThumbnail" required value="" style="width: 170px"
-                            lay-verify="required" autocomplete="off" class="layui-input">
-                    </div>
-                </div>
-
-                <div class="layui-form-item center">
-                    <label class="layui-form-label" style="width: 170px">公共组件的组在psd中的顺序（从0开始）</label>
-                    <div class="layui-input-block">
-                        <input type="text" name="name" id="modifyLayerIndex" required value="" style="width: 170px"
                             lay-verify="required" autocomplete="off" class="layui-input">
                     </div>
                 </div>

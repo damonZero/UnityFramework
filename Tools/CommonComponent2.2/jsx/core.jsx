@@ -33,29 +33,6 @@ var createImg = function (imgDirPath) {
         return;
     }
 
-    var layerIndex = -1
-
-    // 获取 activeLayer 所在的父容器（父图层组或文档本身）的子图层列表，
-    // 不再要求 PSD 顶层必须是包装组（document.layers[0]）
-    var parentLayer = activeLayer.parent;
-    var childLayers = parentLayer.layers;
-
-    for (var i = 0; i < childLayers.length; i++) {
-        var childLayer = childLayers[i];
-
-        if (activeLayer == childLayer) {
-            layerIndex = i;
-            break;
-        }
-    }
-
-    // alert("layerIndex " + layerIndex)
-
-    if (layerIndex < 0) {
-        alert("获取图层出错")
-        return;
-    }
-
     var layer = activeLayer
 
     // 注意：PSD 的 bounds 顺序是 [Top, Left, Bottom, Right]
@@ -97,14 +74,15 @@ var createImg = function (imgDirPath) {
     // alert(imgDirPath)
     createFolder(imgDirPath);
 
-    var thunbnailPath = imgDirPath + "/" + layer.name + "_" + layerIndex + ".png"
+    // 缩略图文件名直接用组件名，不再拼接 psd 序号
+    var thunbnailPath = imgDirPath + "/" + layer.name + ".png"
     var file = new File(thunbnailPath);
 
     newDoc.exportDocument(file, ExportType.SAVEFORWEB, exportOptions);
 
     newDoc.close(SaveOptions.DONOTSAVECHANGES)
 
-    return thunbnailPath + "@" + layerIndex;
+    return thunbnailPath;
 }
 
 var addPsdHandler = function (params) {
@@ -118,8 +96,8 @@ var addPsdHandler = function (params) {
         return;
     }
 
-    var layerIdx = parseInt(infos[1], 10);
-    var layerName = infos[2] || "";
+    // 参数格式: path&layerName （组件按名称查找，不再依赖 psd 序号）
+    var layerName = infos[1] || "";
 
     var docRef = app.activeDocument;
     var importedDocRef = null;
@@ -135,18 +113,13 @@ var addPsdHandler = function (params) {
 
         var layer = null;
 
-        // 优先按名称查找图层（递归搜索整棵图层树，不再要求顶层是包装组）
+        // 按名称查找图层（递归搜索整棵图层树，不再要求顶层是包装组）
         if (layerName) {
             layer = findLayerByName(importedDocRef, layerName);
         }
 
-        // 名称未找到时按索引兜底（索引 = 图层在其父容器内的序号，也递归查找）
-        if (!layer && layerIdx >= 0) {
-            layer = findLayerByIndex(importedDocRef, layerIdx);
-        }
-
         if (!layer) {
-            alert("[addPsd] 错误: 未找到图层\n名称: " + layerName + "\n索引: " + layerIdx);
+            alert("[addPsd] 错误: 未找到图层\n名称: " + layerName);
             importedDocRef.close(SaveOptions.DONOTSAVECHANGES);
             app.activeDocument = docRef;
             return;
@@ -212,26 +185,6 @@ var findLayerByName = function (container, name) {
         // 是图层组则深入查找
         if (l.typename === "LayerSet") {
             var found = findLayerByName(l, name);
-            if (found) {
-                return found;
-            }
-        }
-    }
-    return null;
-}
-
-// 递归查找：索引 = 目标图层在其父容器内的序号（从0开始），整棵图层树内唯一
-var findLayerByIndex = function (container, index) {
-    var layers = container.layers;
-    for (var i = 0; i < layers.length; i++) {
-        if (i === index) {
-            return layers[i];
-        }
-    }
-    for (var i = 0; i < layers.length; i++) {
-        var l = layers[i];
-        if (l.typename === "LayerSet") {
-            var found = findLayerByIndex(l, index);
             if (found) {
                 return found;
             }

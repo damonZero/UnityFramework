@@ -51,7 +51,7 @@ function updateThumbnail() {
 
 function ShowThumbnail(json, isFirst, isEnd) {
     var thumbPath = json.thumbnailPath
-    var eventData = encodeURI(`${json.psdPath}&${json.layerIndex}&${json.layerName}`)
+    var eventData = encodeURI(`${json.psdPath}&${json.layerName}`)
     //var thumb = $('<div class="image-wrapper"><img class="thumbnail" src="' + thumbPath + '" draggable="true"></img><label class="imgName"></label></div>').appendTo('#container');
     var thumb = $('<div class="layui-col-xs3"><div class="layui-card"><div class="layui-card-header"><label class="imgName"></label></div><div class="layui-card-body"><div class="imgContainer"><img class="layui-col-xs3 thumbnail " src="' + thumbPath + '" draggable="true"></img></div><div class="buttonContainer"></div></div></div></div>').appendTo('#container');
     thumb.find('.imgContainer').css({

@@ -3,8 +3,7 @@ const fs = require('fs');
 /**
  * @typedef {Object} jsonData
  * @property {string} psdPath - PSD 文件路径
- * @property {string} layerName - PSD 图层名
- * @property {string} layerIndex - PSD 图层index
+ * @property {string} layerName - PSD 图层组名
  * @property {string} thumbnailPath - 缩略图文件路径
  * @property {string[]} tags - 标签数组
  */
@@ -198,14 +197,13 @@ function getJsonFiles(dir, jsonFs = []) {
     return jsonFs;
 }
 
-function addNewJson(psdPath, layerName, thumbnailPath, layerIndex, tags) {
+function addNewJson(psdPath, layerName, thumbnailPath, tags) {
     /** @type {jsonData} */
     var data = {
         'psdPath': psdPath,
         'thumbnailPath': thumbnailPath,
         'tags': tags.length > 0 ? tags.split(' ') : [],
-        'layerName': layerName,
-        'layerIndex': layerIndex
+        'layerName': layerName
     }
     return writeJsonHandler(data, true);
 }
@@ -217,7 +215,8 @@ function writeJsonHandler(jsonData, isNew, oldJsonPath) {
 
         var parentDir = getParentDir(thumbnailPath);
 
-        savePath = parentDir + '/' + jsonData.layerName + "_" + jsonData.layerIndex + '.json';
+        // JSON 文件名直接用组件名，不再拼接 psd 序号
+        savePath = parentDir + '/' + jsonData.layerName + '.json';
 
         let regex = new RegExp(rootPath, "i");
         jsonData.psdPath = jsonData.psdPath.replace(regex, "");
@@ -231,7 +230,7 @@ function writeJsonHandler(jsonData, isNew, oldJsonPath) {
     try {
         fs.writeFileSync(savePath, json);
 
-        // 当组件名/序号发生变化时，旧 JSON 文件路径与新路径不同，需要删除旧文件
+        // 当组件名发生变化时，旧 JSON 文件路径与新路径不同，需要删除旧文件
         if (oldJsonPath) {
             var normalizedOld = oldJsonPath.replace(/\\/g, '/');
             if (normalizedOld !== savePath) {
@@ -265,7 +264,6 @@ function showModifyInfo(thumbnailPath) {
     origModifyData = {
         thumbnailPath: json.thumbnailPath,
         layerName: json.layerName,
-        layerIndex: json.layerIndex,
         jsonPath: data.jsonPath,
         psdPath: json.psdPath
     };
@@ -275,7 +273,6 @@ function showModifyInfo(thumbnailPath) {
     $('#modifyThumbnail').val(json.thumbnailPath);
     $('#modifyTags').val(json.tags.join(" "));
     $('#modifyLayerName').val(json.layerName);
-    $('#modifyLayerIndex').val(json.layerIndex);
 
     updateInputWidth();
 }
@@ -292,22 +289,20 @@ function saveModifyJson() {
     }
 
     var newLayerName = $('#modifyLayerName').val().trim();
-    var newLayerIndex = $('#modifyLayerIndex').val().trim();
     var tags = $('#modifyTags').val().trim();
     var newPsdPath = $('#modifyPsdPath').val().trim();
 
     var origThumbnailPath = origModifyData.thumbnailPath;
     var origLayerName = origModifyData.layerName;
-    var origLayerIndex = origModifyData.layerIndex;
     var origJsonPath = origModifyData.jsonPath;
 
-    var nameOrIndexChanged = (newLayerName !== origLayerName || newLayerIndex !== origLayerIndex);
+    var nameChanged = (newLayerName !== origLayerName);
     var newThumbnailPath = origThumbnailPath;
 
-    if (nameOrIndexChanged) {
-        // 重命名缩略图 PNG，使其与新的组件名/序号保持一致
+    if (nameChanged) {
+        // 重命名缩略图 PNG，使其与新的组件名保持一致
         var parentDir = getParentDir(origThumbnailPath);
-        newThumbnailPath = parentDir + '/' + newLayerName + '_' + newLayerIndex + '.png';
+        newThumbnailPath = parentDir + '/' + newLayerName + '.png';
         try {
             fs.renameSync(origThumbnailPath, newThumbnailPath);
         } catch (err) {
@@ -321,8 +316,7 @@ function saveModifyJson() {
         'psdPath': newPsdPath,
         'thumbnailPath': newThumbnailPath,
         'tags': tags.length > 0 ? tags.split(' ') : [],
-        'layerName': newLayerName,
-        'layerIndex': newLayerIndex
+        'layerName': newLayerName
     };
 
     var success = writeJsonHandler(data, false, origJsonPath);
