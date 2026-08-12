@@ -150,6 +150,13 @@ function jsonInofHandler(filePath, jsonData) {
     d.psdPath = rootPath + d.psdPath;
     d.thumbnailPath = rootPath + d.thumbnailPath;
 
+    // 备注图片路径与 psd/thumbnail 一致：JSON 中存 rootPath 相对路径，加载时补全为绝对路径
+    if (d.remark && Array.isArray(d.remark.images)) {
+        d.remark.images = d.remark.images.map(function (p) {
+            return p.indexOf(rootPath) === 0 ? p : rootPath + p;
+        });
+    }
+
     // const psdPath = d.psdPath;
     const tags = d.tags;
 
@@ -197,7 +204,7 @@ function getJsonFiles(dir, jsonFs = []) {
     return jsonFs;
 }
 
-function addNewJson(psdPath, layerName, thumbnailPath, tags) {
+function addNewJson(psdPath, layerName, thumbnailPath, tags, remark) {
     /** @type {jsonData} */
     var data = {
         'psdPath': psdPath,
@@ -205,10 +212,15 @@ function addNewJson(psdPath, layerName, thumbnailPath, tags) {
         'tags': tags.length > 0 ? tags.split(' ') : [],
         'layerName': layerName
     }
+    // 新增时携带备注（可为 null）
+    if (remark) {
+        data.remark = remark;
+    }
     return writeJsonHandler(data, true);
 }
 
 // 批量新增公共组件（静默模式：不逐个弹成功提示，成功后统一刷新）
+// items 中每一项可带可选字段 remark，用于批量时给每个组件写入备注
 function addNewJsons(items, tags) {
     var successCount = 0;
     for (var i = 0; i < items.length; i++) {
@@ -219,6 +231,9 @@ function addNewJsons(items, tags) {
             'thumbnailPath': item.thumbnailPath,
             'tags': tags.length > 0 ? tags.split(' ') : [],
             'layerName': item.layerName
+        }
+        if (item.remark) {
+            data.remark = item.remark;
         }
         if (writeJsonHandlerSilent(data)) {
             successCount++;
@@ -239,6 +254,13 @@ function writeJsonHandlerSilent(jsonData) {
         let regex = new RegExp(rootPath, "i");
         jsonData.psdPath = jsonData.psdPath.replace(regex, "");
         jsonData.thumbnailPath = jsonData.thumbnailPath.replace(regex, "");
+
+        // 备注图片同样转成 rootPath 相对路径存储
+        if (jsonData.remark && Array.isArray(jsonData.remark.images)) {
+            jsonData.remark.images = jsonData.remark.images.map(function (p) {
+                return p.replace(regex, "");
+            });
+        }
 
         var json = JSON.stringify(jsonData, null, 2);
     } catch (err) {
@@ -267,6 +289,13 @@ function writeJsonHandler(jsonData, isNew, oldJsonPath) {
         let regex = new RegExp(rootPath, "i");
         jsonData.psdPath = jsonData.psdPath.replace(regex, "");
         jsonData.thumbnailPath = jsonData.thumbnailPath.replace(regex, "");
+
+        // 备注图片同样转成 rootPath 相对路径存储
+        if (jsonData.remark && Array.isArray(jsonData.remark.images)) {
+            jsonData.remark.images = jsonData.remark.images.map(function (p) {
+                return p.replace(regex, "");
+            });
+        }
 
         var json = JSON.stringify(jsonData, null, 2);
     } catch (err) {
@@ -305,6 +334,9 @@ function showModifyInfo(thumbnailPath) {
         alert('没有找到配置文件');
         return;
     }
+
+    // 记录当前正在修改的组件，供“备注”编辑使用
+    curModifyThumb = thumbnailPath;
 
     // 保存原始数据，用于修改时检测变化（删旧文件、重命名等）
     origModifyData = {
@@ -357,6 +389,9 @@ function saveModifyJson() {
         }
     }
 
+    // 保留原有备注（修改其它字段时不应清空备注）
+    var oldJson = imgJsonMap[origThumbnailPath] ? imgJsonMap[origThumbnailPath].json : null;
+
     /** @type {jsonData} */
     var data = {
         'psdPath': newPsdPath,
@@ -364,6 +399,9 @@ function saveModifyJson() {
         'tags': tags.length > 0 ? tags.split(' ') : [],
         'layerName': newLayerName
     };
+    if (oldJson && oldJson.remark) {
+        data.remark = oldJson.remark;
+    }
 
     var success = writeJsonHandler(data, false, origJsonPath);
     if (!success) {
@@ -416,6 +454,14 @@ function delJson(isReplace) {
         fs.unlinkSync(jsonPath);
         alert('文件已成功删除：' + jsonPath);
 
+        // 同时清理备注图片文件，避免残留
+        if (data.json && data.json.remark && Array.isArray(data.json.remark.images)) {
+            for (var r = 0; r < data.json.remark.images.length; r++) {
+                try {
+                    fs.unlinkSync(data.json.remark.images[r]);
+                } catch (e2) {}
+            }
+        }
     } catch (err) {
         alert(err);
     }
@@ -537,6 +583,16 @@ function getFileName(filePath) {
     const fileName = fileNameWithExtension.slice(0, dotIndex);
 
     return fileName
+}
+
+function getExt(filePath) {
+    // 提取文件扩展名（不含点），没有扩展名时默认 png
+    var dotIndex = filePath.lastIndexOf(".");
+    if (dotIndex < 0) {
+        return 'png';
+    }
+    var ext = filePath.slice(dotIndex + 1).toLowerCase();
+    return ext || 'png';
 }
 
 function intersection(...arrays) {

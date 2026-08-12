@@ -104,7 +104,9 @@
                         if (!psdPath || !layerName || !thumbnailPath) {
                             continue;
                         }
-                        items.push({ psdPath: psdPath, layerName: layerName, thumbnailPath: thumbnailPath });
+                        // 每个组件各复制一份备注图片；替换流程不携带新增面板的备注
+                        var remark = isRepalce ? null : collectAddRemark(layerName, thumbnailPath);
+                        items.push({ psdPath: psdPath, layerName: layerName, thumbnailPath: thumbnailPath, remark: remark });
                     }
                     if (items.length == 0) {
                         alert('批量图层信息不完整，未添加任何组件');
@@ -129,7 +131,9 @@
                     alert('图层信息不完整，无法添加公共组件。返回内容：' + decoded);
                     return;
                 }
-                var success = addNewJson(psdPath, layerName, thumbnailPath, tags);
+                // 备注：替换流程不携带新增面板的备注
+                var remark = isRepalce ? null : collectAddRemark(layerName, thumbnailPath);
+                var success = addNewJson(psdPath, layerName, thumbnailPath, tags, remark);
                 if (success) {
                     // 刷新组件列表，让新增的组件立即显示（无需手动刷新窗口）
                     updateThumbnail();
@@ -154,6 +158,7 @@
 
         var clearModifyInfo = function () {
             origModifyData = null;
+            curModifyThumb = null;
             $('#showModifyName').text('');
             $('#modifyPsdPath').val('');
             $('#modifyThumbnail').val('');
@@ -244,13 +249,14 @@
                 title: "新增公共组件配置",
                 closeBtn: true,
                 shift: 2,
-                area: ['400px', '300px'],
+                area: ['540px', '600px'],
                 shadeClose: true,
                 btn: ['新增', '重置'],
                 btnAlign: 'c',
                 content: $("#add-main"),
                 success: function (layero, index) {
                     reset();
+                    clearAddRemark();
                 },
                 btn1: function () {
                     // alert("走这里了")
@@ -258,6 +264,7 @@
                 },
                 btn2: function () {
                     reset();
+                    clearAddRemark();
                 }
             });
         }
@@ -271,7 +278,7 @@
                 shift: 2,
                 area: ['400px', '420px'],
                 shadeClose: true,
-                btn: ['替换', '删除', '修改'],
+                btn: ['替换', '删除', '修改', '备注'],
                 btnAlign: 'c',
                 content: $("#modify-main"),
                 end: function (layero, index) {
@@ -286,6 +293,11 @@
                 },
                 btn3: function () {
                     saveModifyJson();
+                    return false;
+                },
+                btn4: function () {
+                    // 打开编辑备注弹窗，保持修改面板打开
+                    openRemarkEdit();
                     return false;
                 }
             });
@@ -454,12 +466,27 @@
 
         <div id="add-main" style="display: none;">
             <form class="layui-form" id="add-form" action="">
-                <div class="layui-form-item center">
-                    <label class="layui-form-label" style="width: 170px">标签(多个标签用空格隔开)</label>
-                    <div class="layui-input-block">
-                        <input type="text" name="name" id="inputTags" required value="" style="width: 170px"
-                            lay-verify="required" autocomplete="off" class="layui-input">
+                <div class="add-panel">
+                    <div class="remark-field">
+                        <label>标签<span class="field-hint">（多个标签用空格隔开）</span></label>
+                        <input type="text" id="inputTags" class="layui-input" autocomplete="off"
+                            placeholder="如：按钮 通用 蓝色">
                         <div id="chooseThumbnail"></div>
+                    </div>
+                    <div class="remark-field">
+                        <label>备注文本</label>
+                        <textarea id="addRemarkText" class="layui-textarea" rows="4"
+                            placeholder="请输入组件备注说明"></textarea>
+                    </div>
+                    <div class="remark-field">
+                        <label>备注图片<span class="field-hint">（可选）</span></label>
+                        <div id="addRemarkImages" class="remark-images"></div>
+                        <div class="add-image-row">
+                            <input type="file" id="addPanelImageInput" multiple accept="image/*" style="display: none;">
+                            <button type="button" id="addPanelImageBtn" class="layui-btn layui-btn-sm layui-btn-primary">
+                                <i class="layui-icon layui-icon-add-1"></i> 添加图片
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -500,6 +527,25 @@
                 </div>
             </form>
         </div>
+
+        <div id="remark-main" style="display: none;">
+            <div class="remark-edit-wrap">
+                <div class="remark-field">
+                    <label>备注文本</label>
+                    <textarea id="remarkText" class="layui-textarea" rows="6"
+                        placeholder="请输入组件备注说明"></textarea>
+                </div>
+                <div class="remark-field">
+                    <label>备注图片</label>
+                    <div id="remarkImages" class="remark-images"></div>
+                    <input type="file" id="remarkImageInput" multiple accept="image/*" style="display: none;">
+                    <button type="button" id="addRemarkImageBtn" class="layui-btn layui-btn-sm layui-btn-primary">添加图片</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 备注悬浮提示弹窗（hover 组件时显示） -->
+        <div id="remarkTooltip" class="remark-tooltip" style="display: none;"></div>
 
     </div>
 

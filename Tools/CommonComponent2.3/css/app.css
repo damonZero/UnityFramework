@@ -184,3 +184,155 @@ option {
   margin-bottom: 20px;
   margin-right: 20px;
 }
+
+/* ===== 新增公共组件面板排版 ===== */
+.add-panel {
+  padding: 14px 10px 4px;
+}
+
+.add-panel .remark-field {
+  margin-bottom: 20px;
+}
+
+.add-panel .remark-field label {
+  margin-bottom: 6px;
+}
+
+.add-panel .field-hint {
+  font-weight: normal;
+  color: #999;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.add-panel input[type="text"].layui-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+}
+
+.add-image-row {
+  margin-top: 10px;
+}
+
+/* ===== 备注悬浮提示弹窗 ===== */
+.remark-tooltip {
+  position: fixed;
+  z-index: 99999;
+  max-width: 340px;
+  min-width: 200px;
+  padding: 12px 14px;
+  background-color: #fff;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.remark-tooltip-title {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.remark-tooltip-text {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  word-break: break-all;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.remark-tooltip-images {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.remark-tooltip-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  cursor: zoom-in;
+}
+
+.remark-tooltip-img:hover {
+  border-color: #409eff;
+}
+
+/* ===== 备注编辑弹窗 ===== */
+.remark-edit-wrap {
+  padding: 16px;
+}
+
+.remark-field {
+  margin-bottom: 16px;
+}
+
+.remark-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.remark-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.remark-image-item {
+  position: relative;
+}
+
+.remark-image-item img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  cursor: zoom-in;
+  display: block;
+}
+
+.remark-image-item img:hover {
+  border-color: #409eff;
+}
+
+.remark-image-del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: #f56c6c;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.remark-image-del:hover {
+  background-color: #e63a3a;
+}
+
+.remark-empty {
+  color: #999;
+  font-size: 13px;
+}
