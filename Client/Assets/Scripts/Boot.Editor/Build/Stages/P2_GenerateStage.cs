@@ -98,11 +98,13 @@ namespace Boot.Editor.Build
             BuildTarget target = profile.Platform;
             var cache = LoadCache(context);
             using var developmentBuildScope = new DevelopmentBuildScope(profile.DevelopmentBuild);
+            string pathHashManifestPath = GetPathHashManifestPath(context);
+            string bridgeSensitiveManifestPath = GetBridgeSensitiveManifestPath(context);
 
             BuildLogger.Info("[P2] HybridCLR: compiling hot-update DLLs...");
             BuildTelemetry.Measure("P2.CompileHotUpdateDlls", "HybridCLR",
                 () => CompileDllCommand.CompileDll(target, profile.DevelopmentBuild));
-            string compiledDllHash = HashDirectory(SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target));
+            string compiledDllHash = HashPathsCached(new[] { SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target) }, pathHashManifestPath);
 
             BuildTelemetry.Measure("P2.GenerateIl2CppDef", "HybridCLR",
                 Il2CppDefGeneratorCommand.GenerateIl2CppDef);
@@ -110,8 +112,8 @@ namespace Boot.Editor.Build
             BuildTelemetry.Measure("P2.GenerateLinkXml", "HybridCLR",
                 () => LinkGeneratorCommand.GenerateLinkXml(target));
             string linkXmlHash = HashFile(LinkXmlPath);
-            string aotStripInputHash = HashPaths(AotStripInputPaths);
-            string currentAotDllHash = HashDirectory(SettingsUtil.GetAssembliesPostIl2CppStripDir(target));
+            string aotStripInputHash = HashPathsCached(AotStripInputPaths, pathHashManifestPath);
+            string currentAotDllHash = HashPathsCached(new[] { SettingsUtil.GetAssembliesPostIl2CppStripDir(target) }, pathHashManifestPath);
 
             bool stripRequired = context.ForceFullRebuild
                 || !File.Exists(LinkXmlPath)
@@ -130,27 +132,28 @@ namespace Boot.Editor.Build
                 BuildLogger.Info("[P2] HybridCLR: stripped AOT DLL cache verified.");
             }
             string aotDllHash = stripRequired
-                ? HashDirectory(SettingsUtil.GetAssembliesPostIl2CppStripDir(target))
+                ? HashPathsCached(new[] { SettingsUtil.GetAssembliesPostIl2CppStripDir(target) }, pathHashManifestPath)
                 : currentAotDllHash;
 
-            string bridgeInputHash = HashBridgeSensitiveSources();
+            string bridgeInputHash = HashBridgeSensitiveSources(bridgeSensitiveManifestPath);
             string methodBridgePath = Path.Combine(SettingsUtil.GeneratedCppDir, "MethodBridge.cpp");
-            bool bridgeRequired = context.ForceFullRebuild
-                || stripRequired
-                || !File.Exists(methodBridgePath)
-                || !StringEquals(cache.BridgeSensitiveHash, bridgeInputHash)
-                || !StringEquals(cache.AotDllHash, aotDllHash)
-                || !StringEquals(cache.HybridClrProfileHash, profile.ComputeHybridClrProfileHash())
-                || !StringEquals(cache.MethodBridgeHash, HashFile(methodBridgePath));
-            if (bridgeRequired)
+            string methodBridgeCacheKey = ComputeMethodBridgeCacheKey(
+                aotDllHash, bridgeInputHash,
+                profile.ComputeHybridClrProfileHash(), profile.DevelopmentBuild);
+            string cachedMethodBridgePath = Path.Combine(
+                context.Paths.CacheDir, "methodbridge", methodBridgeCacheKey, "MethodBridge.cpp");
+
+            if (context.ForceFullRebuild || !File.Exists(cachedMethodBridgePath))
             {
-                BuildLogger.Info("[P2] HybridCLR: bridge inputs changed, generating MethodBridge.");
+                BuildLogger.Info("[P2] HybridCLR: MethodBridge cache miss, generating.");
                 BuildTelemetry.Measure("P2.GenerateMethodBridge", "HybridCLR",
                     () => MethodBridgeGeneratorCommand.GenerateMethodBridgeAndReversePInvokeWrapper(target));
+                SaveMethodBridgeToCache(methodBridgePath, cachedMethodBridgePath);
             }
             else
             {
-                BuildLogger.Info("[P2] HybridCLR: MethodBridge cache verified.");
+                BuildLogger.Info("[P2] HybridCLR: MethodBridge cache hit, restoring.");
+                RestoreMethodBridgeFromCache(methodBridgePath, cachedMethodBridgePath);
             }
 
             bool genericReferencesRequired = context.ForceFullRebuild
@@ -214,77 +217,198 @@ namespace Boot.Editor.Build
         private static string GetCachePath(BuildContext context)
             => Path.Combine(context.Paths.CacheDir, "hybridclr_generation_cache.json");
 
-        private static string HashBridgeSensitiveSources()
+        /// <summary>
+        /// bridge 敏感源码哈希（带 mtime 短路）：只有含 MonoPInvokeCallback / DllImport / delegate* / calli
+        /// 等标记的 .cs 文件才参与哈希。文件 (size, mtime) 未变时复用清单里缓存的「是否敏感 + 内容哈希」，
+        /// 不重读文件；变了才重新读 + 重新判定 token。结果仍是全部敏感文件的确定性摘要。
+        /// </summary>
+        private static string HashBridgeSensitiveSources(string manifestPath)
         {
+            var manifest = LoadBridgeSensitiveManifest(manifestPath);
+            var index = new Dictionary<string, BridgeSensitiveManifestEntry>(StringComparer.Ordinal);
+            foreach (var entry in manifest.Entries)
+            {
+                if (!string.IsNullOrEmpty(entry.Path))
+                    index[entry.Path] = entry;
+            }
+
             var files = RuntimeSourceRoots
                 .Where(Directory.Exists)
                 .SelectMany(root => Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories))
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
-            using var sha = SHA256.Create();
+
+            var sb = new StringBuilder();
             foreach (string file in files)
             {
-                string text = File.ReadAllText(file);
-                if (!BridgeSensitiveTokens.Any(token => text.IndexOf(token, StringComparison.Ordinal) >= 0))
-                    continue;
-                byte[] bytes = Encoding.UTF8.GetBytes(file.Replace('\\', '/') + "\n" + text + "\n");
-                sha.TransformBlock(bytes, 0, bytes.Length, bytes, 0);
+                string canonical = Path.GetFullPath(file).Replace('\\', '/');
+                var fi = new FileInfo(canonical);
+                long length = fi.Length;
+                long mtime = fi.LastWriteTimeUtc.Ticks;
+
+                index.TryGetValue(canonical, out var entry);
+                bool isSensitive;
+                string hash;
+                if (entry != null && entry.Length == length && entry.MtimeTicks == mtime)
+                {
+                    // mtime 短路：复用缓存的敏感判定与哈希
+                    isSensitive = entry.IsSensitive;
+                    hash = entry.Hash;
+                }
+                else
+                {
+                    string text = File.ReadAllText(canonical);
+                    isSensitive = BridgeSensitiveTokens.Any(token => text.IndexOf(token, StringComparison.Ordinal) >= 0);
+                    if (isSensitive)
+                    {
+                        using var sha = SHA256.Create();
+                        hash = ToHex(sha.ComputeHash(Encoding.UTF8.GetBytes(text)));
+                    }
+                    else
+                    {
+                        hash = "";
+                    }
+
+                    if (entry == null)
+                    {
+                        entry = new BridgeSensitiveManifestEntry { Path = canonical };
+                        index[canonical] = entry;
+                    }
+                    entry.Length = length;
+                    entry.MtimeTicks = mtime;
+                    entry.IsSensitive = isSensitive;
+                    entry.Hash = hash;
+                }
+
+                if (isSensitive)
+                    sb.Append(canonical).Append('|').Append(hash).Append('\n');
             }
-            sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            return ToHex(sha.Hash);
+
+            SaveBridgeSensitiveManifest(new BridgeSensitiveManifest { Entries = index.Values.ToList() }, manifestPath);
+            using var sha = SHA256.Create();
+            return ToHex(sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString())));
         }
 
-        private static string HashDirectory(string directory)
+        private static string GetBridgeSensitiveManifestPath(BuildContext context)
+            => Path.Combine(context.Paths.CacheDir, "bridge_sensitive_manifest.json");
+
+        private static BridgeSensitiveManifest LoadBridgeSensitiveManifest(string path)
         {
-            if (!Directory.Exists(directory)) return "missing";
-            using var sha = SHA256.Create();
-            foreach (string file in Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
-                         .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+            if (!File.Exists(path)) return new BridgeSensitiveManifest();
+            try { return JsonUtility.FromJson<BridgeSensitiveManifest>(File.ReadAllText(path)) ?? new BridgeSensitiveManifest(); }
+            catch { return new BridgeSensitiveManifest(); }
+        }
+
+        private static void SaveBridgeSensitiveManifest(BridgeSensitiveManifest manifest, string path)
+        {
+            try
             {
-                byte[] pathBytes = Encoding.UTF8.GetBytes(file.Replace('\\', '/') + "\n");
-                sha.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
-                byte[] content = File.ReadAllBytes(file);
-                sha.TransformBlock(content, 0, content.Length, content, 0);
+                string dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllText(path, JsonUtility.ToJson(manifest, true));
             }
-            sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            return ToHex(sha.Hash);
+            catch (Exception ex)
+            {
+                BuildLogger.Warn($"[P2] HybridCLR: failed to save bridge-sensitive manifest: {ex.Message}");
+            }
         }
 
-        private static string HashPaths(IEnumerable<string> paths)
+        private static string GetPathHashManifestPath(BuildContext context)
+            => Path.Combine(context.Paths.CacheDir, "path_hash_manifest.json");
+
+        /// <summary>
+        /// 内容哈希（带 mtime 短路）：文件 (size, mtime) 未变时复用清单里的旧 SHA-256，不重读文件；
+        /// 变了才重新计算。结果仍是对全部文件路径 + 内容的确定性摘要。第三方库 / 裁剪后 AOT DLL
+        /// 基本不变，靠这一层把「几百 MB 逐字节哈希」降为「stat + 复用旧哈希」。
+        /// </summary>
+        private static string HashPathsCached(IEnumerable<string> paths, string manifestPath)
         {
-            using var sha = SHA256.Create();
-            foreach (string path in paths.OrderBy(value => value, StringComparer.OrdinalIgnoreCase))
+            var manifest = LoadPathHashManifest(manifestPath);
+            var index = new Dictionary<string, FileHashManifestEntry>(StringComparer.Ordinal);
+            foreach (var entry in manifest.Entries)
+            {
+                if (!string.IsNullOrEmpty(entry.Path))
+                    index[entry.Path] = entry;
+            }
+
+            var sb = new StringBuilder();
+            foreach (string path in paths.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
             {
                 if (File.Exists(path))
                 {
-                    AppendFileToHash(sha, path);
-                    continue;
+                    AppendCachedPath(sb, path, index);
                 }
-
-                if (!Directory.Exists(path))
+                else if (Directory.Exists(path))
                 {
-                    byte[] missing = Encoding.UTF8.GetBytes("missing:" + path.Replace('\\', '/') + "\n");
-                    sha.TransformBlock(missing, 0, missing.Length, missing, 0);
-                    continue;
+                    foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories)
+                                 .Where(f => !f.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                                 .OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+                        AppendCachedPath(sb, file, index);
                 }
-
-                foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-                             .Where(file => !file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
-                             .OrderBy(file => file, StringComparer.OrdinalIgnoreCase))
-                    AppendFileToHash(sha, file);
+                else
+                {
+                    sb.Append("missing:").Append(path.Replace('\\', '/')).Append('\n');
+                }
             }
-            sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            return ToHex(sha.Hash);
+
+            SavePathHashManifest(new FileHashManifest { Entries = index.Values.ToList() }, manifestPath);
+            using var sha = SHA256.Create();
+            return ToHex(sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString())));
         }
 
-        private static void AppendFileToHash(HashAlgorithm hash, string path)
+        private static void AppendCachedPath(StringBuilder sb, string path, Dictionary<string, FileHashManifestEntry> index)
         {
-            byte[] pathBytes = Encoding.UTF8.GetBytes(path.Replace('\\', '/') + "\n");
-            hash.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
-            var buffer = new byte[64 * 1024];
-            using var stream = File.OpenRead(path);
-            int read;
-            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
-                hash.TransformBlock(buffer, 0, read, buffer, 0);
+            string canonical = Path.GetFullPath(path).Replace('\\', '/');
+            sb.Append(canonical).Append('|').Append(GetFileContentHash(canonical, index)).Append('\n');
+        }
+
+        private static string GetFileContentHash(string canonicalPath, Dictionary<string, FileHashManifestEntry> index)
+        {
+            var fi = new FileInfo(canonicalPath);
+            long length = fi.Length;
+            long mtime = fi.LastWriteTimeUtc.Ticks;
+
+            if (index.TryGetValue(canonicalPath, out var entry)
+                && entry.Length == length
+                && entry.MtimeTicks == mtime
+                && !string.IsNullOrEmpty(entry.Hash))
+                return entry.Hash;
+
+            using var stream = File.OpenRead(canonicalPath);
+            using var sha = SHA256.Create();
+            string hash = ToHex(sha.ComputeHash(stream));
+
+            if (entry == null)
+            {
+                entry = new FileHashManifestEntry { Path = canonicalPath };
+                index[canonicalPath] = entry;
+            }
+            entry.Length = length;
+            entry.MtimeTicks = mtime;
+            entry.Hash = hash;
+            return hash;
+        }
+
+        private static FileHashManifest LoadPathHashManifest(string path)
+        {
+            if (!File.Exists(path)) return new FileHashManifest();
+            try { return JsonUtility.FromJson<FileHashManifest>(File.ReadAllText(path)) ?? new FileHashManifest(); }
+            catch { return new FileHashManifest(); }
+        }
+
+        private static void SavePathHashManifest(FileHashManifest manifest, string path)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllText(path, JsonUtility.ToJson(manifest, true));
+            }
+            catch (Exception ex)
+            {
+                BuildLogger.Warn($"[P2] HybridCLR: failed to save path hash manifest: {ex.Message}");
+            }
         }
 
         private static string HashFile(string path)
@@ -293,6 +417,62 @@ namespace Boot.Editor.Build
             using var stream = File.OpenRead(path);
             using var sha = SHA256.Create();
             return ToHex(sha.ComputeHash(stream));
+        }
+
+        /// <summary>
+        /// MethodBridge.cpp 缓存的输入键。故意不含 compiledDllHash（热更 DLL 全量内容）：
+        /// 19 分钟的 methodBridgeAnalyzer.Run() 只用 CreateAOTAssemblyResolver 扫描裁剪后的 AOT 程序集，
+        /// 完全不读热更程序集；热更侧只影响逆向 P/Invoke / calli / DllImport 三个快速分析器，
+        /// 这部分由 bridgeInputHash（bridge 敏感源码哈希）覆盖。因此 ZLinq 等基本库不变、且未新增
+        /// bridge 敏感标记时，即便修改普通业务代码也直接命中缓存，跳过全量泛型展开。
+        /// </summary>
+        private static string ComputeMethodBridgeCacheKey(
+            string aotDllHash, string bridgeInputHash,
+            string hybridClrProfileHash, bool developmentBuild)
+        {
+            string hybridClrVersion = "";
+            try
+            {
+                hybridClrVersion = UnityEditor.PackageManager.PackageInfo
+                    .FindForPackageName("com.code-philosophy.hybridclr")?.version ?? "";
+            }
+            catch { }
+
+            var sb = new StringBuilder();
+            sb.Append(aotDllHash).Append('\n');
+            sb.Append(bridgeInputHash).Append('\n');
+            sb.Append(hybridClrProfileHash).Append('\n');
+            sb.Append(Application.unityVersion).Append('\n');
+            sb.Append(hybridClrVersion).Append('\n');
+            sb.Append(SettingsUtil.HybridCLRSettings.maxMethodBridgeGenericIteration).Append('\n');
+            sb.Append(developmentBuild).Append('\n');
+            using var sha = SHA256.Create();
+            return ToHex(sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString())));
+        }
+
+        private static void SaveMethodBridgeToCache(string methodBridgePath, string cachedPath)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(cachedPath);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+                File.Copy(methodBridgePath, cachedPath, true);
+                BuildLogger.Info($"[P2] HybridCLR: MethodBridge cached: {cachedPath}");
+            }
+            catch (Exception ex)
+            {
+                BuildLogger.Warn($"[P2] HybridCLR: failed to cache MethodBridge: {ex.Message}");
+            }
+        }
+
+        private static void RestoreMethodBridgeFromCache(string methodBridgePath, string cachedPath)
+        {
+            string dir = Path.GetDirectoryName(methodBridgePath);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+            File.Copy(cachedPath, methodBridgePath, true);
+            BuildLogger.Info($"[P2] HybridCLR: MethodBridge restored from cache: {cachedPath}");
         }
 
         private static string ToHex(byte[] bytes) => BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
@@ -312,6 +492,37 @@ namespace Boot.Editor.Build
             {
                 EditorUserBuildSettings.development = _previous;
             }
+        }
+
+        [Serializable]
+        private sealed class FileHashManifest
+        {
+            public List<FileHashManifestEntry> Entries = new List<FileHashManifestEntry>();
+        }
+
+        [Serializable]
+        private sealed class FileHashManifestEntry
+        {
+            public string Path;
+            public long Length;
+            public long MtimeTicks;
+            public string Hash;
+        }
+
+        [Serializable]
+        private sealed class BridgeSensitiveManifest
+        {
+            public List<BridgeSensitiveManifestEntry> Entries = new List<BridgeSensitiveManifestEntry>();
+        }
+
+        [Serializable]
+        private sealed class BridgeSensitiveManifestEntry
+        {
+            public string Path;
+            public long Length;
+            public long MtimeTicks;
+            public bool IsSensitive;
+            public string Hash;
         }
 
         [Serializable]
