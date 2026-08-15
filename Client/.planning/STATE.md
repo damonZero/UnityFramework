@@ -8,7 +8,7 @@ last_updated: "2026-07-31T00:00:00.000Z"
 
 # Project State: KJ Unity Framework
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-15
 **Current Status:** ✅ 分层启动链重构完成（Phase 0-4）+ 热更闭环完整验证 + 仓库统一为 KJ 根（Client+Server 单一仓库）。Android P0-P10 E2E 构建通过（含 CDN 发布 P10）；AOT 泛型修复（补 `Microsoft.Extensions.Logging` AOT metadata）；CDN 发布集成（`PublishToCdn` 可勾选 + `P10_PublishCdnStage`）；热更验证 1.0.0→1.0.1（版本热更）→1.0.2（内容级热更，设备运行新代码打印 `v1.0.2` 标记）全部通过。
 
 ## 进度
@@ -78,6 +78,7 @@ last_updated: "2026-07-31T00:00:00.000Z"
 - [x] DASH-02: 缓存预检 Repaint 死锁修复（getter 每次 Repaint 全目录 SHA-256 → 卡死；改为 `BuildCachePreview` 结果缓存 + `StageView.GetCachedEntries` 缓存，仅 Profile 变化时重算）。
 - [x] DASH-03: 指纹性能优化（路径指纹从内容 SHA-256 改为「文件大小 + LastWriteTimeUtc.Ticks」，`BuildCachePreview` 与 `BuildPipelineRunner` 同步；Dashboard 阶段视图 30s → 亚秒；首次构建后重写新格式指纹）。
 - [x] BUGFIX-07: P4 增量构建失败（YooAsset 3.0.3 `TaskPrepare` 要求输出目录不存在，`ClearBuildCacheFiles=false` 时残留 `Bundles/{Platform}/{Package}/{version}` 报 ErrorCode115；P4 构建前清理包输出目录）。
+- [x] PKG-19: HybridCLR MethodBridge 输出缓存 + P2 哈希 mtime 短路（`P2_GenerateStage`：`MethodBridge.cpp` 纯函数缓存，键 = AOT DLL 哈希 + 桥接敏感源码哈希 + HybridCLR Profile + Unity/HybridCLR 版本 + 泛型迭代次数 + development，命中直接回填跳过 19 分钟全量泛型分析；AOT DLL / 热更 DLL / AOT strip 输入哈希改「size+mtime 短路 + 内容 SHA-256 权威」持久化清单，第三方库不变时只 stat 不读文件；`HashBridgeSensitiveSources` 套同款 mtime 清单）。E2E 验证：Android Dev 打包 26 分钟 → 37 秒（MethodBridge 20.6min→跳过、P6 IL2CPP 4.7min→8.8s，IL2CPP 编译缓存随 MethodBridge 命中得以保留）；顺带修 `BuildStageRegistry_RegistersP0ToP9InOrder` 过期测试 → P0-P10。
 - [ ] UI-01: UISystem（UI 管理）
 - [ ] UI-02: UIWindow 基类
 
@@ -381,6 +382,7 @@ Phase 2 规划：
 
 ## 最新验证记录
 
+- 2026-08-15: **PKG-19 HybridCLR MethodBridge 输出缓存 + P2 哈希 mtime 短路落地**：`MethodBridge.cpp` 按输入哈希缓存（AOT DLL + 桥接敏感源码 + HybridCLR Profile + 版本 + 设置 + development），命中直接回填跳过 19 分钟全量泛型分析；AOT/热更 DLL 与 AOT strip 输入哈希改为「size+mtime 短路 + 内容哈希权威」持久化清单，第三方库不变时不再逐字节读取；`HashBridgeSensitiveSources` 同样 mtime 短路。E2E 验证：Android Dev 打包 26 分钟 → 37 秒（MethodBridge 20.6min 跳过、P6 IL2CPP 4.7min→8.8s）。另修 BuildStageRegistry 过期测试（P0-P9 → P0-P10）。
 - 2026-07-31: **PKG-18 构建管线 1.1.0 增量优化落地**：P2 拆分并缓存 CompileDll/Il2CppDef/link.xml/AOT Strip/MethodBridge/AOTGenericReference；Stage 输入输出改用 SHA-256 内容指纹并跨版本、按平台缓存；P3 删除重复 DLL 编译；P4 默认复用 YooAsset build cache；Dashboard/CI 增加显式全量模式。用户确认 Editor 编译与 TestRunner 无报错；真实增量耗时待 E2E 报告。
 - 2026-07-20: **PLATFORM-01~04 落地**：构建管线全部 19 个文件统一使用 `BuildLogger`（GameLog + Unity Console 双写）；Dashboard 中文化并集成热更补丁发布按钮和设备安装勾选；`SimpleLogger<T>` 实现落地 Core 层，`CoreContainerRegistration` 改用 `SimpleLogger<>` 替代 `Logger<>` 注册 `ILogger<>`，从架构层面绕过 IL2CPP AOT 泛型实例化边界。
 - 2026-07-19: **BUGFIX-05/06 修复**：YooAsset Sandbox/Builtin 文件系统参数修复——`BootLoader` 和 `AssetRuntime` 中 `CreateDefaultBuiltinFileSystemParameters()` 和 `CreateDefaultSandboxFileSystemParameters()` 不再错误地把 `packageName` 当 `packageRoot` 传递，解决设备端 Host 模式 "Read-only file system" 错误。P8 ADB pull 路径修复——`pull PATH/Runtime localDir` 导致文件嵌套一层，改为 `pull PATH/Runtime/. localDir` 展平。设备验证：BootLoader→YooAsset→HybridCLR→Boot→Core→VContainer AOT 链全部通过（AOT metadata/DLL 加载、Hot-update files current、Handing control to hot-update Boot layer、ProjectBootstrapper registration ready）。但 MissingMethodException `Logger.Log<TState>` 未消除（Architecture 层面：`Logger<T>` 在 AOT 侧 DLL，HybridCLR 无法穿透其泛型实例化）。
