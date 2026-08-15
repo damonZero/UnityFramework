@@ -146,13 +146,14 @@ namespace Boot.Editor.Build.Tests
         }
 
         [Test]
-        public void BuildStageRegistry_RegistersP0ToP9InOrder()
+        public void BuildStageRegistry_RegistersP0ToP10InOrder()
         {
             var stages = BuildStageRegistry.GetAll();
 
-            Assert.AreEqual(10, stages.Count);
+            Assert.AreEqual(11, stages.Count);
             Assert.AreEqual("P0.Plan", stages[0].Id);
             Assert.AreEqual("P9.Report", stages[9].Id);
+            Assert.AreEqual("P10.PublishCdn", stages[10].Id);
             CollectionAssert.IsEmpty(BuildStageRegistry.ValidateDependencies());
         }
 
