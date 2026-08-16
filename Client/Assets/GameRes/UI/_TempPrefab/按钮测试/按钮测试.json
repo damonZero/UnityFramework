@@ -1,0 +1,3389 @@
+{
+  "name": "按钮测试",
+  "type": 1,
+  "pos": [
+    0,
+    0
+  ],
+  "size": [
+    750,
+    1624
+  ],
+  "childNodes": [
+    {
+      "name": "CmnFuncBtnVerticalLayout__T2B",
+      "type": 2,
+      "pos": [
+        314,
+        485
+      ],
+      "size": [
+        96,
+        426
+      ],
+      "childNodes": [
+        {
+          "name": "布局_容器",
+          "type": 2,
+          "pos": [
+            314,
+            485
+          ],
+          "size": [
+            96,
+            426
+          ],
+          "childNodes": [
+            {
+              "name": "CmnFuncBtnStyle1",
+              "type": 2,
+              "pos": [
+                313,
+                652.5
+              ],
+              "size": [
+                84,
+                91
+              ],
+              "childNodes": [
+                {
+                  "name": "img_btnFunction_iconbase",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    655.5
+                  ],
+                  "size": [
+                    84,
+                    85
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "icon_function_tujian",
+                  "type": 3,
+                  "pos": [
+                    315,
+                    656.5
+                  ],
+                  "size": [
+                    52,
+                    57
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "img_btnfunction_wordbase",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    619.5
+                  ],
+                  "size": [
+                    54,
+                    25
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c63",
+                  "type": 4,
+                  "content": "图鉴",
+                  "pos": [
+                    314.5,
+                    620
+                  ],
+                  "size": [
+                    41,
+                    22
+                  ],
+                  "font": "B",
+                  "fontSize": 22,
+                  "color": [
+                    0.76,
+                    0.76,
+                    0.76,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      194,
+                      194,
+                      194,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "CmnFuncBtnStyle1",
+              "type": 2,
+              "pos": [
+                313,
+                541.5
+              ],
+              "size": [
+                84,
+                91
+              ],
+              "childNodes": [
+                {
+                  "name": "img_btnFunction_iconbase",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    544.5
+                  ],
+                  "size": [
+                    84,
+                    85
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "icon_function_tujian",
+                  "type": 3,
+                  "pos": [
+                    315,
+                    545.5
+                  ],
+                  "size": [
+                    52,
+                    57
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "img_btnfunction_wordbase",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    508.5
+                  ],
+                  "size": [
+                    54,
+                    25
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c63",
+                  "type": 4,
+                  "content": "图鉴",
+                  "pos": [
+                    314.5,
+                    509
+                  ],
+                  "size": [
+                    41,
+                    22
+                  ],
+                  "font": "B",
+                  "fontSize": 22,
+                  "color": [
+                    0.76,
+                    0.76,
+                    0.76,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      194,
+                      194,
+                      194,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "CmnFuncBtnStyle1",
+              "type": 2,
+              "pos": [
+                314,
+                428.5
+              ],
+              "size": [
+                86,
+                91
+              ],
+              "childNodes": [
+                {
+                  "name": "img_btnFunction_iconbase",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    431.5
+                  ],
+                  "size": [
+                    84,
+                    85
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "icon_function_tujian",
+                  "type": 3,
+                  "pos": [
+                    315,
+                    432.5
+                  ],
+                  "size": [
+                    52,
+                    57
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "img_btnfunction_wordbase",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    395.5
+                  ],
+                  "size": [
+                    54,
+                    25
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c63",
+                  "type": 4,
+                  "content": "图鉴图鉴",
+                  "pos": [
+                    314.5,
+                    396
+                  ],
+                  "size": [
+                    85,
+                    22
+                  ],
+                  "font": "B",
+                  "fontSize": 22,
+                  "color": [
+                    0.76,
+                    0.76,
+                    0.76,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      194,
+                      194,
+                      194,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    4
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "CmnFuncBtnStyle3",
+              "type": 2,
+              "pos": [
+                314,
+                316.5
+              ],
+              "size": [
+                96,
+                89
+              ],
+              "childNodes": [
+                {
+                  "name": "img_btnFunction_icondi2",
+                  "type": 3,
+                  "pos": [
+                    313,
+                    321
+                  ],
+                  "size": [
+                    80,
+                    80
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "icon_function_xianling",
+                  "type": 3,
+                  "pos": [
+                    314,
+                    320.5
+                  ],
+                  "size": [
+                    58,
+                    63
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "img_btnfunction_wordbase2",
+                  "type": 3,
+                  "pos": [
+                    314,
+                    284.5
+                  ],
+                  "size": [
+                    96,
+                    25
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswbc45",
+                  "type": 4,
+                  "content": "法宝仙令",
+                  "pos": [
+                    314,
+                    285
+                  ],
+                  "size": [
+                    86,
+                    20
+                  ],
+                  "font": "B",
+                  "fontSize": 22,
+                  "color": [
+                    0.69,
+                    0.67,
+                    0.59,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      176,
+                      170,
+                      150,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    4
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CmnFuncBtnVerticalLayout__B2T",
+      "type": 2,
+      "pos": [
+        317,
+        -355
+      ],
+      "size": [
+        78,
+        322
+      ],
+      "childNodes": [
+        {
+          "name": "_btnmainface",
+          "type": 2,
+          "pos": [
+            317,
+            -466
+          ],
+          "size": [
+            78,
+            100
+          ],
+          "childNodes": [
+            {
+              "name": "img_btnmainface_icondi",
+              "type": 3,
+              "pos": [
+                317,
+                -459
+              ],
+              "size": [
+                78,
+                86
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "img_common_gongnengdi",
+              "type": 3,
+              "pos": [
+                319.5,
+                -494
+              ],
+              "size": [
+                73,
+                44
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "icon_hole_paiming",
+              "type": 3,
+              "pos": [
+                319,
+                -461.5
+              ],
+              "size": [
+                66,
+                73
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fsbt@c53",
+              "type": 4,
+              "content": "好友",
+              "pos": [
+                319.5,
+                -493.5
+              ],
+              "size": [
+                41,
+                21
+              ],
+              "font": "B",
+              "fontSize": 22,
+              "color": [
+                1,
+                1,
+                1,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 8.37753,
+              "letterSpacing": -80,
+              "colorRuns": [
+                [
+                  255,
+                  255,
+                  255,
+                  255
+                ]
+              ],
+              "runLengths": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "_btnmainface",
+          "type": 2,
+          "pos": [
+            317,
+            -355
+          ],
+          "size": [
+            78,
+            100
+          ],
+          "childNodes": [
+            {
+              "name": "img_btnmainface_icondi",
+              "type": 3,
+              "pos": [
+                317,
+                -348
+              ],
+              "size": [
+                78,
+                86
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "img_common_gongnengdi",
+              "type": 3,
+              "pos": [
+                319.5,
+                -383
+              ],
+              "size": [
+                73,
+                44
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "icon_hole_paiming",
+              "type": 3,
+              "pos": [
+                319,
+                -350.5
+              ],
+              "size": [
+                66,
+                73
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fsbt@c53",
+              "type": 4,
+              "content": "好友",
+              "pos": [
+                319.5,
+                -382.5
+              ],
+              "size": [
+                41,
+                21
+              ],
+              "font": "B",
+              "fontSize": 22,
+              "color": [
+                1,
+                1,
+                1,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 8.37753,
+              "letterSpacing": -80,
+              "colorRuns": [
+                [
+                  255,
+                  255,
+                  255,
+                  255
+                ]
+              ],
+              "runLengths": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "_btnmainface",
+          "type": 2,
+          "pos": [
+            317,
+            -244
+          ],
+          "size": [
+            78,
+            100
+          ],
+          "childNodes": [
+            {
+              "name": "img_btnmainface_icondi",
+              "type": 3,
+              "pos": [
+                317,
+                -237
+              ],
+              "size": [
+                78,
+                86
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "img_common_gongnengdi",
+              "type": 3,
+              "pos": [
+                319.5,
+                -272
+              ],
+              "size": [
+                73,
+                44
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "icon_hole_paiming",
+              "type": 3,
+              "pos": [
+                319,
+                -239.5
+              ],
+              "size": [
+                66,
+                73
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fsbt@c53",
+              "type": 4,
+              "content": "好友",
+              "pos": [
+                319.5,
+                -271.5
+              ],
+              "size": [
+                41,
+                21
+              ],
+              "font": "B",
+              "fontSize": 22,
+              "color": [
+                1,
+                1,
+                1,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 8.37753,
+              "letterSpacing": -80,
+              "colorRuns": [
+                [
+                  255,
+                  255,
+                  255,
+                  255
+                ]
+              ],
+              "runLengths": [
+                2
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CmnBtnClose__0",
+      "type": 2,
+      "pos": [
+        -306.5,
+        -732.5
+      ],
+      "size": [
+        137,
+        91
+      ],
+      "childNodes": [
+        {
+          "name": "img_common_backdark",
+          "type": 3,
+          "pos": [
+            -306.5,
+            -732.5
+          ],
+          "size": [
+            137,
+            91
+          ],
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "name": "CmnBtnClose__1",
+      "type": 2,
+      "pos": [
+        -311.5,
+        -726
+      ],
+      "size": [
+        71,
+        52
+      ],
+      "childNodes": [
+        {
+          "name": "img_common_backdark_2",
+          "type": 3,
+          "pos": [
+            -311.5,
+            -726
+          ],
+          "size": [
+            71,
+            52
+          ],
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "name": "CmnDrawBtnGroup",
+      "type": 2,
+      "pos": [
+        0,
+        -541
+      ],
+      "size": [
+        676,
+        124
+      ],
+      "childNodes": [
+        {
+          "name": "黄按钮",
+          "type": 2,
+          "pos": [
+            175,
+            -532
+          ],
+          "size": [
+            326,
+            106
+          ],
+          "childNodes": [
+            {
+              "name": "img_Secondbtn_di_h",
+              "type": 3,
+              "pos": [
+                175,
+                -532
+              ],
+              "size": [
+                326,
+                106
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fsbt@c1",
+              "type": 4,
+              "content": "十连抽",
+              "pos": [
+                174,
+                -516
+              ],
+              "size": [
+                104,
+                34
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            },
+            {
+              "name": "img_primarybtn_costdi_h",
+              "type": 3,
+              "pos": [
+                178,
+                -549
+              ],
+              "size": [
+                180,
+                28
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "Icon_540",
+              "type": 3,
+              "pos": [
+                161.5,
+                -549.5
+              ],
+              "size": [
+                25,
+                27
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c5",
+              "type": 4,
+              "content": "10",
+              "pos": [
+                189.5,
+                -549.5
+              ],
+              "size": [
+                21,
+                19
+              ],
+              "font": "B",
+              "fontSize": 26,
+              "color": [
+                0.1,
+                0.6,
+                0.17,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  26,
+                  154,
+                  43,
+                  255
+                ]
+              ],
+              "runLengths": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "绿按钮",
+          "type": 2,
+          "pos": [
+            -175,
+            -532
+          ],
+          "size": [
+            326,
+            106
+          ],
+          "childNodes": [
+            {
+              "name": "img_Secondbtn_di_b",
+              "type": 3,
+              "pos": [
+                -175,
+                -532
+              ],
+              "size": [
+                326,
+                106
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fsbt@c1",
+              "type": 4,
+              "content": "单抽",
+              "pos": [
+                -175.5,
+                -515
+              ],
+              "size": [
+                67,
+                36
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                2
+              ]
+            },
+            {
+              "name": "img_primarybtn_costdi_n",
+              "type": 3,
+              "pos": [
+                -172.5,
+                -549
+              ],
+              "size": [
+                181,
+                28
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "Icon_540",
+              "type": 3,
+              "pos": [
+                -184.5,
+                -549.5
+              ],
+              "size": [
+                25,
+                27
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c5",
+              "type": 4,
+              "content": "1",
+              "pos": [
+                -161,
+                -549.5
+              ],
+              "size": [
+                4,
+                19
+              ],
+              "font": "B",
+              "fontSize": 26,
+              "color": [
+                0.07,
+                0.6,
+                0.13,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  18,
+                  152,
+                  34,
+                  255
+                ]
+              ],
+              "runLengths": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t2d@fswb@c16",
+          "type": 4,
+          "content": "22:22:22后免费",
+          "pos": [
+            -166.5,
+            -590
+          ],
+          "size": [
+            171,
+            26
+          ],
+          "font": "B",
+          "fontSize": 26,
+          "color": [
+            0.8,
+            0.79,
+            0.79,
+            1
+          ],
+          "italic": false,
+          "bold": false,
+          "underline": false,
+          "alignment": "Top",
+          "lineSpace": 36,
+          "letterSpacing": 0,
+          "colorRuns": [
+            [
+              204,
+              202,
+              202,
+              255
+            ]
+          ],
+          "runLengths": [
+            11
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CmnDoubleBtnMid",
+      "type": 2,
+      "pos": [
+        0,
+        -125
+      ],
+      "size": [
+        606,
+        88
+      ],
+      "childNodes": [
+        {
+          "name": "CmnBtnMid",
+          "type": 2,
+          "pos": [
+            164,
+            -125
+          ],
+          "size": [
+            278,
+            88
+          ],
+          "childNodes": [
+            {
+              "name": "高亮状态",
+              "type": 2,
+              "pos": [
+                164,
+                -125
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_h",
+                  "type": 3,
+                  "pos": [
+                    164,
+                    -125
+                  ],
+                  "size": [
+                    272,
+                    88
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "确 定",
+                  "pos": [
+                    163,
+                    -120.5
+                  ],
+                  "size": [
+                    80,
+                    35
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "普通状态",
+              "type": 2,
+              "pos": [
+                164,
+                -125
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_n",
+                  "type": 3,
+                  "pos": [
+                    164,
+                    -125
+                  ],
+                  "size": [
+                    272,
+                    88
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "一键放入",
+                  "pos": [
+                    164.5,
+                    -120
+                  ],
+                  "size": [
+                    143,
+                    32
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.24,
+                    0.24,
+                    0.24,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      61,
+                      61,
+                      61,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    4
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "信息状态",
+              "type": 2,
+              "pos": [
+                164,
+                -120
+              ],
+              "size": [
+                278,
+                64
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_info",
+                  "type": 3,
+                  "pos": [
+                    164,
+                    -120
+                  ],
+                  "size": [
+                    278,
+                    64
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fsbt@c65",
+                  "type": 4,
+                  "content": "快速觅宝",
+                  "pos": [
+                    163.5,
+                    -119
+                  ],
+                  "size": [
+                    135,
+                    34
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.33,
+                    0.33,
+                    0.33,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      84,
+                      84,
+                      84,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    4
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "置灰状态",
+              "type": 2,
+              "pos": [
+                164,
+                -125
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_d",
+                  "type": 3,
+                  "pos": [
+                    164,
+                    -125
+                  ],
+                  "size": [
+                    272,
+                    88
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fsbt@c1 拷贝",
+                  "type": 4,
+                  "content": "灰状态",
+                  "pos": [
+                    163.5,
+                    -119.5
+                  ],
+                  "size": [
+                    107,
+                    35
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.24,
+                    0.24,
+                    0.24,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      61,
+                      61,
+                      61,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnMid",
+          "type": 2,
+          "pos": [
+            -164,
+            -125
+          ],
+          "size": [
+            278,
+            88
+          ],
+          "childNodes": [
+            {
+              "name": "高亮状态",
+              "type": 2,
+              "pos": [
+                -164,
+                -125
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_h",
+                  "type": 3,
+                  "pos": [
+                    -164,
+                    -125
+                  ],
+                  "size": [
+                    272,
+                    88
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "取 消",
+                  "pos": [
+                    -166.5,
+                    -119.5
+                  ],
+                  "size": [
+                    77,
+                    35
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "普通状态",
+              "type": 2,
+              "pos": [
+                -164,
+                -125
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_n",
+                  "type": 3,
+                  "pos": [
+                    -164,
+                    -125
+                  ],
+                  "size": [
+                    272,
+                    88
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "取 消",
+                  "pos": [
+                    -165.5,
+                    -119.5
+                  ],
+                  "size": [
+                    77,
+                    35
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.24,
+                    0.24,
+                    0.24,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      61,
+                      61,
+                      61,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "信息状态",
+              "type": 2,
+              "pos": [
+                -164,
+                -120
+              ],
+              "size": [
+                278,
+                64
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_info",
+                  "type": 3,
+                  "pos": [
+                    -164,
+                    -120
+                  ],
+                  "size": [
+                    278,
+                    64
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fsbt@c65",
+                  "type": 4,
+                  "content": "快速觅宝",
+                  "pos": [
+                    -164.5,
+                    -119
+                  ],
+                  "size": [
+                    135,
+                    34
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.33,
+                    0.33,
+                    0.33,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      84,
+                      84,
+                      84,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    4
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "置灰状态",
+              "type": 2,
+              "pos": [
+                -164,
+                -125
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "childNodes": [
+                {
+                  "name": "img_Secondbtn_di_d",
+                  "type": 3,
+                  "pos": [
+                    -164,
+                    -125
+                  ],
+                  "size": [
+                    272,
+                    88
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fsbt@c1 拷贝",
+                  "type": 4,
+                  "content": "灰状态",
+                  "pos": [
+                    -164.5,
+                    -119.5
+                  ],
+                  "size": [
+                    107,
+                    35
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.24,
+                    0.24,
+                    0.24,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      61,
+                      61,
+                      61,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CmnBtnShop",
+      "type": 2,
+      "pos": [
+        181,
+        -30
+      ],
+      "size": [
+        212,
+        60
+      ],
+      "childNodes": [
+        {
+          "name": "btn_sevenday_buy",
+          "type": 3,
+          "pos": [
+            181,
+            -30
+          ],
+          "size": [
+            212,
+            60
+          ],
+          "opacity": 1
+        },
+        {
+          "name": "Icon_02",
+          "type": 3,
+          "pos": [
+            157.5,
+            -26.5
+          ],
+          "size": [
+            33,
+            37
+          ],
+          "opacity": 1
+        },
+        {
+          "name": "t2d@fswbo@c1",
+          "type": 4,
+          "content": "60",
+          "pos": [
+            197,
+            -27.5
+          ],
+          "size": [
+            32,
+            23
+          ],
+          "font": "B",
+          "fontSize": 32,
+          "color": [
+            0.24,
+            0.24,
+            0.24,
+            1
+          ],
+          "italic": false,
+          "bold": false,
+          "underline": false,
+          "alignment": "Top",
+          "lineSpace": 36,
+          "letterSpacing": 0,
+          "colorRuns": [
+            [
+              61,
+              61,
+              61,
+              255
+            ]
+          ],
+          "runLengths": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CmnBottomButtons__Two",
+      "type": 2,
+      "pos": [
+        57,
+        -734
+      ],
+      "size": [
+        590,
+        108
+      ],
+      "childNodes": [
+        {
+          "name": "_btnPrimary",
+          "type": 2,
+          "pos": [
+            168.5,
+            -734
+          ],
+          "size": [
+            367,
+            108
+          ],
+          "childNodes": [
+            {
+              "name": "img_primarybtn_di_h",
+              "type": 3,
+              "pos": [
+                168.5,
+                -734
+              ],
+              "size": [
+                367,
+                108
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "融 合",
+              "pos": [
+                169,
+                -730
+              ],
+              "size": [
+                106,
+                44
+              ],
+              "font": "B",
+              "fontSize": 48,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "_btnPrimary",
+          "type": 2,
+          "pos": [
+            -117,
+            -734
+          ],
+          "size": [
+            242,
+            108
+          ],
+          "childNodes": [
+            {
+              "name": "img_primarybtn_di_n",
+              "type": 3,
+              "pos": [
+                -117,
+                -734
+              ],
+              "size": [
+                242,
+                108
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "一键放入\r",
+              "pos": [
+                -117,
+                -730
+              ],
+              "size": [
+                166,
+                38
+              ],
+              "font": "B",
+              "fontSize": 42,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "TopLeft",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                5
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "消耗/次数一级按钮",
+      "type": 2,
+      "pos": [
+        57,
+        -716
+      ],
+      "size": [
+        590,
+        142
+      ],
+      "childNodes": [
+        {
+          "name": "CmnBtnBigWithCost",
+          "type": 2,
+          "pos": [
+            57,
+            -716
+          ],
+          "size": [
+            590,
+            142
+          ],
+          "childNodes": [
+            {
+              "name": "高亮状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_h",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -730.5
+                  ],
+                  "size": [
+                    106,
+                    45
+                  ],
+                  "font": "B",
+                  "fontSize": 48,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "普通状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_n",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -730.5
+                  ],
+                  "size": [
+                    106,
+                    45
+                  ],
+                  "font": "B",
+                  "fontSize": 48,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "信息状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_info",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c65",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    80,
+                    34
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.33,
+                    0.33,
+                    0.33,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      84,
+                      84,
+                      84,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "置灰状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_d",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -730.5
+                  ],
+                  "size": [
+                    106,
+                    45
+                  ],
+                  "font": "B",
+                  "fontSize": 48,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "消耗信息",
+              "type": 2,
+              "pos": [
+                57.5,
+                -664
+              ],
+              "size": [
+                137,
+                38
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_costdi",
+                  "type": 3,
+                  "pos": [
+                    57.5,
+                    -664
+                  ],
+                  "size": [
+                    137,
+                    28
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "Icon_item_box_gem_02",
+                  "type": 3,
+                  "pos": [
+                    15.5,
+                    -664
+                  ],
+                  "size": [
+                    39,
+                    38
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "10000",
+                  "pos": [
+                    77,
+                    -664
+                  ],
+                  "size": [
+                    72,
+                    20
+                  ],
+                  "font": "B",
+                  "fontSize": 28,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": true,
+                  "underline": false,
+                  "alignment": "TopLeft",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    5
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnBigWithNum",
+          "type": 2,
+          "pos": [
+            57,
+            -717.5
+          ],
+          "size": [
+            590,
+            139
+          ],
+          "childNodes": [
+            {
+              "name": "高亮状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_h",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -730.5
+                  ],
+                  "size": [
+                    106,
+                    45
+                  ],
+                  "font": "B",
+                  "fontSize": 48,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "普通状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_n",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -730.5
+                  ],
+                  "size": [
+                    106,
+                    45
+                  ],
+                  "font": "B",
+                  "fontSize": 48,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "信息状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_info",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c65",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    80,
+                    34
+                  ],
+                  "font": "B",
+                  "fontSize": 36,
+                  "color": [
+                    0.33,
+                    0.33,
+                    0.33,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      84,
+                      84,
+                      84,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "置灰状态",
+              "type": 2,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_di_d",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -734
+                  ],
+                  "size": [
+                    590,
+                    106
+                  ],
+                  "opacity": 1
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "挑 战",
+                  "pos": [
+                    57,
+                    -730.5
+                  ],
+                  "size": [
+                    106,
+                    45
+                  ],
+                  "font": "B",
+                  "fontSize": 48,
+                  "color": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": false,
+                  "underline": false,
+                  "alignment": "Top",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    3
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "文本信息",
+              "type": 2,
+              "pos": [
+                57,
+                -664.5
+              ],
+              "size": [
+                248,
+                33
+              ],
+              "childNodes": [
+                {
+                  "name": "img_primarybtn_costdi",
+                  "type": 3,
+                  "pos": [
+                    57,
+                    -664.5
+                  ],
+                  "size": [
+                    248,
+                    33
+                  ],
+                  "opacity": 0.2
+                },
+                {
+                  "name": "t2d@fswb@c1",
+                  "type": 4,
+                  "content": "今日剩余次数  1/5",
+                  "pos": [
+                    56.5,
+                    -665
+                  ],
+                  "size": [
+                    227,
+                    28
+                  ],
+                  "font": "B",
+                  "fontSize": 28,
+                  "color": [
+                    0.38,
+                    0.38,
+                    0.38,
+                    1
+                  ],
+                  "italic": false,
+                  "bold": true,
+                  "underline": false,
+                  "alignment": "TopLeft",
+                  "lineSpace": 36,
+                  "letterSpacing": 0,
+                  "colorRuns": [
+                    [
+                      96,
+                      96,
+                      96,
+                      255
+                    ],
+                    [
+                      71,
+                      71,
+                      71,
+                      255
+                    ],
+                    [
+                      25,
+                      132,
+                      94,
+                      255
+                    ],
+                    [
+                      96,
+                      96,
+                      96,
+                      255
+                    ]
+                  ],
+                  "runLengths": [
+                    6,
+                    2,
+                    1,
+                    2
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "一级按钮组",
+      "type": 2,
+      "pos": [
+        57,
+        -734
+      ],
+      "size": [
+        590,
+        106
+      ],
+      "childNodes": [
+        {
+          "name": "CmnBtnBig__Light",
+          "type": 2,
+          "pos": [
+            57,
+            -734
+          ],
+          "size": [
+            590,
+            106
+          ],
+          "childNodes": [
+            {
+              "name": "img_primarybtn_di_h",
+              "type": 3,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "挑 战",
+              "pos": [
+                57,
+                -730.5
+              ],
+              "size": [
+                106,
+                45
+              ],
+              "font": "B",
+              "fontSize": 48,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnBig__Dark",
+          "type": 2,
+          "pos": [
+            57,
+            -734
+          ],
+          "size": [
+            590,
+            106
+          ],
+          "childNodes": [
+            {
+              "name": "img_primarybtn_di_n",
+              "type": 3,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "挑 战",
+              "pos": [
+                57,
+                -730.5
+              ],
+              "size": [
+                106,
+                45
+              ],
+              "font": "B",
+              "fontSize": 48,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnBig__Grey",
+          "type": 2,
+          "pos": [
+            57,
+            -734
+          ],
+          "size": [
+            590,
+            106
+          ],
+          "childNodes": [
+            {
+              "name": "img_primarybtn_di_info",
+              "type": 3,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c65",
+              "type": 4,
+              "content": "挑 战",
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                80,
+                34
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.33,
+                0.33,
+                0.33,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  84,
+                  84,
+                  84,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnBig__Grey",
+          "type": 2,
+          "pos": [
+            57,
+            -734
+          ],
+          "size": [
+            590,
+            106
+          ],
+          "childNodes": [
+            {
+              "name": "img_primarybtn_di_d",
+              "type": 3,
+              "pos": [
+                57,
+                -734
+              ],
+              "size": [
+                590,
+                106
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "挑 战",
+              "pos": [
+                57,
+                -730.5
+              ],
+              "size": [
+                106,
+                45
+              ],
+              "font": "B",
+              "fontSize": 48,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "二级按钮组",
+      "type": 2,
+      "pos": [
+        197,
+        -425
+      ],
+      "size": [
+        278,
+        88
+      ],
+      "childNodes": [
+        {
+          "name": "CmnBtnPrimary__Light",
+          "type": 2,
+          "pos": [
+            197,
+            -425
+          ],
+          "size": [
+            272,
+            88
+          ],
+          "childNodes": [
+            {
+              "name": "img_Secondbtn_di_h",
+              "type": 3,
+              "pos": [
+                197,
+                -425
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "强 化",
+              "pos": [
+                197.5,
+                -420.5
+              ],
+              "size": [
+                77,
+                33
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnSmall__Dark",
+          "type": 2,
+          "pos": [
+            197,
+            -425
+          ],
+          "size": [
+            272,
+            88
+          ],
+          "childNodes": [
+            {
+              "name": "img_Secondbtn_di_n",
+              "type": 3,
+              "pos": [
+                197,
+                -425
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "一键放入",
+              "pos": [
+                197.5,
+                -420
+              ],
+              "size": [
+                143,
+                32
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.24,
+                0.24,
+                0.24,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  61,
+                  61,
+                  61,
+                  255
+                ]
+              ],
+              "runLengths": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnSmall__Info",
+          "type": 2,
+          "pos": [
+            197,
+            -420
+          ],
+          "size": [
+            278,
+            64
+          ],
+          "childNodes": [
+            {
+              "name": "img_Secondbtn_di_info",
+              "type": 3,
+              "pos": [
+                197,
+                -420
+              ],
+              "size": [
+                278,
+                64
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c65",
+              "type": 4,
+              "content": "快速觅宝",
+              "pos": [
+                198,
+                -418.5
+              ],
+              "size": [
+                140,
+                35
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.33,
+                0.33,
+                0.33,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  84,
+                  84,
+                  84,
+                  255
+                ]
+              ],
+              "runLengths": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnSmall__Grey",
+          "type": 2,
+          "pos": [
+            197,
+            -425
+          ],
+          "size": [
+            272,
+            88
+          ],
+          "childNodes": [
+            {
+              "name": "img_Secondbtn_di_d",
+              "type": 3,
+              "pos": [
+                197,
+                -425
+              ],
+              "size": [
+                272,
+                88
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fsbt@c1 拷贝",
+              "type": 4,
+              "content": "灰状态",
+              "pos": [
+                196.5,
+                -419.5
+              ],
+              "size": [
+                107,
+                35
+              ],
+              "font": "B",
+              "fontSize": 36,
+              "color": [
+                0.24,
+                0.24,
+                0.24,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  61,
+                  61,
+                  61,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "小按钮组",
+      "type": 2,
+      "pos": [
+        244.5,
+        -333
+      ],
+      "size": [
+        159,
+        64
+      ],
+      "childNodes": [
+        {
+          "name": "CmnBtnSmall__Light",
+          "type": 2,
+          "pos": [
+            244.5,
+            -333
+          ],
+          "size": [
+            159,
+            64
+          ],
+          "childNodes": [
+            {
+              "name": "img_Thridbtn_di_h",
+              "type": 3,
+              "pos": [
+                244.5,
+                -333
+              ],
+              "size": [
+                159,
+                64
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "激 活",
+              "pos": [
+                246,
+                -329
+              ],
+              "size": [
+                62,
+                26
+              ],
+              "font": "B",
+              "fontSize": 28,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnSmall__Dark",
+          "type": 2,
+          "pos": [
+            244.5,
+            -333
+          ],
+          "size": [
+            159,
+            64
+          ],
+          "childNodes": [
+            {
+              "name": "img_Thridbtn_di_n",
+              "type": 3,
+              "pos": [
+                244.5,
+                -333
+              ],
+              "size": [
+                159,
+                64
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "激 活",
+              "pos": [
+                246,
+                -329
+              ],
+              "size": [
+                62,
+                26
+              ],
+              "font": "B",
+              "fontSize": 28,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnSmall__Info",
+          "type": 2,
+          "pos": [
+            244.5,
+            -329
+          ],
+          "size": [
+            145,
+            50
+          ],
+          "childNodes": [
+            {
+              "name": "img_Thridbtn_di_info",
+              "type": 3,
+              "pos": [
+                244.5,
+                -329
+              ],
+              "size": [
+                145,
+                50
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c65",
+              "type": 4,
+              "content": "选 择",
+              "pos": [
+                245.5,
+                -328.5
+              ],
+              "size": [
+                63,
+                27
+              ],
+              "font": "B",
+              "fontSize": 28,
+              "color": [
+                0.33,
+                0.33,
+                0.33,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  84,
+                  84,
+                  84,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CmnBtnSmall__Grey",
+          "type": 2,
+          "pos": [
+            244.5,
+            -333
+          ],
+          "size": [
+            159,
+            64
+          ],
+          "childNodes": [
+            {
+              "name": "img_Thridbtn_di_d",
+              "type": 3,
+              "pos": [
+                244.5,
+                -333
+              ],
+              "size": [
+                159,
+                64
+              ],
+              "opacity": 1
+            },
+            {
+              "name": "t2d@fswb@c1",
+              "type": 4,
+              "content": "激 活",
+              "pos": [
+                246,
+                -329
+              ],
+              "size": [
+                62,
+                26
+              ],
+              "font": "B",
+              "fontSize": 28,
+              "color": [
+                0.28,
+                0.28,
+                0.28,
+                1
+              ],
+              "italic": false,
+              "bold": false,
+              "underline": false,
+              "alignment": "Top",
+              "lineSpace": 36,
+              "letterSpacing": 0,
+              "colorRuns": [
+                [
+                  71,
+                  71,
+                  71,
+                  255
+                ]
+              ],
+              "runLengths": [
+                3
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

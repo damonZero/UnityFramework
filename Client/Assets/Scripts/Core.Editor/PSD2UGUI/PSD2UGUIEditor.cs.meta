@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f3a1364f50e99784797be24b6226cc86
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_PersistentViewDataDictionary: {instanceID: 0}
+  - logoTexture: {fileID: 2800000, guid: 55c7ee01637a0b14e89188d657275129, type: 3}
+  - saveTexture: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

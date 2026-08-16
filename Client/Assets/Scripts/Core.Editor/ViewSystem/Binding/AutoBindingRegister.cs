@@ -67,8 +67,8 @@ namespace Core.Editor
 
             // TextMeshPro 类型（com.unity.textmeshpro 已引入）
             { "_tmp", typeof(TMPro.TMP_Text) },
-            { "_t2d", typeof(TMPro.TextMeshPro) },
-            { "_t3d", typeof(TMPro.TextMeshProUGUI) },
+            { "_t2d", typeof(TMPro.TextMeshProUGUI) },
+            { "_t3d", typeof(TMPro.TextMeshPro) },
             { "_tdd", typeof(TMPro.TMP_Dropdown) },
             { "_tipf", typeof(TMPro.TMP_InputField) },
         };

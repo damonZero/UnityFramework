@@ -236,6 +236,19 @@ namespace General
             offsetZoom = 0;
         }
 
+        /// <summary>获取缩放累计值。</summary>
+        public float GetZoomOffset() => offsetZoom;
+
+        /// <summary>重置缩放累计值（仅缩放，用于自动恢复位置）。</summary>
+        public void ResetZoomOffset() => offsetZoom = 0;
+
+        /// <summary>设置拖动累计值（用于拖动初始状态与相机当前状态不一致时）。</summary>
+        public void SetOffset(float x, float y)
+        {
+            offsetX = x;
+            offsetY = y;
+        }
+
         /// <summary>触发移动回调（简化：直接传相机位置，去掉 37 的 Ground 射线）。</summary>
         private void TriggerMoveCb()
         {

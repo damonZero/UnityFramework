@@ -359,6 +359,7 @@ Assets/Scripts/Core/UI/                    ← 🆕 ScreenHelper（安全区/分
 Assets/Scripts/Core/UnityExtension/        ← 🆕 CameraExtension（World/Screen/Viewport/UI 坐标互转 + GetSceneGroundPosXYZ 地面取点）
 Assets/Scripts/Core/URP/                   ← 🆕 URP 相机栈（CameraStackBase/CameraStackOverlay/BaseCamera/OverlayCamera，标准 URP renderType/cameraStack 管理 1 Base + N Overlay）+ CameraColorTexture/CameraDepthTexture（按需纹理，标准 requiresColor/DepthTexture）
 Assets/Scripts/Core/Timeline/              ← 🆕 UIFlow（UI 跟随）+ CameraSwitch/FadeScene（过场切镜）Timeline 片段/轨道
+Assets/Scripts/Core/EffectSystem/          ← 🆕 Mirror（平面反射动态反射相机）
 Assets/Scripts/Core.Editor/ViewSystem/     ← 🆕 Binding/AutoBindingRegister
 Assets/Scripts/Core.Editor/Rendering/      ← 🆕 KJUrpSetup（URP 管线一键设置）
 Assets/Scripts/General/Camera/             ← 🆕 CameraMoveAdv 精简拆分版（核心 + Move/LookAround/Rotate/Around/Zoom/Inertia/MoveTo 7 个 partial 功能文件 + MoveCamByAxisLocalX/偏移累计管理）+ CameraDrag/CameraRoll/CameraAngle
@@ -368,6 +369,7 @@ Assets/Scripts/Project/Demo/               ← 🆕 DemoForm（MvvmForm 演示�
 Assets/Scripts/Project.Editor/             ← 🆕 DemoFormPrefabCreator
 Assets/Framework/UIEffectExtension/        ← 🆕 UIModelImage（UIModelImg/UIModelCam/UIModelLocMgr/UIModelScreenFitting，UI 3D 模型渲染）
 Assets/Framework/URPExtension/             ← 🆕 URP RenderFeature 门面（CustomRenderFeature Show/Hide + CommandBufferPass/CommandRenderer/InstancingRenderPass/SetupAble/MaterialPropertyBlockCache）
+Assets/Framework/URPSceneEffect/           ← 🆕 PlanarShadow（URP 平面阴影 Feature/CommonBuffer 两模式）
 Assets/Framework/1External/Demigiant/      ← 🆕 DOTween 免费版（Runtime+Modules+Editor+Aot + DemiLib.dll）
 Assets/Framework/1External/E7/             ← 🆕 Notch Solution（SafePadding 安全区组件）
 ```
@@ -421,9 +423,17 @@ UI 框架 + 显示层 + 相机控制 + UI 3D 模型均已落地（见 UI-01~05�
 
 - [ ] **UI-00d UIEffectExtension 其余特效**：EffectImage/FrameAnimation/ImageBlur/MaskImg/GrayUI（依赖 37 专属 shader + Coffee.UIExtensions）。
 - [ ] **UI-00e TransitionLoadingScreenshot**：游戏侧导航过渡截图，待 Loading 界面落地后再实现。
-- [ ] **UI-03 游戏特定渲染模块**：RenderQualityManager/Controller（耦合 Game.Config + shader 关键字）、BaseCamera/OverlayCamera/LightUtil/MixLightShadow/RoleAddLight/LightBakeDebug（依赖 37 改包 URP 字段 + Boot.Update/Coverage）、CameraColorTexture/DepthTexture（依赖改包 showColorTextrue 字段）。
+- [ ] **UI-03 游戏特定渲染模块**：RenderQualityManager/Controller（耦合 Game.Config + shader 关键字）、LightUtil/MixLightShadow/RoleAddLight/LightBakeDebug（依赖 37 改包 URP 字段 + Boot.Update/Coverage）。
 - [ ] **CameraMoveAdv 移动端触摸输入**：当前为鼠标模式（37 原版如此），移动端接入时补。
 - [ ] **PreShutdownAsync 接入**：异步 Shutdown 正确 await Close（当前同步 ISystem.Shutdown 走 fire-and-forget）。
+
+相机系统移植（CAMERA_PORT_PLAN，详见 `.planning/CAMERA.md`）——**可移植项已全部落地**，剩余均为游戏特定/阻塞项：
+
+- [ ] **HighQualityShadow**（Phase 4.3）：依赖 37 私有 URP API `SetCustomShadowDistance`/`isSupports`，标准 URP 14.0.12 无 → 除非 fork URP 否则阻塞。
+- [ ] **Instancing/\* + OverDrawStatic**（Phase 3.6）：GPU 植被实例化（LOD + 二进制导出）+ overdraw 诊断，游戏特定。
+- [ ] **VirtualCameraMov**（Phase 6.8）：依赖 Cinemachine（KJ 未引入）。
+- [ ] **Phase 7 Editor 工具**：CoverageCheckerInEditor（依赖 Spine + 37 ViewSystem 事件）、CameraMoveDevEditor（面向旧 37 CameraMoveAdv API）、CameraAngleEditor（CameraAngle 已改默认 Inspector，非必需）。
+- [ ] **Phase 8 战斗相机**：FightCameraNode/LocationAndCameraNode/CameraShake（游戏特定，依赖战斗系统）。
 
 业务模块规划（依赖 UI 框架 + Config）：
 
@@ -435,7 +445,7 @@ UI 框架 + 显示层 + 相机控制 + UI 3D 模型均已落地（见 UI-01~05�
 
 ## 最新验证记录
 
-- 2026-08-16: **相机系统剩余可移植项落地（CAMERA.md Phase 2/3/5/6）**：① **Phase 2 按需纹理**——`CameraColorTexture`/`CameraDepthTexture`（`Core/URP`，37 私有 `showColorTextrue`/`showDepthTextrue` 改标准 `requiresColorTexture`/`requiresDepthTexture`，引用计数归零关闭）；② **Phase 3 RenderFeature 门面**——`Framework/URPExtension`（新 asmdef 引用 URP；`CustomRenderFeature` Show/Hide 注册门面 + `CommandBufferPass`/`CommandRenderer`/`InstancingRenderPass`/`SetupAble`/`MaterialPropertyBlockCache`）；③ **Phase 5 Timeline**——`Core/Timeline`（`UIFlow` UI 跟随 + `CameraSwitch` 过场切镜 + `FadeScene`）；④ **Phase 6 操控工具**——`CameraDrag`/`CameraRoll`/`CameraAngle`（`General/Camera`）+ `GravityCamera`（`General/GravitySensor`）+ `LookAtCamera`（`Core/UI`）。**后置（游戏特定/阻塞）**：Phase 3.6 `Instancing/*`+`OverDrawStatic`（GPU 植被实例化 + compute 诊断）；Phase 4 `Mirror`/`PlanarShadow`/`HighQualityShadow`（依赖 37 额外 URP 私有 `SetCustomShadowDistance`/`isSupports` + URP 内部 `MainLightShadowCasterPass`/`RenderObjectsPass` + 游戏 shader）；Phase 7 三个 Editor（`CameraMoveDevEditor` 面向旧 37 CameraMoveAdv API、`CoverageCheckerInEditor` 依赖 Spine、`CameraAngleEditor` 随 CameraAngle 改默认 Inspector）；Phase 6.8 `VirtualCameraMov`（依赖 Cinemachine）；Phase 8 战斗相机。**待 Unity 验证**：Editor 编译 + Play 下按需纹理/操控组件/Timeline 跟随正常。
+- 2026-08-16: **相机系统剩余可移植项落地（CAMERA.md Phase 2/3/5/6）**：① **Phase 2 按需纹理**——`CameraColorTexture`/`CameraDepthTexture`（`Core/URP`，37 私有 `showColorTextrue`/`showDepthTextrue` 改标准 `requiresColorTexture`/`requiresDepthTexture`，引用计数归零关闭）；② **Phase 3 RenderFeature 门面**——`Framework/URPExtension`（新 asmdef 引用 URP；`CustomRenderFeature` Show/Hide 注册门面 + `CommandBufferPass`/`CommandRenderer`/`InstancingRenderPass`/`SetupAble`/`MaterialPropertyBlockCache`）；③ **Phase 5 Timeline**——`Core/Timeline`（`UIFlow` UI 跟随 + `CameraSwitch` 过场切镜 + `FadeScene`）；④ **Phase 6 操控工具**——`CameraDrag`/`CameraRoll`/`CameraAngle`（`General/Camera`）+ `GravityCamera`（`General/GravitySensor`）+ `LookAtCamera`（`Core/UI`）。**后置（游戏特定/阻塞）**：Phase 3.6 `Instancing/*`+`OverDrawStatic`（GPU 植被实例化 + compute 诊断）；Phase 4 `Mirror`/`PlanarShadow` 已移植（`Core/EffectSystem/Mirror.cs`、`Framework/URPSceneEffect/PlanarShadow.cs`，需游戏材质/shader），仅 `HighQualityShadow` 仍阻塞（37 URP 私有 `SetCustomShadowDistance`/`isSupports`）；Phase 7 三个 Editor（`CameraMoveDevEditor` 面向旧 37 CameraMoveAdv API、`CoverageCheckerInEditor` 依赖 Spine、`CameraAngleEditor` 随 CameraAngle 改默认 Inspector）；Phase 6.8 `VirtualCameraMov`（依赖 Cinemachine）；Phase 8 战斗相机。**待 Unity 验证**：Editor 编译 + Play 下按需纹理/操控组件/Timeline 跟随正常。
 
 - 2026-08-16: **URP 相机栈落地（CAMERA.md Phase 1）**：`Core/URP/` 移植 37 的相机栈四件套——`CameraStackBase`（静态 `Stack` + `MainCamera`/`MainData` + `AddOverlay`/`RemoveOverlay`/`ResetStack`，标准 URP `renderType`/`cameraStack`）、`CameraStackOverlay`（`order` + OnEnable/OnDisable 挂栈/出栈）、`BaseCamera`（主相机自注册为 Base + Editor 校验 cullingMask 不含 UI 层）、`OverlayCamera`（场景相机 + Coverage 遮挡挂接）。**Phase 0 决策落地**：不 fork URP，37 私有字段 `ShotInUI`→不移植、`isUICamera`→`CompareTag`、`showDepth/ColorTextrue`→标准 `requiresDepth/ColorTexture`（见 CAMERA.md Phase 0）；`Boot*` 改名 `CameraStack*`（落 Core，KJ Boot 是 AOT 壳不引用 URP）、去 `uiCamera/uiData`（复用 `Core.UI.UICamera`）、修软重启静态集合泄漏（readonly 集合 OnDestroy 清空）。**待 Unity 验证**：Editor 编译 + Play 下「主相机 + UI 相机 + 特效相机」并存时 `Stack` 维护 1 Base + N Overlay。
 

@@ -142,6 +142,31 @@ namespace Core.UI
             rt.sizeDelta = Vector2.zero;
         }
 
+        /// <summary>世界坐标转 UI 世界坐标（对应参考项目 ScreenHelper.WorldPointToUIPoint(Camera, Vector3)）。</summary>
+        public static Vector3 WorldPointToUIPoint(Camera worldCamera, Vector3 pos)
+        {
+            pos = worldCamera.WorldToScreenPoint(pos);
+            var uiCamera = UICamera.Camera;
+            if (uiCamera != null)
+            {
+                pos = uiCamera.ScreenToWorldPoint(pos);
+                pos.z = 0f;
+            }
+
+            return pos;
+        }
+
+        /// <summary>UI 世界坐标转世界坐标（对应参考项目 ScreenHelper.UIPointToWorldPoint(Camera, Vector3)）。</summary>
+        public static Vector3 UIPointToWorldPoint(Camera uiCamera, Vector3 pos)
+        {
+            if (uiCamera == null)
+            {
+                return pos;
+            }
+
+            return uiCamera.ScreenToWorldPoint(pos);
+        }
+
         public static void Cleanup()
         {
             RootCanvas = null;

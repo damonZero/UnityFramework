@@ -25,7 +25,10 @@
         "Framework.Coverage",
         "Framework.Touch",
         "Framework.UIEffectExtension",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Framework.Restart",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.Timeline"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

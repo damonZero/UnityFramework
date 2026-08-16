@@ -69,6 +69,39 @@ namespace General
             t.OnComplete(() => callBack?.Invoke(userData)).target = cam.transform;
         }
 
+        /// <summary>沿 X 轴（TouchX）平移相机到目标点（仅横向移动，保持 Y 高度）。</summary>
+        public void MoveCamByAxisLocalX(Vector3 tar, Action<object> callBack = null, object userData = null, float moveTime = -1)
+        {
+            if (!enableMoveTo || cam == null) return;
+
+            var camTr = cam.transform;
+            var realTar = new Vector3(tar.x, camTr.position.y, tar.z);
+            var axisX = GetAxis(touchX);
+            var dirVec = realTar - camTr.position;
+            var projectOnPlane = Vector3.ProjectOnPlane(dirVec, GetAxis(Axis.LocalZ));
+            var dir = Vector3.Dot(axisX, projectOnPlane) < 0 ? -1f : 1f;
+            var realDis = FixDelta(offsetX, dir * projectOnPlane.magnitude, minOffsetX, maxOffsetX);
+            offsetX += realDis;
+
+            var finalPos = camTr.position + realDis * axisX;
+            var rt = moveTime >= 0 ? moveTime : realDis / fixedMoveSpeed;
+            var t = DOTween.To(() => camTr.position,
+                x =>
+                {
+                    if (cam != null)
+                    {
+                        cam.transform.position = x;
+                        TriggerMoveCb();
+                    }
+                }, finalPos, rt);
+            t.SetEase(Ease.Linear);
+            t.OnComplete(() =>
+            {
+                callBack?.Invoke(userData);
+                if (cam != null) LastLoc = camTr.position;
+            }).target = camTr;
+        }
+
         /// <summary>根据坐标计算环视 Y 轴旋转角度。</summary>
         public float RotateYCamAngle(Vector3 targetPos)
         {

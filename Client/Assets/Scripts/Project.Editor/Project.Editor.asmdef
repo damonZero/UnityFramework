@@ -3,9 +3,12 @@
     "rootNamespace": "Project.Editor",
     "references": [
         "Project",
+        "Core.Editor",
         "Framework.View",
         "Framework.Touch",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Unity.Timeline"
     ],
     "includePlatforms": [
         "Editor"
