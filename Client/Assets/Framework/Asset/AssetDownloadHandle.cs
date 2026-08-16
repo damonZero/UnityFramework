@@ -11,7 +11,7 @@ namespace Framework.Asset
 
         public float Progress => _operation?.Progress ?? 1f;
         public bool IsDone => _operation == null || _operation.IsDone;
-        public bool IsSucceeded => _operation != null && _operation.Status == YooAsset.EOperationStatus.Succeeded;
+        public bool IsSucceeded => _operation == null || _operation.Status == YooAsset.EOperationStatus.Succeeded;
         public string Error => _operation?.Error;
         public int TotalDownloadCount => _operation?.TotalDownloadCount ?? 0;
         public long TotalDownloadBytes => _operation?.TotalDownloadBytes ?? 0;

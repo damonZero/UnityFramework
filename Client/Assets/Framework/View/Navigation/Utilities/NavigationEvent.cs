@@ -266,6 +266,10 @@ namespace Framework.View.Navigation
             public uint order;
             public bool IsAsync => asyncDelegate != null;
 
+            public NavigationDelegateWrapper()
+            {
+            }
+
             public void Reset()
             {
                 syncDelegate = null;

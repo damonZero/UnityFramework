@@ -40,8 +40,10 @@ namespace Framework.View.Navigation
 
         #region ObjectPool 对象池相关
 
-        public static ObjectPool<NavigateSceneOptions> Pool { get; } =
-            NavigationFactory.Instance.CreatePool(() => new NavigateSceneOptions(), 32);
+        private static ObjectPool<NavigateSceneOptions> _pool;
+
+        public static ObjectPool<NavigateSceneOptions> Pool =>
+            _pool ??= NavigationFactory.Instance.CreatePool(() => new NavigateSceneOptions(), 32);
 
         public void RecycleToPool()
         {

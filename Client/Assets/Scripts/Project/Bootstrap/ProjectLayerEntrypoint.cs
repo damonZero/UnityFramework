@@ -1,8 +1,12 @@
 using System;
+#if UNITY_EDITOR
 using Cysharp.Threading.Tasks;
+#endif
 using Framework.Log;
 using Microsoft.Extensions.Logging;
+#if UNITY_EDITOR
 using Project.Demo;
+#endif
 using VContainer;
 using VContainer.Unity;
 
@@ -10,7 +14,7 @@ namespace Project.Bootstrap
 {
     /// <summary>
     /// Project 层启动入口（分层启动链 Phase 3）。
-    /// 实现 <see cref="IPostStartable"/>，在 <see cref="General.Models.ModelLifecycle"/>（IPostStartable，
+    /// 实现 <see cref="IPostStartable"/>，在 <see cref="General.ModelLifecycle"/>（IPostStartable，
     /// 先注册先触发）加载本层模型之后执行。标记 Project 启动完成；如有模型失败则记录。
     /// 注入 <see cref="General.IModelStartupStatus"/>：解析到本层 ModelLifecycle（Project scope 的
     /// Configure 总是 RegisterModelLifecycle；若未注册则 scope 构建失败，本项目不会启动，
@@ -21,6 +25,11 @@ namespace Project.Bootstrap
         private readonly General.IModelStartupStatus _modelStartupStatus;
         private readonly ILogger<ProjectLayerEntrypoint> _logger;
         private readonly IObjectResolver _resolver;
+
+        /// <summary>
+        /// 热更内容标记版本号：发布新补丁后必须递增，用于验证内容级热更是否生效。
+        /// </summary>
+        private const string HotUpdateMarker = "v1.0.2";
 
         public ProjectLayerEntrypoint(
             General.IModelStartupStatus modelStartupStatus,
@@ -44,10 +53,12 @@ namespace Project.Bootstrap
                     Framework.DependencyInjection.Dependencies.Scope = projectScope;
                 }
                 // 热更内容标记：发布新补丁后此日志应显示最新补丁版本号（验证内容级热更）。
-                GameLog.Info("[Project] Hot-update runtime marker: v1.0.2", "Project.Bootstrap");
+                GameLog.Info($"[Project] Hot-update runtime marker: {HotUpdateMarker}", module: nameof(ProjectLayerEntrypoint));
 
-                // 测试：打开 DemoForm 验证 UI 框架链路（临时验证用，稳定后移除）。
+#if UNITY_EDITOR
+                // 测试：打开 DemoForm 验证 UI 框架链路（仅编辑器开发用，发布版不执行）。
                 OpenDemoFormForTest().Forget();
+#endif
                 return;
             }
 
@@ -61,6 +72,7 @@ namespace Project.Bootstrap
         {
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// 打开 DemoForm 验证 UI 框架链路（临时测试用）。
         /// 注意：依赖 DemoForm.prefab 可被 IAssetSystem 加载（YooAsset 收集，见
@@ -71,13 +83,14 @@ namespace Project.Bootstrap
             var form = await ViewDemo.OpenDemoForm();
             if (form != null)
             {
-                GameLog.Info($"[Demo] DemoForm 打开成功: {form}", "Project.Bootstrap");
+                GameLog.Info($"[Demo] DemoForm 打开成功: {form}", module: nameof(ProjectLayerEntrypoint));
             }
             else
             {
                 GameLog.Error("[Demo] DemoForm 打开失败：请确认 DemoForm.prefab 已加入 YooAsset 收集",
-                    "Project.Bootstrap");
+                    module: nameof(ProjectLayerEntrypoint));
             }
         }
+#endif
     }
 }

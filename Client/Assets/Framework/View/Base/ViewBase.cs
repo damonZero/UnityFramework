@@ -339,6 +339,11 @@ namespace Framework.View
         /// </summary>
         private const int LIFECYCLE_WAIT_MAX_FRAMES = 300;
 
+        /// <summary>
+        /// 打开(Opened)阶段收到隐藏请求时置位，Open 完成后跳过首次 Show，保持不渲染
+        /// </summary>
+        private bool _pendingHide;
+
         #endregion
 
         #region protected: Monobehaviour生命周期
@@ -877,6 +882,7 @@ namespace Framework.View
             OpenShowData = data;
 
             var slotOk = await AcquireLifecycleSlot();
+            if (this == null) return; // 等待期间对象可能被销毁（如 Shutdown 中 Destroy UI 根）
             if (!slotOk)
             {
                 Log.Error($"Failed to acquire lifecycle slot for opening '{name}'! " +
@@ -928,8 +934,12 @@ namespace Framework.View
                     GameLog.Exception(e, "View lifecycle exception", module: "Framework.View");
                 }
 
-                // Open 完成后自动执行首次 Show
-                await InternalExecuteShow(args);
+                // Open 完成后自动执行首次 Show；若打开(Opened)阶段已请求隐藏，则跳过首次 Show，保持不渲染
+                if (!_pendingHide)
+                {
+                    await InternalExecuteShow(args);
+                }
+                _pendingHide = false;
             }
             finally
             {
@@ -943,6 +953,7 @@ namespace Framework.View
         /// </summary>
         private async UniTask InternalExecuteShow(LifeCycleArgs args)
         {
+            if (this == null) return; // 对象可能已销毁（异步生命周期中途被 Destroy）
             if (PendingPhase != ViewPhase.None)
             {
                 Log.Error($"Cannot show '{AssetName}' when PendingPhase is {PendingPhase}! " +
@@ -1015,6 +1026,7 @@ namespace Framework.View
         /// </summary>
         private async UniTask InternalExecuteHide(LifeCycleArgs args)
         {
+            if (this == null) return; // 对象可能已销毁（异步生命周期中途被 Destroy）
             if (PendingPhase != ViewPhase.None)
             {
                 Log.Error($"Cannot hide '{AssetName}' when PendingPhase is {PendingPhase}! " +
@@ -1134,6 +1146,7 @@ namespace Framework.View
             if (CurrentPhase == ViewPhase.Closed || PendingPhase == ViewPhase.Closed) return;
 
             var slotOk = await AcquireLifecycleSlot();
+            if (this == null) return; // 等待期间对象可能被销毁（如 Shutdown 中 Destroy UI 根）
             if (!slotOk) return;
             try
             {
@@ -1338,6 +1351,14 @@ namespace Framework.View
             {
                 // 如果已经是预期的Hidden状态了，就跳过不执行
                 if (CurrentPhase == ViewPhase.Hidden) return false;
+
+                // 正在打开(Opened)、尚未首次 Show 时收到隐藏请求：InternalExecuteHide 要求 CurrentPhase==Shown，
+                // 此时无法执行 Hide，改为记录待隐藏标志，等 Open 完成后跳过首次 Show，保持不渲染。
+                if (CurrentPhase == ViewPhase.Opened)
+                {
+                    _pendingHide = true;
+                    return false;
+                }
 
                 var args = new LifeCycleArgs(LifeCycleCause.None);
                 await InternalExecuteHide(args);

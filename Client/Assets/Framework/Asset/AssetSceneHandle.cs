@@ -40,10 +40,15 @@ namespace Framework.Asset
                 return;
 
             _disposed = true;
-            if (_onUnloadStarted != null)
-                await _onUnloadStarted(_handle);
-            else
-                await _handle.UnloadSceneAsync().ToUniTask();
+            // Guard against double-unload: teardown may have already unloaded and
+            // released the underlying scene handle, leaving IsValid false.
+            if (_handle.IsValid)
+            {
+                if (_onUnloadStarted != null)
+                    await _onUnloadStarted(_handle);
+                else
+                    await _handle.UnloadSceneAsync().ToUniTask();
+            }
 
             _onDispose?.Invoke(_handle);
         }
@@ -58,10 +63,15 @@ namespace Framework.Asset
                 return;
 
             _disposed = true;
-            if (_onUnloadStarted != null)
-                _onUnloadStarted(_handle).Forget();
-            else
-                _handle.UnloadSceneAsync().ToUniTask().Forget();
+            // Guard against double-unload: teardown may have already unloaded and
+            // released the underlying scene handle, leaving IsValid false.
+            if (_handle.IsValid)
+            {
+                if (_onUnloadStarted != null)
+                    _onUnloadStarted(_handle).Forget();
+                else
+                    _handle.UnloadSceneAsync().ToUniTask().Forget();
+            }
 
             _onDispose?.Invoke(_handle);
         }

@@ -78,7 +78,17 @@ namespace Framework.ViewCache
             }
 
             // 2.移除旧的缓存值
-            var min = _pool.Keys.GetEnumerator().Current;
+            // SortedDictionary 按键升序遍历，首个 key 即最小 cost。此前直接读枚举器
+            // Current（未 MoveNext）拿到 default，池满时按 default 剔除会抛 KeyNotFoundException。
+            CostKey min = default;
+            if (_pool.Count > 0)
+            {
+                foreach (var entry in _pool)
+                {
+                    min = entry.Key;
+                    break;
+                }
+            }
             Stack<TValue> values = null;
             if (accCost >= min.cost)
             {

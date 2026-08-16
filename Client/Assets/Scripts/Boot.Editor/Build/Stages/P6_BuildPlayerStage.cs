@@ -80,6 +80,9 @@ namespace Boot.Editor.Build
                     v => EditorUserBuildSettings.exportAsGoogleAndroidProject = v,
                     () => EditorUserBuildSettings.exportAsGoogleAndroidProject);
                 EditorUserBuildSettings.exportAsGoogleAndroidProject = false;
+
+                // 应用身份 + 签名：Formal/Audit 必须，否则产出未签名/错误 applicationId 的 APK。
+                ApplyAndroidIdentityAndSigning(context, profile);
             }
 
             // 4. 刷新资源
@@ -140,6 +143,31 @@ namespace Boot.Editor.Build
         {
             base.Verify(context);
             BuildLogger.Info("[P6] ✓ Player artifact verified");
+        }
+
+        private void ApplyAndroidIdentityAndSigning(BuildContext context, BuildProfile profile)
+        {
+            context.Transaction.SnapshotAndroidSigning();
+
+            if (!string.IsNullOrWhiteSpace(profile.PackageId))
+                PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, profile.PackageId);
+            if (!string.IsNullOrWhiteSpace(profile.VersionName))
+                PlayerSettings.bundleVersion = profile.VersionName;
+            PlayerSettings.Android.bundleVersionCode = profile.VersionCode;
+
+            if (!profile.RequireSigning)
+                return;
+
+            if (string.IsNullOrWhiteSpace(profile.KeystorePath))
+                throw new BuildFailedException(Id, "Android keystore path is empty but signing is required (Formal/Audit).");
+            if (string.IsNullOrWhiteSpace(profile.KeystoreAlias))
+                throw new BuildFailedException(Id, "Android keystore alias is empty but signing is required (Formal/Audit).");
+
+            PlayerSettings.Android.useCustomKeystore = true;
+            PlayerSettings.Android.keystoreName = profile.KeystorePath;
+            PlayerSettings.Android.keystorePass = profile.KeystorePassword ?? string.Empty;
+            PlayerSettings.Android.keyaliasName = profile.KeystoreAlias;
+            PlayerSettings.Android.keyaliasPass = profile.KeystorePassword ?? string.Empty;
         }
 
         private static string[] GetEnabledScenes()

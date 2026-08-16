@@ -211,7 +211,7 @@ namespace Boot.Editor.Build
 
         private static void SaveCache(BuildContext context, HybridClrGenerationCache cache)
         {
-            File.WriteAllText(GetCachePath(context), JsonUtility.ToJson(cache, true));
+            AtomicWriteAllText(GetCachePath(context), JsonUtility.ToJson(cache, true));
         }
 
         private static string GetCachePath(BuildContext context)
@@ -457,13 +457,33 @@ namespace Boot.Editor.Build
                 string dir = Path.GetDirectoryName(cachedPath);
                 if (!string.IsNullOrEmpty(dir))
                     Directory.CreateDirectory(dir);
-                File.Copy(methodBridgePath, cachedPath, true);
+                AtomicFileCopy(methodBridgePath, cachedPath);
                 BuildLogger.Info($"[P2] HybridCLR: MethodBridge cached: {cachedPath}");
             }
             catch (Exception ex)
             {
                 BuildLogger.Warn($"[P2] HybridCLR: failed to cache MethodBridge: {ex.Message}");
             }
+        }
+
+        /// <summary>写临时文件后原子替换，避免中途崩溃留下半截损坏的缓存。</summary>
+        private static void AtomicWriteAllText(string path, string content)
+        {
+            string tmpPath = path + ".tmp";
+            File.WriteAllText(tmpPath, content);
+            if (File.Exists(path))
+                File.Delete(path);
+            File.Move(tmpPath, path);
+        }
+
+        /// <summary>先复制到临时文件再原子替换，避免中途崩溃留下半截损坏的缓存文件。</summary>
+        private static void AtomicFileCopy(string sourcePath, string destinationPath)
+        {
+            string tmpPath = destinationPath + ".tmp";
+            File.Copy(sourcePath, tmpPath, true);
+            if (File.Exists(destinationPath))
+                File.Delete(destinationPath);
+            File.Move(tmpPath, destinationPath);
         }
 
         private static void RestoreMethodBridgeFromCache(string methodBridgePath, string cachedPath)

@@ -96,9 +96,7 @@ namespace Framework.View.Editor
             var hash = 17;
             hash = hash * 31 + _keys.arraySize;
 
-            var checkCount = Math.Min(_keys.arraySize, 10);
-
-            for (var i = 0; i < checkCount; i++)
+            for (var i = 0; i < _keys.arraySize; i++)
             {
                 var value = _values.GetArrayElementAtIndex(i);
                 if (value == null) continue;

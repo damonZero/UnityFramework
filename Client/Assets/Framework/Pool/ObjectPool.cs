@@ -45,9 +45,38 @@ namespace Framework.Pool
             }
         }
 
-        public int CreatedCount => _createdCount;
-        public int RentCount => _rentCount;
-        public int ReturnCount => _returnCount;
+        public int CreatedCount
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _createdCount;
+                }
+            }
+        }
+
+        public int RentCount
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _rentCount;
+                }
+            }
+        }
+
+        public int ReturnCount
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _returnCount;
+                }
+            }
+        }
 
         public T Rent()
         {

@@ -209,6 +209,12 @@ namespace Framework.RuntimeLog
                     case '\t':
                         builder.Append("\\t");
                         break;
+                    case '\u2028':
+                        builder.Append("\\u2028");
+                        break;
+                    case '\u2029':
+                        builder.Append("\\u2029");
+                        break;
                     default:
                         if (ch < 32)
                         {

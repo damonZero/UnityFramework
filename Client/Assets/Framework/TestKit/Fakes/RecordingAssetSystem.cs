@@ -89,9 +89,10 @@ namespace Framework.TestKit.Fakes
             _releasedPaths.Add(path);
         }
 
-        public void UnloadUnused()
+        public UniTask UnloadUnused()
         {
             _unloadUnusedCount++;
+            return UniTask.CompletedTask;
         }
 
         public void ClearRecords()

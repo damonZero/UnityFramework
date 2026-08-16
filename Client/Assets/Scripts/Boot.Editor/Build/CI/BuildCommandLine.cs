@@ -1,4 +1,5 @@
 using System;
+using Framework.BuildPipeline.CI;
 using UnityEditor;
 using UnityEngine;
 
@@ -31,9 +32,7 @@ namespace Boot.Editor.Build
                 BuildLogger.Info($"[BuildCI] ========== CI BUILD STARTED: {profile.ProfileName} ==========");
                 var report = KJBuildPipeline.Build(profile, args.ForceFullRebuild);
 
-                int exitCode = report.AllPassed
-                    ? (int)Framework.BuildPipeline.CI.BuildExitCode.Success
-                    : (int)Framework.BuildPipeline.CI.BuildExitCode.UnknownError;
+                int exitCode = ResolveExitCode(report);
 
                 BuildLogger.Info($"[BuildCI] Build result: {(report.AllPassed ? "SUCCESS" : "FAILED")}");
                 BuildLogger.Info($"[BuildCI] Exit code: {exitCode}");
@@ -42,7 +41,48 @@ namespace Boot.Editor.Build
             catch (Exception ex)
             {
                 BuildLogger.Error($"[BuildCI] Fatal: {ex}");
-                EditorApplication.Exit((int)Framework.BuildPipeline.CI.BuildExitCode.UnknownError);
+                EditorApplication.Exit((int)BuildExitCode.UnknownError);
+            }
+        }
+
+        /// <summary>
+        /// 从报告推导稳定的 CI 退出码：优先取第一个失败 Stage 对应的分类码，
+        /// 而不是把所有失败都塌缩成 UnknownError(99)。
+        /// </summary>
+        private static int ResolveExitCode(BuildReportData report)
+        {
+            if (report.AllPassed)
+                return (int)BuildExitCode.Success;
+
+            var failed = report.StageResults.Find(s => s.Status == StageStatus.Failed);
+            if (failed == null)
+                return (int)BuildExitCode.UnknownError;
+
+            return MapStageIdToExitCode(failed.StageId);
+        }
+
+        private static int MapStageIdToExitCode(string stageId)
+        {
+            if (string.IsNullOrEmpty(stageId))
+                return (int)BuildExitCode.UnknownError;
+
+            // StageId 形如 "P1.Preflight" —— 取 "P1" 前缀映射到 BuildExitCode 分类。
+            int dot = stageId.IndexOf('.');
+            string prefix = dot > 0 ? stageId.Substring(0, dot) : stageId;
+            switch (prefix)
+            {
+                case "P0": return (int)BuildExitCode.ConfigError;
+                case "P1": return (int)BuildExitCode.PreflightFailed;
+                case "P2":
+                case "P3": return (int)BuildExitCode.GenerateFailed;
+                case "P4": return (int)BuildExitCode.AssetFailed;
+                case "P5": return (int)BuildExitCode.ConfigFailed;
+                case "P6": return (int)BuildExitCode.PlayerFailed;
+                case "P7": return (int)BuildExitCode.VerifyFailed;
+                case "P8": return (int)BuildExitCode.SmokeFailed;
+                case "P9":
+                case "P10": return (int)BuildExitCode.ReportFailed;
+                default: return (int)BuildExitCode.UnknownError;
             }
         }
 

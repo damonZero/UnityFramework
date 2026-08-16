@@ -22,7 +22,7 @@ namespace Framework.View.Navigation
         /// <summary>
         /// 没有转场
         /// </summary>
-        public static ITransition None { get; } = new TransitionNoOp();
+        public static readonly ITransition None = new TransitionNoOp();
 
         /// <summary>
         /// 创建转场效果实例

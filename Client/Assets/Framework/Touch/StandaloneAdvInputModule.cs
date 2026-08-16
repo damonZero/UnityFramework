@@ -15,7 +15,7 @@ namespace Framework.Touch
         // 是否处理鼠标右键、中键
         public static bool isHandleRightAndMiddleButton = false;
         // 连续点击间隔时间（秒）
-        public static float continuousClickInterval = 0.3f;
+        public static readonly float continuousClickInterval = 0.3f;
 
         // 射线检测结果缓存字典，每帧更新
         private static readonly Dictionary<int, List<RaycastResult>> _raycastResultDic = new Dictionary<int, List<RaycastResult>>();

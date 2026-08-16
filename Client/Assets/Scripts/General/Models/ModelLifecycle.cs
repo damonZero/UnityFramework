@@ -4,6 +4,7 @@ using Core.Systems;
 using Microsoft.Extensions.Logging;
 using VContainer;
 using VContainer.Unity;
+using ZLinq;
 
 namespace General
 {
@@ -52,6 +53,7 @@ namespace General
 
             // 先把所有类型解析为实例并按 Priority 排序，再依次 Load。
             // IReadOnlyList<Type> 契约下 Type 自身无 Priority，必须解析实例后按实例排序。
+            // 一次性启动路径，非热路径（General 未引用 Pool，直接 new 可接受）。
             var resolved = new List<IModel>(_modelTypes.Count);
             foreach (var type in _modelTypes)
             {
@@ -66,9 +68,12 @@ namespace General
                 }
             }
 
-            resolved.Sort(static (a, b) => a.Priority.CompareTo(b.Priority));
+            // 稳定排序：Priority 相同时按类型名排序，保证同优先级模型加载顺序确定。
+            var ordered = resolved.AsValueEnumerable()
+                .OrderBy(static m => m.Priority)
+                .ThenBy(static m => m.GetType().Name);
 
-            foreach (var model in resolved)
+            foreach (var model in ordered)
             {
                 try
                 {

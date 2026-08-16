@@ -6,6 +6,7 @@
         "Event",
         "Pool",
         "Cache",
+        "E7.NotchSolution",
         "Timer",
         "VContainer",
         "MessagePipe",
@@ -22,7 +23,8 @@
         "Framework.MVVM",
         "Framework.View.Navigation",
         "Framework.Coverage",
-        "Framework.Touch"
+        "Framework.Touch",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

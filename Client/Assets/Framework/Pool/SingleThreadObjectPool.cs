@@ -11,9 +11,9 @@ namespace Framework.Pool
         private readonly Func<T> _factory;
         private readonly Action<T> _reset;
         private readonly int _maxIdle;
+        private readonly HashSet<T> _idleSet;
 
 #if UNITY_ASSERTIONS
-        private readonly HashSet<T> _idleSet;
         private readonly int _ownerThreadId;
 #endif
 
@@ -23,9 +23,9 @@ namespace Framework.Pool
             _reset = reset ?? throw new ArgumentNullException(nameof(reset));
             _maxIdle = Math.Max(0, maxIdle);
             _idle = new Stack<T>(_maxIdle > 0 ? _maxIdle : 4);
+            _idleSet = new HashSet<T>(ReferenceComparer.Instance);
 
 #if UNITY_ASSERTIONS
-            _idleSet = new HashSet<T>(ReferenceComparer.Instance);
             _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
 #endif
         }
@@ -40,9 +40,7 @@ namespace Framework.Pool
             }
 
             var item = _idle.Pop();
-#if UNITY_ASSERTIONS
             _idleSet.Remove(item);
-#endif
             return item;
         }
 
@@ -55,12 +53,11 @@ namespace Framework.Pool
 
             AssertOwnerThread();
 
-#if UNITY_ASSERTIONS
+            // 防双回收：同一实例经值拷贝后两次 Return 会损坏共享池，必须在所有构建下拦截（不能只在 UNITY_ASSERTIONS 下）。
             if (_idleSet.Contains(item))
             {
                 return;
             }
-#endif
 
             _reset(item);
 
@@ -70,9 +67,7 @@ namespace Framework.Pool
             }
 
             _idle.Push(item);
-#if UNITY_ASSERTIONS
             _idleSet.Add(item);
-#endif
         }
 
         private void AssertOwnerThread()
@@ -85,7 +80,6 @@ namespace Framework.Pool
 #endif
         }
 
-#if UNITY_ASSERTIONS
         private sealed class ReferenceComparer : IEqualityComparer<T>
         {
             public static readonly ReferenceComparer Instance = new();
@@ -94,6 +88,5 @@ namespace Framework.Pool
 
             public int GetHashCode(T obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
         }
-#endif
     }
 }

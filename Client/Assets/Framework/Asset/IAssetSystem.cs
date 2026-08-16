@@ -19,6 +19,6 @@ namespace Framework.Asset
         AssetDownloadHandle CreateDownloader(string[] tags);
         void Release<T>(string path) where T : Object;
         void Release(string path);
-        void UnloadUnused();
+        UniTask UnloadUnused();
     }
 }

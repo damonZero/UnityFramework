@@ -58,7 +58,7 @@ namespace Framework.View.Navigation
 
             //将渲染帧间隔设置为最大,在停止相机渲染的瞬间让Unity不渲染新的画面
             // FIXME by fred 临时屏蔽，解决无法完成登录界面加载问题（导致游戏循环Update不执行了）
-            OnDemandRendering.renderFrameInterval = int.MaxValue;
+            // OnDemandRendering.renderFrameInterval = int.MaxValue;
         }
 
 

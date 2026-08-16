@@ -342,7 +342,7 @@ References: (none — zero external dependencies, `noEngineReferences=true`)
 | `StartupProbeSystem` | `Core.Systems` | 0 | `ISystem` | (none) |
 | `AssetSystem` | `Core.Asset` | 100 | `ISystem` | `IAssetRuntime`, `IPublisher<AssetSystemReadyEvent>` |
 | `PoolService` | `Core` | 110 | `ISystem` | `IAssetSystem` |
-| `TimerSystem` | `Core` | 120 | `ISystem`, `ITickableSystem` | `ITimerManager` |
+| `TimerSystem` | `Core.Timer` | 120 | `ISystem`, `ITickableSystem` | `ITimerManager` |
 
 ### Registration Flow (layered startup chain)
 
@@ -446,9 +446,9 @@ SystemManager.Start() → InitAll()
 
 ## Hot-Update Assembly List
 
-HYB-03 established 10 hot-update assemblies; since extended to 13 (single source of truth: `ProjectSettings/HybridCLRSettings.asset`):
+19 hot-update assemblies (single source of truth: `ProjectSettings/HybridCLRSettings.asset`; validated by `asmdef_dependency_validator.py`):
 
-`Boot`, `Core`, `General`, `Project`, `Pool`, `Cache`, `Event`, `Asset`, `Log`, `RuntimeLog`, `Timer`, `Framework.ViewCache`, `Framework.DependencyInjection`
+`Boot`, `Core`, `General`, `Project`, `Pool`, `Cache`, `Event`, `Asset`, `Log`, `RuntimeLog`, `Timer`, `Framework.ViewCache`, `Framework.DependencyInjection`, `Framework.View`, `Framework.MVVM`, `Framework.View.Navigation`, `Framework.Restart`, `Framework.Coverage`, `Framework.Touch`
 
 AOT-only: `Launcher` (never in hotUpdateAssemblies).
 

@@ -23,7 +23,7 @@ namespace Project.Demo
 
             return await formSystem.Open(new FormOptions
             {
-                AssetName = "DemoForm",
+                AssetName = nameof(DemoForm),
                 Layer = 1,
                 Data = "hello-demo"
             });

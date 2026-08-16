@@ -14,7 +14,7 @@ namespace Framework.View.Navigation
         ///
         /// 超过最长帧数 && 超过最长时间 => 会强制结束转场效果，避免转场效果异常导致界面无法操作
         /// </summary>
-        public static float MaxDurationSeconds { get; set; } = 5f;
+        public static readonly float MaxDurationSeconds = 5f;
 
         /// <summary>
         /// 转场效果最长持续帧数
@@ -24,7 +24,7 @@ namespace Framework.View.Navigation
         /// 为什么除了时间还需要用帧数？
         ///     因为Editor环境（以及断点调试）可能会卡顿、反应慢，导致转场效果时间变长，更容易超过最长时间
         /// </summary>
-        public static int MaxDurationFrames { get; set; } = 150;
+        public static readonly int MaxDurationFrames = 150;
 
         public virtual bool IsNoOp => false;
 

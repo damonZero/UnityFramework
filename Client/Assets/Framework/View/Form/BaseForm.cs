@@ -21,7 +21,12 @@ namespace Framework.View
             get => _layer;
             set
             {
-                Debug.Assert(value >= 0, $"{name}: Layer must be >= 0, got {value}");
+                if (value < 0)
+                {
+                    GameLog.Error($"{name}: Layer must be >= 0, got {value}", module: "Framework.View");
+                    return;
+                }
+
                 if (_layer == value) return;
 
                 var oldLayer = _layer;

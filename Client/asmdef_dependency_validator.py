@@ -5,9 +5,11 @@ KJ asmdef dependency validator + ground-truth generator.
 
 Design notes (related to the flaky G: mount):
     * The project lives under a sandbox mount whose folder name is a long run of
-    'M' characters. We NEVER hardcode that literal here. Instead the KJ root is
-    resolved dynamically by scanning G:/ for the M-folder that actually contains
-    NewProjectK/KJ/Assets/AGENTS.md. Pass an explicit root as argv[1] to bypass.
+    'M' characters. We NEVER hardcode that literal here. Instead the Unity project
+    root (KJ/Client, since REPO-01 repo-unification moved Unity under Client/) is
+    resolved dynamically by scanning G:/ for the M-folder that contains
+    NewProjectK/KJ/Client/ProjectSettings/ProjectVersion.txt. Pass an explicit
+    root as argv[1] to bypass.
   * Every file read is retried, because the mount intermittently returns empty.
 
 What it does:
@@ -25,7 +27,7 @@ What it does:
                              (may reference only LOWER-tier Framework pkgs)
            => no lateral (T1->T1) and no upward (T0->T1) references.
        R5  No cycles anywhere in the dependency graph.
-       R6  HybridCLR hotUpdateAssemblies consistency (10 expected; Launcher excluded).
+       R6  HybridCLR hotUpdateAssemblies consistency (19 expected; Launcher excluded).
        R7  Editor assemblies are Editor-gated (includePlatforms: Editor).
 
 Run:  python asmdef_dependency_validator.py [ROOT]
@@ -42,14 +44,14 @@ def resolve_root(max_tries=40, sleep=0.3):
             continue
         for name in top:
             if name.startswith("M") and os.path.isdir(os.path.join("G:\\", name)):
-                cand = os.path.join("G:\\", name, "NewProjectK", "KJ")
-                probe = os.path.join(cand, "Assets", "AGENTS.md")
+                cand = os.path.join("G:\\", name, "NewProjectK", "KJ", "Client")
+                probe = os.path.join(cand, "ProjectSettings", "ProjectVersion.txt")
                 for _2 in range(5):
                     if os.path.isfile(probe):
                         return cand
                     time.sleep(0.1)
         time.sleep(sleep)
-    raise SystemExit("Could not resolve KJ root under G:\\ (mount flaky?)")
+    raise SystemExit("Could not resolve KJ Client root under G:\\ (mount flaky?)")
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else resolve_root()
 
@@ -73,6 +75,21 @@ ASMDEFS = [
     "Assets/Framework/AssetShared/Framework.AssetShared.asmdef",
     "Assets/Framework/Asset.Editor/Framework.Asset.Editor.asmdef",
     "Assets/Framework/TestKit/TestKit.asmdef",
+    "Assets/Framework/View/Framework.View.asmdef",
+    "Assets/Framework/View/Navigation/Framework.View.Navigation.asmdef",
+    "Assets/Framework/MVVM/Framework.MVVM.asmdef",
+    "Assets/Framework/ViewCache/Framework.ViewCache.asmdef",
+    "Assets/Framework/DependencyInjection/Framework.DependencyInjection.asmdef",
+    "Assets/Framework/Coverage/Framework.Coverage.asmdef",
+    "Assets/Framework/Touch/Framework.Touch.asmdef",
+    "Assets/Framework/Restart/Framework.Restart.asmdef",
+    "Assets/Framework/BuildPipeline/Framework.BuildPipeline.asmdef",
+    "Assets/Framework/Aop/Aop.asmdef",
+    "Assets/Framework/View/Editor/Framework.View.Editor.asmdef",
+    "Assets/Framework/View/Navigation.Editor/Framework.View.Navigation.Editor.asmdef",
+    "Assets/Framework/Coverage/Editor/Framework.Coverage.Editor.asmdef",
+    "Assets/Framework/1External/E7/NotchSolution/E7.NotchSolution.asmdef",
+    "Assets/Framework/1External/E7/NotchSolution/Editor/E7.NotchSolution.Editor.asmdef",
 ]
 
 def read_json(rel, max_tries=40, sleep=0.4):
@@ -128,18 +145,35 @@ def layer_of(name):
     if name == "Core": return "Core"
     if name == "General": return "General"
     if name == "Project": return "Project"
-    if name in ("Boot.Editor", "Core.Editor", "Framework.Asset.Editor"): return "Editor"
+    if name in ("Boot.Editor", "Core.Editor", "Framework.Asset.Editor",
+                "Framework.View.Editor", "Framework.View.Navigation.Editor",
+                "Framework.Coverage.Editor", "E7.NotchSolution.Editor", "Aop"): return "Editor"
     if name == "TestKit": return "Test"
-    if name in ("AssetShared", "Log", "Cache", "Event", "Pool",
-                "RuntimeLog", "Asset", "Timer"): return "Framework"
+    if name == "E7.NotchSolution": return "1External"
+    if name in ("AssetShared", "Log", "Cache", "Event", "Pool", "RuntimeLog", "Asset", "Timer",
+                "Framework.ViewCache", "Framework.DependencyInjection", "Framework.Coverage",
+                "Framework.Touch", "Framework.Restart", "Framework.BuildPipeline",
+                "Framework.View", "Framework.View.Navigation", "Framework.MVVM"): return "Framework"
     return "Other"
 
-FRAMEWORK = {"AssetShared", "Log", "Cache", "Event", "Pool", "RuntimeLog", "Asset", "Timer"}
-TIER0 = {"AssetShared", "Log", "Cache", "Timer"}            # leaves
-TIER1 = {"Event", "Pool", "RuntimeLog", "Asset"}   # composites
+FRAMEWORK = {"AssetShared", "Log", "Cache", "Event", "Pool", "RuntimeLog", "Asset", "Timer",
+             "Framework.ViewCache", "Framework.DependencyInjection", "Framework.Coverage",
+             "Framework.Touch", "Framework.Restart", "Framework.BuildPipeline",
+             "Framework.View", "Framework.View.Navigation", "Framework.MVVM"}
+# Framework 分层（数值越大层级越高；X -> Y 要求 tier(X) > tier(Y)，即只允许引用更低层）。
+TIER = {"AssetShared": 0, "Log": 0, "Cache": 0, "Timer": 0,
+        "Framework.BuildPipeline": 0, "Framework.Restart": 0, "Framework.Touch": 0,
+        "Framework.DependencyInjection": 0,
+        "Event": 1, "Pool": 1, "RuntimeLog": 1, "Asset": 1, "Framework.ViewCache": 1,
+        "Framework.Coverage": 1,
+        "Framework.View": 2,
+        "Framework.View.Navigation": 3, "Framework.MVVM": 3}
 SCRIPTS = {"Boot", "Core", "General", "Project", "Launcher"}
 HOT = {"Boot", "Core", "General", "Project", "Pool", "Cache",
-       "Event", "Asset", "Log", "RuntimeLog", "Timer"}
+       "Event", "Asset", "Log", "RuntimeLog", "Timer",
+       "Framework.ViewCache", "Framework.DependencyInjection",
+       "Framework.View", "Framework.MVVM", "Framework.View.Navigation",
+       "Framework.Restart", "Framework.Coverage", "Framework.Touch"}
 
 ENGINE_OK = {"UnityEngine", "UnityEngine.CoreModule", "UnityEngine.AssetBundleModule",
              "UnityEditor", "Assembly-CSharp", "mscorlib", "netstandard", "System",
@@ -181,22 +215,18 @@ for name in FRAMEWORK:
         bad = [r for r in graph[name] if r in SCRIPTS]
         check(name, not bad, "references Scripts-layer: %s" % bad)
 
-# R4 Framework tiering (strictly one-way)
+# R4 Framework tiering (strictly one-way, acyclic): X -> Y requires tier(X) > tier(Y).
 for name in FRAMEWORK:
     if name not in graph:
         continue
     for r in graph[name]:
         if r not in FRAMEWORK:
             continue
-        if name in TIER1 and r in TIER0:
-            continue  # OK: T1 -> T0
-        if name in TIER0 and r in TIER0:
-            errors.append("[%s] Tier0 references another Tier0 Framework pkg: %s" % (name, r))
-        elif name in TIER1 and r in TIER1:
-            errors.append("[%s] lateral Tier1->Tier1 reference: %s "
-                          "(must be strictly lower tier)" % (name, r))
-        elif name in TIER0 and r in TIER1:
-            errors.append("[%s] UPWARD Tier0->Tier1 reference: %s (forbidden)" % (name, r))
+        tx = TIER.get(name, -1)
+        ty = TIER.get(r, -1)
+        if tx <= ty:
+            errors.append("[%s] invalid Framework reference (tier %d -> tier %d): %s"
+                          % (name, tx, ty, r))
 
 # R5 cycle detection
 def find_cycle():
@@ -248,7 +278,7 @@ out.append("=" * 72)
 out.append("KJ asmdef dependency validator")
 out.append("=" * 72)
 out.append("ROOT                  = %s" % ROOT)
-out.append("resolved M-folder len = %d" % len(os.path.basename(os.path.dirname(os.path.dirname(ROOT)))))
+out.append("resolved M-folder len = %d" % len(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(ROOT))))))
 out.append("")
 out.append("== Ground-truth reference table (source of truth = .asmdef files) ==")
 for name in order:

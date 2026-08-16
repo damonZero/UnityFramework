@@ -1,0 +1,16 @@
+{
+  "name": "DOTween.Runtime",
+  "rootNamespace": "",
+  "references": [
+    "GUID:8399f2978dc1cef47b902e762206eff0"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

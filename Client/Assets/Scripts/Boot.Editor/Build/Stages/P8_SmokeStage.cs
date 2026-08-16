@@ -273,7 +273,7 @@ namespace Boot.Editor.Build
             {
                 FileName = adb, Arguments = "devices",
                 UseShellExecute = false, RedirectStandardOutput = true,
-                RedirectStandardError = true, CreateNoWindow = true,
+                CreateNoWindow = true,
             };
             using var p = System.Diagnostics.Process.Start(psi);
             if (p == null) return online;
@@ -309,11 +309,12 @@ namespace Boot.Editor.Build
         {
             try
             {
+                // 不重定向 stdout/stderr：输出无消费方，重定向但不读取会在 adb 输出量大时
+                // 填满管道缓冲区导致死锁（WaitForExit 永不返回）。
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = adb, Arguments = $"-s {device} {args}",
-                    UseShellExecute = false, RedirectStandardOutput = true,
-                    RedirectStandardError = true, CreateNoWindow = true,
+                    UseShellExecute = false, CreateNoWindow = true,
                 };
                 using var p = System.Diagnostics.Process.Start(psi);
                 if (p == null) return -1;

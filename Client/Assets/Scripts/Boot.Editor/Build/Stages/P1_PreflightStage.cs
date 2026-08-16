@@ -47,11 +47,12 @@ namespace Boot.Editor.Build
             }
             BuildLogger.Info("[P1] ✓ HybridCLR runtime: installed");
 
-            // 2. 平台切换
+            // 2. 平台切换（事务快照，构建结束后由 Runner 回滚到原平台）
             BuildTarget activeTarget = EditorUserBuildSettings.activeBuildTarget;
             if (activeTarget != buildTarget)
             {
                 BuildLogger.Warn($"[P1] Switching platform: {activeTarget} → {buildTarget}");
+                context.Transaction.SnapshotActiveBuildTarget();
                 if (!EditorUserBuildSettings.SwitchActiveBuildTarget(
                     BuildPipeline.GetBuildTargetGroup(buildTarget), buildTarget))
                 {

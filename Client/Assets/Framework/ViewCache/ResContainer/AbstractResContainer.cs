@@ -17,7 +17,7 @@ namespace Framework.ViewCache
             }
 
 
-            var root = new GameObject(nameof(AbstractResContainer<T>));
+            var root = new GameObject(typeof(T).Name);
             root.SetActive(false);
 
             _cacheRoot = root.transform;

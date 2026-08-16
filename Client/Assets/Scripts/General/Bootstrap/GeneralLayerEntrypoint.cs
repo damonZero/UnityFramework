@@ -1,5 +1,6 @@
 using System;
 using Core.Bootstrap;
+using Core.Systems;
 using Microsoft.Extensions.Logging;
 using VContainer;
 using VContainer.Unity;
@@ -8,7 +9,7 @@ namespace General.Bootstrap
 {
     /// <summary>
     /// General 层启动入口（分层启动链 Phase 3）。
-    /// 实现 <see cref="IPostStartable"/>，在 <see cref="General.Models.ModelLifecycle"/>（IPostStartable，
+    /// 实现 <see cref="IPostStartable"/>，在 <see cref="General.ModelLifecycle"/>（IPostStartable，
     /// 先注册先触发）加载本层模型之后执行。仅当本层模型全部加载成功才反射启动 Project；
     /// 否则记录失败并阻断，不创建下一层。
     /// 通过 <see cref="IObjectResolver.ApplicationOrigin"/> 获取本层 scope（VContainer 构建时
@@ -17,15 +18,18 @@ namespace General.Bootstrap
     public sealed class GeneralLayerEntrypoint : IPostStartable, IDisposable
     {
         private readonly IModelStartupStatus _modelStartupStatus;
+        private readonly ICoreStartupStatus _coreStartupStatus;
         private readonly ILogger<GeneralLayerEntrypoint> _logger;
         private readonly IObjectResolver _resolver;
 
         public GeneralLayerEntrypoint(
             IModelStartupStatus modelStartupStatus,
+            ICoreStartupStatus coreStartupStatus,
             ILogger<GeneralLayerEntrypoint> logger,
             IObjectResolver resolver)
         {
             _modelStartupStatus = modelStartupStatus ?? throw new ArgumentNullException(nameof(modelStartupStatus));
+            _coreStartupStatus = coreStartupStatus ?? throw new ArgumentNullException(nameof(coreStartupStatus));
             _logger = logger;
             _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         }
@@ -34,6 +38,16 @@ namespace General.Bootstrap
         {
             if (!_modelStartupStatus.IsLoaded)
             {
+                // Core 启动失败时 ModelLifecycle 跳过 LoadAll（无模型失败），需区分于模型加载失败。
+                if (!_coreStartupStatus.IsStarted || _coreStartupStatus.HasInitFailures)
+                {
+                    var failedSystems = _coreStartupStatus.FailedSystemNames.Count == 0
+                        ? "<none>"
+                        : string.Join(", ", _coreStartupStatus.FailedSystemNames);
+                    GeneralLayerEntrypointLog.CoreBlocked(_logger, failedSystems);
+                    return;
+                }
+
                 var failed = _modelStartupStatus.FailedModelNames.Count == 0
                     ? "<none>"
                     : string.Join(", ", _modelStartupStatus.FailedModelNames);

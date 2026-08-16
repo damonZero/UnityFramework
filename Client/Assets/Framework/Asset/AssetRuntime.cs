@@ -20,6 +20,7 @@ namespace Framework.Asset
         private readonly Dictionary<string, UniTask> _sceneUnloadTasks = new();
         private readonly HashSet<YooAsset.AssetHandle> _ownedAssetHandles = new();
         private readonly HashSet<YooAsset.SceneHandle> _ownedSceneHandles = new();
+        // startup/teardown path; pooled only if Pool referenced
         private readonly List<AssetCacheKey> _releaseKeys = new();
         private readonly Dictionary<AssetCacheKey, PendingAssetLoad> _loadingTasks = new();
         private readonly object _gate = new();
@@ -55,7 +56,7 @@ namespace Framework.Asset
             catch (Exception e)
             {
                 LastError = e.Message;
-                GameLog.Error($"[AssetRuntime] Initialization failed: {e}");
+                GameLog.Exception(e, "[AssetRuntime] Initialization failed", module: "Framework.Asset");
                 CleanupAfterInitializeFailure();
                 return AssetInitializeHandle.Failed(LastError);
             }
@@ -72,19 +73,39 @@ namespace Framework.Asset
                 return true;
 
             LastError = "Synchronous AssetRuntime.Initialize is not supported by YooAsset package initialization. Use BeginInitialize and poll the returned handle.";
-            GameLog.Error($"[AssetRuntime] {LastError}");
+            GameLog.Error($"[AssetRuntime] {LastError}", module: "Framework.Asset");
             return false;
         }
 
-        public void Shutdown()
+        /// <summary>
+        /// 软释放：释放已加载句柄与内部缓存，但保留底层 YooAsset package 与 IsReady。
+        /// 用于软重启——Core scope 销毁时只释放资源占用，不拆 YooAsset，重建后仍可加载。
+        /// </summary>
+        public void Release()
+        {
+            ReleaseAllHandles();
+        }
+
+        /// <summary>
+        /// 硬销毁：ReleaseAllHandles + YooAssets.Destroy()。进程退出 / 整机重启后不可再加载。
+        /// </summary>
+        public void Destroy()
         {
             if (_defaultPackage == null && !IsReady)
                 return;
 
+            ReleaseAllHandles();
+
             IsReady = false;
             _initializeHandle = null;
             _config = null;
+            _defaultPackage = null;
+            YooAssets.Destroy();
+        }
 
+        private void ReleaseAllHandles()
+        {
+            // startup/teardown path; pooled only if Pool referenced
             List<YooAsset.AssetHandle> handlesToRelease = new();
             List<PendingAssetLoad> pendingLoads = new();
             lock (_gate)
@@ -109,25 +130,23 @@ namespace Framework.Asset
 
             foreach (var handle in handlesToRelease)
             {
-                try { handle.Release(); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error releasing cached handle: {e}"); }
+                try { handle.Release(); } catch (Exception e) { GameLog.Exception(e, "[AssetRuntime] Error releasing cached handle", module: "Framework.Asset"); }
             }
 
             foreach (var handle in _ownedAssetHandles)
             {
-                try { handle.Release(); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error releasing owned asset handle: {e}"); }
+                try { handle.Release(); } catch (Exception e) { GameLog.Exception(e, "[AssetRuntime] Error releasing owned asset handle", module: "Framework.Asset"); }
             }
 
             foreach (var handle in _ownedSceneHandles)
             {
-                try { UnloadSceneSynchronously(handle); } catch (Exception e) { GameLog.Error($"[AssetRuntime] Error unloading owned scene handle: {e}"); }
+                try { UnloadSceneSynchronously(handle); } catch (Exception e) { GameLog.Exception(e, "[AssetRuntime] Error unloading owned scene handle", module: "Framework.Asset"); }
             }
 
             _sceneHandles.Clear();
             _sceneUnloadTasks.Clear();
             _ownedAssetHandles.Clear();
             _ownedSceneHandles.Clear();
-            _defaultPackage = null;
-            YooAssets.Destroy();
         }
 
         public void WrapFromExistingPackage(AssetConfig config, ResourcePackage existingPackage)
@@ -163,7 +182,7 @@ namespace Framework.Asset
                 throw new ArgumentNullException(nameof(config), "AssetConfig is missing. Create Assets/Resources/AssetConfig.asset before starting the asset runtime.");
 
             if (_defaultPackage != null || IsReady)
-                Shutdown();
+                Destroy();
             else if (YooAssets.IsInitialized)
                 YooAssets.Destroy();
 
@@ -220,7 +239,7 @@ namespace Framework.Asset
             catch (Exception e)
             {
                 LastError = e.Message;
-                GameLog.Error($"[AssetRuntime] Initialization failed: {e}");
+                GameLog.Exception(e, "[AssetRuntime] Initialization failed", module: "Framework.Asset");
                 CleanupAfterInitializeFailure();
                 handle.Complete(false, LastError);
             }
@@ -233,13 +252,13 @@ namespace Framework.Asset
             try
             {
                 if (_defaultPackage != null || IsReady)
-                    Shutdown();
+                    Destroy();
                 else if (YooAssets.IsInitialized)
                     YooAssets.Destroy();
             }
             catch (Exception e)
             {
-                GameLog.Error($"[AssetRuntime] Cleanup after initialization failure failed: {e}");
+                GameLog.Exception(e, "[AssetRuntime] Cleanup after initialization failure failed", module: "Framework.Asset");
             }
             finally
             {
@@ -260,19 +279,19 @@ namespace Framework.Asset
             var handle = _defaultPackage.LoadAssetAsync<T>(path);
             await handle.ToUniTask();
 
-            // Guard against Shutdown() arriving while the load was in-flight.
+            // Guard against Destroy() arriving while the load was in-flight.
             // If IsReady is false, _ownedAssetHandles has already been cleared,
             // so adding the handle here would create a permanent leak.
             if (!IsReady)
             {
-                GameLog.Warn($"[AssetRuntime] LoadAssetHandleAsync: runtime shut down during load of '{path}'. Releasing handle.");
+                GameLog.Warn($"[AssetRuntime] LoadAssetHandleAsync: runtime shut down during load of '{path}'. Releasing handle.", module: "Framework.Asset");
                 handle.Release();
                 return null;
             }
 
             if (handle.Status != EOperationStatus.Succeeded)
             {
-                GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}");
+                GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}", module: "Framework.Asset");
                 handle.Release();
                 return null;
             }
@@ -311,7 +330,7 @@ namespace Framework.Asset
                 LoadAssetInternalAsync<T>(key, path, pendingLoad).Forget();
             }
 
-            var loadedObj = await pendingLoad.Task;
+            var loadedObj = await pendingLoad.Task.AsUniTask();
             return loadedObj as T;
         }
 
@@ -324,7 +343,7 @@ namespace Framework.Asset
                 await handle.ToUniTask();
                 if (handle.Status != EOperationStatus.Succeeded)
                 {
-                    GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}");
+                    GameLog.Error($"[AssetRuntime] Load failed: {path} - {handle.Error}", module: "Framework.Asset");
                     handle.Release();
                     pendingLoad.TrySetResult(null);
                     return;
@@ -353,7 +372,7 @@ namespace Framework.Asset
             }
             catch (Exception e)
             {
-                GameLog.Error($"[AssetRuntime] Load exception: {path} - {e}");
+                GameLog.Exception(e, $"[AssetRuntime] Load exception: {path}", module: "Framework.Asset");
                 handle?.Release();
                 pendingLoad.TrySetResult(null);
             }
@@ -392,7 +411,13 @@ namespace Framework.Asset
             }
 
             if (_sceneHandles.TryGetValue(path, out var oldHandle))
+            {
+                // Only unload an already-completed handle; an in-progress load is
+                // awaited rather than unloaded mid-load.
+                if (!oldHandle.IsDone)
+                    await UniTask.WaitUntil(() => oldHandle.IsDone);
                 await StartSceneUnloadAsync(path, oldHandle);
+            }
 
             var handle = _defaultPackage.LoadSceneAsync(path, mode);
             _sceneHandles[path] = handle;
@@ -406,7 +431,7 @@ namespace Framework.Asset
             onProgress?.Invoke(1f);
             if (handle.Status != EOperationStatus.Succeeded)
             {
-                GameLog.Error($"[AssetRuntime] Scene load failed: {path} - {handle.Error}");
+                GameLog.Error($"[AssetRuntime] Scene load failed: {path} - {handle.Error}", module: "Framework.Asset");
                 _sceneHandles.Remove(path);
                 await handle.UnloadSceneAsync().ToUniTask();
                 return null;
@@ -458,7 +483,7 @@ namespace Framework.Asset
             {
                 if (handle.Status != EOperationStatus.Succeeded)
                 {
-                    GameLog.Error($"[AssetRuntime] Raw file load failed: {path} - {handle.Error}");
+                    GameLog.Error($"[AssetRuntime] Raw file load failed: {path} - {handle.Error}", module: "Framework.Asset");
                     return Array.Empty<byte>();
                 }
 
@@ -494,6 +519,7 @@ namespace Framework.Asset
 
         public void Release(string path)
         {
+            // startup/teardown path; pooled only if Pool referenced
             List<YooAsset.AssetHandle> handlesToRelease = new();
             lock (_gate)
             {
@@ -545,10 +571,10 @@ namespace Framework.Asset
             }
         }
 
-        public void UnloadUnused()
+        public async UniTask UnloadUnused()
         {
             EnsureReady();
-            _defaultPackage.UnloadUnusedAssetsAsync().WaitForCompletion();
+            await _defaultPackage.UnloadUnusedAssetsAsync().ToUniTask();
         }
 
         private void EnsureReady()
@@ -650,8 +676,13 @@ namespace Framework.Asset
             if (handle == null)
                 return;
 
+            // main-thread blocking — used only during teardown
             var operation = handle.UnloadSceneAsync();
             operation.WaitForCompletion();
+
+            // Fully release the scene handle so its ref count is dropped and the
+            // wrapper's IsValid guard prevents a later Dispose from re-unloading.
+            handle.Release();
         }
 
         private readonly struct AssetCacheKey : IEquatable<AssetCacheKey>
@@ -696,8 +727,19 @@ namespace Framework.Asset
         private sealed class CdnRemoteService : IRemoteService
         {
             private readonly string _baseUrl;
+            private readonly Dictionary<string, string[]> _urlCache = new();
+
             public CdnRemoteService(string baseUrl) => _baseUrl = baseUrl.TrimEnd('/');
-            public IReadOnlyList<string> GetRemoteUrls(string fileName) => new[] { $"{_baseUrl}/{fileName}" };
+
+            public IReadOnlyList<string> GetRemoteUrls(string fileName)
+            {
+                if (!_urlCache.TryGetValue(fileName, out var urls))
+                {
+                    urls = new[] { $"{_baseUrl}/{fileName}" };
+                    _urlCache[fileName] = urls;
+                }
+                return urls;
+            }
         }
     }
 }

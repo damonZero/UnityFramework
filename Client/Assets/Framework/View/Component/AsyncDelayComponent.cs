@@ -9,7 +9,7 @@ namespace Framework.View
     /// 异步延迟功能组件
     /// 提供可复用的异步延迟操作实现，支持帧延迟和时间延迟
     /// </summary>
-    public class AsyncDelayComponent : IViewActiveComponent
+    public class AsyncDelayComponent : IViewActiveComponent, IViewDestroyComponent
     {
         /// <summary>
         /// 用于管理可取消异步操作的令牌源
@@ -62,12 +62,23 @@ namespace Framework.View
         /// </summary>
         public void OnViewDisable()
         {
-            if (_disableCts is { IsCancellationRequested: false })
-            {
-                _disableCts.Cancel();
-                _disableCts.Dispose();
-                _disableCts = null;
-            }
+            DisposeDisableCts();
+        }
+
+        /// <summary>
+        /// 当拥有者被销毁时调用，确保取消令牌被释放（即使从未经过禁用流程）
+        /// </summary>
+        public void OnViewDestroy()
+        {
+            DisposeDisableCts();
+        }
+
+        private void DisposeDisableCts()
+        {
+            if (_disableCts == null) return;
+            _disableCts.Cancel();
+            _disableCts.Dispose();
+            _disableCts = null;
         }
 
         /// <summary>

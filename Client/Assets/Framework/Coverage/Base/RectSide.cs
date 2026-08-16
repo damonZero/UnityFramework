@@ -35,7 +35,7 @@ namespace Framework.Coverage
         }
 
 
-        private static List<RectSide> _pool = new List<RectSide>();
+        private static readonly List<RectSide> _pool = new List<RectSide>();
 
         public override void OnCache()
         {

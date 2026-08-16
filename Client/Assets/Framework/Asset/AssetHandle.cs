@@ -37,7 +37,10 @@ namespace Framework.Asset
                 return;
 
             _disposed = true;
-            _handle.Release();
+            // Guard against double-release: ReleaseAllHandles() releases the
+            // underlying handle directly during teardown, leaving IsValid false.
+            if (_handle.IsValid)
+                _handle.Release();
             _onDispose?.Invoke(_handle);
         }
 

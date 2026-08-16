@@ -89,7 +89,8 @@ namespace Core.Bootstrap
             if (!typeof(ISystem).IsAssignableFrom(type))
                 throw new InvalidOperationException($"[CoreSystem] type must implement ISystem: {type.FullName}");
 
-            if (type.Namespace == null || !type.Namespace.StartsWith("Core", StringComparison.Ordinal))
+            if (type.Namespace == null ||
+                (type.Namespace != "Core" && !type.Namespace.StartsWith("Core.", StringComparison.Ordinal)))
                 throw new InvalidOperationException($"[CoreSystem] is reserved for Core systems: {type.FullName}");
         }
     }

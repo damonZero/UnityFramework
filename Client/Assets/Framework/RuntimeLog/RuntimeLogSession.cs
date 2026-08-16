@@ -128,14 +128,16 @@ namespace Framework.RuntimeLog
         private void WriteSessionManifestLocked()
         {
             var json = RuntimeLogJson.SerializeSession(_sessionInfo);
-            File.WriteAllText(SessionFilePath, json, Encoding.UTF8);
+            File.WriteAllText(SessionFilePath, json, new UTF8Encoding(false));
             if (_options.MaintainLatest)
-                File.WriteAllText(LatestSessionFilePath, json, Encoding.UTF8);
+                File.WriteAllText(LatestSessionFilePath, json, new UTF8Encoding(false));
         }
 
         private static StreamWriter CreateWriter(string path)
         {
             var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+            // AutoFlush 有意开启：每行日志立即落盘，保证崩溃后 AI 读取 latest.jsonl 仍能看到
+            // 崩溃前最后一条已写入的日志；代价是每行多一次 flush（syscall），在日志量下可接受。
             return new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true };
         }
     }

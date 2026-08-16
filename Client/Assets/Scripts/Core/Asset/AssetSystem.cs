@@ -44,7 +44,8 @@ namespace Core.Asset
 
         public void Shutdown()
         {
-            _runtime.Shutdown();
+            // 软释放：只释放资源句柄缓存，保留底层 YooAsset package（软重启后重建可继续加载）。
+            _runtime.Release();
             AssetSystemLog.Shutdown(_logger);
         }
     }

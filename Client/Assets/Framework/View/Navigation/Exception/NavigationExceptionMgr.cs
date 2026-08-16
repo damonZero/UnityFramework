@@ -5,7 +5,6 @@
 //**************************************************************************************
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 namespace Framework.View.Navigation
 {
@@ -89,7 +88,7 @@ namespace Framework.View.Navigation
         public static bool HasException(NavigationBehaviour behaviour)
         {
             if (_instance == null) return false;
-            return _instance._exceptions.Any(errData => errData.behaviour == behaviour);
+            return _instance._exceptions.Exists(errData => errData.behaviour == behaviour);
         }
 
         /// <summary>

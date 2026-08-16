@@ -1,3 +1,4 @@
+using E7.NotchSolution;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,8 +6,9 @@ namespace Core.UI
 {
     /// <summary>
     /// 屏幕 / 安全区 / 分辨率适配。
-    /// 对应参考项目 ScriptsC#/Core/UI/Screen/ScreenHelper + CanvasScalerHelper，
-    /// 去掉对 NotchSolution / SafePadding / StartScreen 的依赖，直接用 Unity Screen.safeArea。
+    /// 对应参考项目 ScriptsC#/Core/UI/Screen/ScreenHelper + CanvasScalerHelper。
+    /// 安全区边距由 E7 Notch Solution 的 <see cref="SafePadding"/> 组件驱动（ViewSystem 创建 UIRoot 时挂载），
+    /// 此处只读 <see cref="SafePadding.Instance"/> 的 FinalPaddingsLdur；SafePadding 未就绪时回退手写 Screen.safeArea。
     /// </summary>
     public static class ScreenHelper
     {
@@ -37,8 +39,10 @@ namespace Core.UI
         /// <summary>横向适配比例：屏幕像素宽 / 标准宽。</summary>
         public static float StandardRate => Screen.width * 1f / StandardWidth;
 
-        /// <summary>安全区边距（左 下 上 右，Canvas 逻辑单位）。</summary>
-        public static Vector4 SafePaddingLdur { get; private set; }
+        /// <summary>安全区边距（左 下 上 右，Canvas 逻辑单位）。由 SafePadding 组件驱动，未就绪时回退手写计算。</summary>
+        public static Vector4 SafePaddingLdur => SafePadding.Instance != null
+            ? SafePadding.Instance.FinalPaddingsLdur
+            : FallbackSafePaddingLdur();
 
         /// <summary>CanvasScaler 的 matchWidthOrHeight 取值（0=宽度适配，1=高度适配）。</summary>
         public static float MatchWidthOrHeight =>
@@ -53,12 +57,11 @@ namespace Core.UI
         }
 
         /// <summary>
-        /// 刷新画布逻辑尺寸与安全区边距。分辨率 / 安全区变化时调用。
+        /// 刷新画布逻辑尺寸。分辨率变化时调用（安全区边距由 SafePadding 组件自行驱动，无需在此应用）。
         /// </summary>
         public static void Refresh()
         {
             RefreshCanvasSize();
-            ApplySafeArea();
         }
 
         private static void RefreshCanvasSize()
@@ -85,20 +88,18 @@ namespace Core.UI
             }
         }
 
-        private static void ApplySafeArea()
+        /// <summary>
+        /// 安全区边距兜底：SafePadding 未就绪（如测试环境 / 异常）时直接用 Screen.safeArea 计算。
+        /// 正常运行时安全区由 SafePadding 组件驱动其自身 RectTransform，此方法不改变任何状态。
+        /// </summary>
+        private static Vector4 FallbackSafePaddingLdur()
         {
-            if (SafeUIRoot == null)
-            {
-                return;
-            }
-
             var safeArea = Screen.safeArea;
             var screenW = Screen.width;
             var screenH = Screen.height;
             if (screenW <= 0 || screenH <= 0)
             {
-                SafePaddingLdur = Vector4.zero;
-                return;
+                return Vector4.zero;
             }
 
             var left = safeArea.xMin / screenW * CanvasWidth;
@@ -106,12 +107,7 @@ namespace Core.UI
             var bottom = safeArea.yMin / screenH * CanvasHeight;
             var top = (screenH - safeArea.yMax) / screenH * CanvasHeight;
 
-            SafePaddingLdur = new Vector4(left, bottom, top, right);
-
-            SafeUIRoot.anchorMin = Vector2.zero;
-            SafeUIRoot.anchorMax = Vector2.one;
-            SafeUIRoot.offsetMin = new Vector2(left, bottom);
-            SafeUIRoot.offsetMax = new Vector2(-right, -top);
+            return new Vector4(left, bottom, top, right);
         }
 
         /// <summary>
@@ -151,6 +147,8 @@ namespace Core.UI
             RootCanvas = null;
             UIRoot = null;
             SafeUIRoot = null;
+            CanvasWidth = 0;
+            CanvasHeight = 0;
         }
     }
 }

@@ -361,6 +361,9 @@ namespace Boot.Editor.Build
             private bool _installAfterBuild;
             private string _selectedSmokeDevice;
 
+            /// <summary>在线设备扫描结果缓存。避免每次 Repaint 都 spawn `adb devices` 子进程。</summary>
+            private static List<string> _cachedOnlineDevices;
+
             public BuildView(BuildDashboardWindow window)
             {
                 _window = window;
@@ -448,7 +451,11 @@ namespace Boot.Editor.Build
 
             [Button("刷新设备列表"), GUIColor(0.5f, 0.5f, 0.5f)]
             [EnableIf(nameof(InstallAfterBuild))]
-            public void RefreshDevices() => _selectedSmokeDevice = FindFirstOnlineDevice();
+            public void RefreshDevices()
+            {
+                InvalidateDeviceCache();
+                _selectedSmokeDevice = FindFirstOnlineDevice();
+            }
 
             [Button("一键打包", ButtonSizes.Large), GUIColor(0.20f, 0.72f, 0.38f)]
             [EnableIf(nameof(BuildEnabled))]
@@ -550,7 +557,17 @@ namespace Boot.Editor.Build
                 }
             }
 
+            private static void InvalidateDeviceCache() => _cachedOnlineDevices = null;
+
             private static List<string> ListOnlineDevices()
+            {
+                if (_cachedOnlineDevices != null)
+                    return _cachedOnlineDevices;
+                _cachedOnlineDevices = ScanOnlineDevices();
+                return _cachedOnlineDevices;
+            }
+
+            private static List<string> ScanOnlineDevices()
             {
                 var devices = new List<string>();
                 string adb = FindAdbPath();
@@ -561,7 +578,7 @@ namespace Boot.Editor.Build
                     {
                         FileName = adb, Arguments = "devices",
                         UseShellExecute = false, RedirectStandardOutput = true,
-                        RedirectStandardError = true, CreateNoWindow = true,
+                        CreateNoWindow = true,
                     };
                     using var p = System.Diagnostics.Process.Start(psi);
                     if (p == null) return devices;

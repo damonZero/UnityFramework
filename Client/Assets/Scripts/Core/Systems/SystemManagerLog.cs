@@ -52,6 +52,10 @@ namespace Core.Systems
         [ZLoggerMessage(LogLevel.Error, "[SystemManager] Shutdown 失败: {name}")]
         internal static partial void ShutdownFailed(ILogger logger, string name, Exception e);
 
+        [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information), Conditional(GameLogSymbols.Warning), Conditional(GameLogSymbols.Error)]
+        [ZLoggerMessage(LogLevel.Error, "[SystemManager] Tick 失败: {name}")]
+        internal static partial void TickFailed(ILogger logger, string name, Exception e);
+
         [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information)]
         [ZLoggerMessage(LogLevel.Information, "[SystemManager] 全部关闭完成")]
         internal static partial void ShutdownComplete(ILogger logger);

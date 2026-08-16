@@ -70,7 +70,7 @@ namespace Boot
             }
             catch (Exception e)
             {
-                BootStartupLog.Error($"[BootLoader] Startup failed: {e}");
+                BootStartupLog.Error(e, "[BootLoader] Startup failed");
                 _view?.SetStatus("Startup failed");
                 _view?.SetRepairVisible(true);
                 throw;
@@ -99,8 +99,23 @@ namespace Boot
 
         private async UniTask<ResourcePackage> InitializeYooAsset(AssetConfig config)
         {
-            YooAssets.Initialize();
             var packageName = string.IsNullOrWhiteSpace(config.PackageName) ? "DefaultPackage" : config.PackageName;
+
+            // 幂等：Repair 会二次进入（首次失败后再次启动）。YooAsset 已就绪（包已建且清单已激活）
+            // 时直接复用，否则 YooAssets.Initialize()/CreatePackage() 会抛 "already initialized/exists"。
+            if (YooAssets.IsInitialized
+                && YooAssets.TryGetPackage(packageName, out var readyPackage)
+                && readyPackage.PackageValid)
+            {
+                BootStartupLog.Info($"[BootLoader] YooAsset already initialized, reusing package: {packageName}");
+                return readyPackage;
+            }
+
+            // 上次启动残留未完成/失败的初始化，整体销毁后重建，保证干净。
+            if (YooAssets.IsInitialized)
+                YooAssets.Destroy();
+
+            YooAssets.Initialize();
             var package = YooAssets.CreatePackage(packageName);
             var operation = package.InitializePackageAsync(BuildOptions(config, packageName));
             await operation.ToUniTask();
@@ -322,7 +337,16 @@ namespace Boot
             if (method == null)
                 throw new InvalidOperationException("[BootLoader] Boot.BootUpdateRunner.Start(BootBridge) was not found.");
 
-            method.Invoke(null, new object[] { bridge });
+            try
+            {
+                method.Invoke(null, new object[] { bridge });
+            }
+            catch (TargetInvocationException tie)
+            {
+                // MethodInfo.Invoke 会把热更入口的真实异常包成 TargetInvocationException，
+                // 解包抛出真实原因，否则 RunAsync 的 catch 只能看到包装异常。
+                throw tie.InnerException ?? tie;
+            }
         }
     }
 }

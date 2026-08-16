@@ -80,7 +80,6 @@ namespace Boot.Editor.Build
                 Arguments = args,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
-                RedirectStandardError = true,
                 CreateNoWindow = true,
             };
             using var p = System.Diagnostics.Process.Start(psi);

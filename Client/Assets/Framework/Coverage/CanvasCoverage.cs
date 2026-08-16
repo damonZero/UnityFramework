@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using Framework.Coverage;
+using Framework.Log;
 using UnityEngine;
 
 namespace Framework.Coverage
@@ -104,10 +105,10 @@ namespace Framework.Coverage
                 _showAreas.Init(_showAreaInfos, this, UICoverageArea.CoverageType.Show);
 
             if (_showAreaInfos == null || _showAreaInfos.Length < 1)
-                Debug.LogError($"coverage 未指定任何显示区域, name：{gameObject.name}");
+                GameLog.Error($"coverage 未指定任何显示区域, name：{gameObject.name}", module: "Framework.Coverage");
 
             // 初始化遮挡列表的所有矩形
-            if (_showAreaInfos != null)
+            if (_coverAreaInfos != null)
                 _coverAreas.Init(_coverAreaInfos, this, UICoverageArea.CoverageType.Cover);
 
             CalcSide();

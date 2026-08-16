@@ -11,7 +11,7 @@ namespace Framework.ViewCache
         /// <summary>
         /// 如果是单例的分析类，需要在这边进行注册一下 FIXME by liangc:这里没看懂
         /// </summary>
-        private static Dictionary<Type, ICacheStatistics> _staticContainer =
+        private static readonly Dictionary<Type, ICacheStatistics> _staticContainer =
             new Dictionary<Type, ICacheStatistics>()
             {
                 {

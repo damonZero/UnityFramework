@@ -14,6 +14,9 @@ namespace Boot
     /// </summary>
     public class Entry : MonoBehaviour
     {
+        /// <summary>AOT 入口单例（软重启时作为持久根 <c>GameRestart.bootComponent</c> 保留）。</summary>
+        public static Entry Instance { get; private set; }
+
         [SerializeField]
         private BootStartupSettings startupSettings = new BootStartupSettings();
 
@@ -25,6 +28,7 @@ namespace Boot
 
         private void Awake()
         {
+            Instance = this;
             DontDestroyOnLoad(gameObject);
             RunStartupAsync().Forget();
         }
@@ -57,10 +61,10 @@ namespace Boot
                 if (method != null)
                     method.Invoke(null, Array.Empty<object>());
             }
-            catch
+            catch (Exception e)
             {
                 // Reset 失败不阻塞 Repair；RunStartupAsync 会尝试重建。
-                BootStartupLog.Warn("[Entry] CoreStartup.Reset failed during Repair (scope may be stale).");
+                BootStartupLog.Warn($"[Entry] CoreStartup.Reset failed during Repair (scope may be stale): {e}");
             }
         }
 
@@ -89,6 +93,8 @@ namespace Boot
 
         private void OnDestroy()
         {
+            if (Instance == this)
+                Instance = null;
             _loader?.Dispose();
         }
     }

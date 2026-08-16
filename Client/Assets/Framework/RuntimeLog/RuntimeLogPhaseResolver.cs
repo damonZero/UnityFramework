@@ -18,9 +18,6 @@ namespace Framework.RuntimeLog
             if (Contains(module, "HybridCLR") || Contains(category, "HybridCLR") || Contains(message, "HybridCLR"))
                 return "HybridCLR";
 
-            if (Contains(module, "Asset") || Contains(category, "AssetSystem") || Contains(message, "[AssetSystem]"))
-                return "Core.Asset";
-
             if (Contains(category, "SystemManager") || Contains(message, "[SystemManager]"))
                 return "Core.Init";
 
@@ -32,6 +29,12 @@ namespace Framework.RuntimeLog
 
             if (StartsWith(module, "General") || StartsWith(category, "General"))
                 return "General";
+
+            // 精确匹配资源模块（module == "Framework.Asset" 或 "Core.Asset*"），避免裸 "Asset" 误匹配
+            // Project.AssetXxx / General.AssetXxx / AssetShared 等；须在通用 Core 判定之前。
+            if (module == "Framework.Asset" || StartsWith(module, "Core.Asset")
+                || Contains(category, "AssetSystem") || Contains(message, "[AssetSystem]"))
+                return "Core.Asset";
 
             if (StartsWith(module, "Core") || StartsWith(category, "Core"))
                 return "Core";

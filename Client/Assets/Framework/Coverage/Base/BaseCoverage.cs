@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Framework.Log;
 using UnityEngine;
 
 namespace Framework.Coverage
@@ -168,7 +169,7 @@ namespace Framework.Coverage
         {
             if (!InitSuccess)
             {
-                Debug.LogError($"Coverage: {gameObject.name} have not init success!");
+                GameLog.Error($"Coverage: {gameObject.name} have not init success!", module: "Framework.Coverage");
                 return false;
             }
 

@@ -84,7 +84,7 @@ namespace Framework.ViewCache
             // var staticMem  = AssetBundleIndex.HasBundleIndex(key)
             //     ? AssetBundleIndex.GetMemory(key) : AssetBundleIndex.GetMemory(key + ".unity");
 
-            var staticMem = CacheDependencies.GetMemory(key);
+            var staticMem = CacheDependencies.GetMemory != null ? CacheDependencies.GetMemory(key) : 0;
 
             _memProfits[key] = GetMemoryProfit(dynamicMem, staticMem, consumeTime);
         }
@@ -111,6 +111,9 @@ namespace Framework.ViewCache
         {
             //内存值(KB) = 动态内存差值*比例 + 静态内存值*(1-比例)
             float memTmp = (dynamicMem * MemRatio + staticMem * (1 - MemRatio)) / 1024;
+            // memTmp 可能为 0（GetMemory 默认返回 0 或 Editor 下未统计），此时无内存收益，返回 0 避免除零
+            if (memTmp <= 0)
+                return 0;
             //时间消耗放大1000000倍,避免因时间太小,计算出的收益值太小
             return (uint) (time * 1000000 / memTmp);
         }

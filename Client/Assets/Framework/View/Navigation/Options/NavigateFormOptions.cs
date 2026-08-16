@@ -21,8 +21,10 @@ namespace Framework.View.Navigation
 
         #region ObjectPool 对象池相关
 
-        public static ObjectPool<NavigateFormOptions> Pool { get; } =
-            NavigationFactory.Instance.CreatePool(() => new NavigateFormOptions(), 32);
+        private static ObjectPool<NavigateFormOptions> _pool;
+
+        public static ObjectPool<NavigateFormOptions> Pool =>
+            _pool ??= NavigationFactory.Instance.CreatePool(() => new NavigateFormOptions(), 32);
 
         public void RecycleToPool()
         {

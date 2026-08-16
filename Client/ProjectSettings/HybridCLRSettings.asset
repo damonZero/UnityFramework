@@ -30,6 +30,9 @@ MonoBehaviour:
   - Framework.View
   - Framework.MVVM
   - Framework.View.Navigation
+  - Framework.Restart
+  - Framework.Coverage
+  - Framework.Touch
   - Boot
   - Core
   - General

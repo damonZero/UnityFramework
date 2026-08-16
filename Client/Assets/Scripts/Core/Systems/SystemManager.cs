@@ -21,7 +21,9 @@ namespace Core.Systems
 
         private readonly List<ISystem> _systems = new();
         private readonly List<ISystem> _initializedSystems = new();
+        private readonly HashSet<Type> _initializedTypes = new();
         private readonly List<ITickableSystem> _tickableSystems = new();
+        private readonly HashSet<ITickableSystem> _tickFailed = new();
         private readonly List<string> _failedSystemNames = new();
         private readonly Dictionary<Type, ISystem> _systemMap = new();
         private readonly IPublisher<AppStartedEvent> _appStartedPublisher;
@@ -93,7 +95,7 @@ namespace Core.Systems
             }
 
             _systems.Sort((a, b) => a.Priority.CompareTo(b.Priority));
-            _initializedSystems.Clear();
+            _tickableSystems.Sort((a, b) => a.Priority.CompareTo(b.Priority));
             _failedSystemNames.Clear();
 
             SystemManagerLog.InitStart(_logger, _systems.Count);
@@ -101,9 +103,15 @@ namespace Core.Systems
             for (var i = 0; i < _systems.Count; i++)
             {
                 var sys = _systems[i];
+
+                // 部分失败后重入：已成功初始化的系统跳过，避免重复 Init。
+                if (_initializedTypes.Contains(sys.GetType()))
+                    continue;
+
                 try
                 {
                     sys.Init();
+                    _initializedTypes.Add(sys.GetType());
                     _initializedSystems.Add(sys);
                     SystemManagerLog.InitProgress(_logger, i + 1, _systems.Count, sys.GetType().Name, sys.Priority);
                 }
@@ -111,6 +119,10 @@ namespace Core.Systems
                 {
                     _failedSystemNames.Add(sys.GetType().Name);
                     SystemManagerLog.InitFailed(_logger, sys.GetType().Name, e);
+
+                    // Init 中途抛异常的系统可能已部分初始化，尽力回收，避免资源泄漏。
+                    try { sys.Shutdown(); }
+                    catch { }
                 }
             }
 
@@ -152,7 +164,9 @@ namespace Core.Systems
 
             _systems.Clear();
             _initializedSystems.Clear();
+            _initializedTypes.Clear();
             _tickableSystems.Clear();
+            _tickFailed.Clear();
             _systemMap.Clear();
             _failedSystemNames.Clear();
             Initialized = false;
@@ -171,7 +185,8 @@ namespace Core.Systems
             var dt = Time.deltaTime;
             foreach (var t in _tickableSystems)
             {
-                t.Update(dt);
+                try { t.Update(dt); }
+                catch (Exception e) { ReportTickFailure(t, e); }
             }
         }
 
@@ -181,7 +196,8 @@ namespace Core.Systems
             var dt = Time.deltaTime;
             foreach (var t in _tickableSystems)
             {
-                t.LateUpdate(dt);
+                try { t.LateUpdate(dt); }
+                catch (Exception e) { ReportTickFailure(t, e); }
             }
         }
 
@@ -191,8 +207,17 @@ namespace Core.Systems
             var dt = Time.fixedDeltaTime;
             foreach (var t in _tickableSystems)
             {
-                t.FixedUpdate(dt);
+                try { t.FixedUpdate(dt); }
+                catch (Exception e) { ReportTickFailure(t, e); }
             }
+        }
+
+        private void ReportTickFailure(ITickableSystem t, Exception e)
+        {
+            // 单系统 Tick 抛异常不得中断其它系统/整帧。首次失败记录一次，
+            // 避免同一系统每帧抛异常刷屏 JSONL。
+            if (_tickFailed.Add(t))
+                SystemManagerLog.TickFailed(_logger, t.GetType().Name, e);
         }
 
         public void Dispose()

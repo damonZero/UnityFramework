@@ -35,7 +35,18 @@ namespace Core.Bootstrap
             var scope = _rootScope;
             _rootScope = null;
             if (scope != null)
+            {
+                // 同步释放容器：立即触发 SystemManager.ShutdownAll（逆序）/ ModelLifecycle.UnloadAll / 子 scope 级联，
+                // 让旧系统停止 Tick。OnDestroy 里的 DisposeCore 幂等，后续 Object.Destroy 安全。
+                scope.Dispose();
                 UnityEngine.Object.Destroy(scope.gameObject);
+            }
+
+            // 级联清空子层静态 scope 引用：否则 Repair/软重启后 GeneralStartup/ProjectStartup 的
+            // _scope 仍非空，Start 防重入会提前返回，导致下一层无法重建。
+            // Core 不编译期引用 General/Project，沿用分层启动链反射契约。
+            LayerStartupReflector.InvokeReset("General.Bootstrap.GeneralStartup, General");
+            LayerStartupReflector.InvokeReset("Project.Bootstrap.ProjectStartup, Project");
         }
     }
 }

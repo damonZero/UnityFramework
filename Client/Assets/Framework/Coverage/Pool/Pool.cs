@@ -21,7 +21,7 @@ namespace Framework.Coverage
     public class Pool<T>:IPool
         where T : class, IPool,new()
     {
-        private static Queue<T> _pool = new Queue<T>();
+        private static readonly Queue<T> _pool = new Queue<T>();
 
         public static T Take()
         {

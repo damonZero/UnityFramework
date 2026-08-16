@@ -18,6 +18,7 @@ namespace General
             if (assembly == null)
                 return Array.Empty<Type>();
 
+            // 一次性启动路径，非热路径（General 未引用 Pool，直接 new 可接受）。
             var result = new List<Type>();
             try
             {

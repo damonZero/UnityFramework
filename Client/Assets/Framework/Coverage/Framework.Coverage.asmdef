@@ -1,7 +1,9 @@
 {
     "name": "Framework.Coverage",
     "rootNamespace": "Framework.Coverage",
-    "references": [],
+    "references": [
+        "Log"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

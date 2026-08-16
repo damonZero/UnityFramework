@@ -73,21 +73,22 @@ namespace Framework.View.Navigation.Editor
         /// <param name="append"></param>
         public void WriteRecord(List<NavigationOperateRecordData> records, bool append = false)
         {
-            if (!File.Exists(_recordPath))
-                File.Create(_recordPath);
+            // _recordPath 从未被赋值，此处为空时直接返回，避免 File.Create(null) 抛异常
+            if (string.IsNullOrEmpty(_recordPath))
+                return;
 
-            var writeStream = File.Open(_recordPath, append ? FileMode.Append : FileMode.CreateNew);
-            foreach (var record in records)
+            using (var writeStream = File.Open(_recordPath, append ? FileMode.Append : FileMode.Create))
             {
-                //新建序列化对象
-                DataContractJsonSerializer jsonData =
-                    new DataContractJsonSerializer(typeof(NavigationOperateRecordData));
+                foreach (var record in records)
+                {
+                    //新建序列化对象
+                    DataContractJsonSerializer jsonData =
+                        new DataContractJsonSerializer(typeof(NavigationOperateRecordData));
 
-                //进行序列化
-                jsonData.WriteObject(writeStream, record);
+                    //进行序列化
+                    jsonData.WriteObject(writeStream, record);
+                }
             }
-
-            writeStream.Close();
         }
 
         /// <summary>

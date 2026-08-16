@@ -114,6 +114,13 @@ namespace Framework.View.Navigation
         public UniTask<TForm> OpenFormAsync<TForm>(int layer, object data = null, string formName = null)
             where TForm : BaseForm
         {
+            if (layer <= 0)
+            {
+                throw new ArgumentException($"[{nameof(NavigateContainer)}.{nameof(OpenFormAsync)}] " +
+                                            $"Invalid Layer: layer={layer}\n" +
+                                            $"参数layer不合法，请设置大于0的Layer值！");
+            }
+
             var options = NavigateFormOptions.Pool.Rent();
             options.Layer = layer;
             options.Data = data;
@@ -310,6 +317,7 @@ namespace Framework.View.Navigation
 
             // 查找加载器，若不存在则创建
             NavigationLoader loader = null;
+            var consumed = false;
 
             if (options.Mode.HasFlag(NavigationMode.FindOrNew))
             {
@@ -329,6 +337,7 @@ namespace Framework.View.Navigation
                 }
 
                 loader = newLoader;
+                consumed = true;
             }
             else if (loader.ViewOptions != options &&
                      loader.CurrentState is NavigationStateType.None &&
@@ -336,11 +345,18 @@ namespace Framework.View.Navigation
             {
                 loader.ViewOptions?.RecycleToPool();
                 loader.ViewOptions = options;
+                consumed = true;
             }
 
             // 填充加载器参数
             loader.Mode = options.Mode;
             loader.OpenShowData = options.Data;
+
+            // 加载器已存在且处于 Open/转场流程中时，options 未被消费，归还池避免泄漏
+            if (!consumed && loader.ViewOptions != options)
+            {
+                options.RecycleToPool();
+            }
 
             return loader;
         }
@@ -410,18 +426,22 @@ namespace Framework.View.Navigation
         public IEnumerable<NavigationLoader> SafeForeach(List<NavigationLoader> loaders)
         {
             var list = NavigationFactory.GetLoaderList();
-
-            foreach (var t in loaders)
+            try
             {
-                list.Add(t);
-            }
+                foreach (var t in loaders)
+                {
+                    list.Add(t);
+                }
 
-            foreach (var loader in list)
+                foreach (var loader in list)
+                {
+                    yield return loader;
+                }
+            }
+            finally
             {
-                yield return loader;
+                NavigationFactory.ReleaseLoaderList(list);
             }
-
-            NavigationFactory.ReleaseLoaderList(list);
         }
 
         /// <summary>
@@ -504,23 +524,28 @@ namespace Framework.View.Navigation
                 if (Children.Count > 0)
                 {
                     var list = NavigationFactory.GetContainerList();
-                    list.AddRange(Children);
-
-                    // 后序遍历：先遍历子节点，再返回自身
-                    for (var i = list.Count - 1; i >= 0; i--)
+                    try
                     {
-                        var child = list[i];
+                        list.AddRange(Children);
 
-                        // 遍历过程中Children可能发生变化，所以要判断一下child是否还在
-                        if (!Children.Contains(child)) continue;
-
-                        foreach (var container in child.ForeachContainers(TraversalOrder.Reverse, true))
+                        // 后序遍历：先遍历子节点，再返回自身
+                        for (var i = list.Count - 1; i >= 0; i--)
                         {
-                            yield return container;
+                            var child = list[i];
+
+                            // 遍历过程中Children可能发生变化，所以要判断一下child是否还在
+                            if (!Children.Contains(child)) continue;
+
+                            foreach (var container in child.ForeachContainers(TraversalOrder.Reverse, true))
+                            {
+                                yield return container;
+                            }
                         }
                     }
-
-                    NavigationFactory.ReleaseContainerList(list);
+                    finally
+                    {
+                        NavigationFactory.ReleaseContainerList(list);
+                    }
                 }
 
 
@@ -1110,7 +1135,6 @@ namespace Framework.View.Navigation
         public override bool IsStateValid(NavigationStateType targetState)
         {
             var passVerify = true;
-            var needThrowException = false;
 
             //已关闭后不能进行其他操作
             if (CurrentState == NavigationStateType.Close)
@@ -1121,10 +1145,7 @@ namespace Framework.View.Navigation
 
             if (!passVerify)
             {
-                var info = $"导航容器:'{Name}'在状态:{CurrentState}中,不允许执行操作:{targetState}";
-                if (needThrowException)
-                    throw new NavigationVerifyException(info);
-                Log.Debug(info);
+                Log.Debug($"导航容器:'{Name}'在状态:{CurrentState}中,不允许执行操作:{targetState}");
             }
 
             return passVerify;

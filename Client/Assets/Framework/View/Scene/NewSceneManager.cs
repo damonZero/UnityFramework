@@ -87,7 +87,7 @@ namespace Framework.View
         {
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
             UnityEngine.SceneManagement.SceneManager.activeSceneChanged += OnActiveSceneChanged;
-            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
         public virtual void Shutdown()
@@ -490,15 +490,21 @@ namespace Framework.View
                       $"(IsValid:{loadedScene.IsValid()}, isLoaded:{loadedScene.isLoaded})");
 
             var list = CollectionPool<List<GameObject>, GameObject>.Get();
-
-            // 先把场景所有gameObject销毁（解决加载场景比卸载快，导致逻辑异常的问题）
-            //      1. Destroy不会立即执行，导致截图可能会出现2个场景重叠的情况
-            //      2. rootGameObjects中的获取的GameObject可能为null
-            loadedScene.GetRootGameObjects(list);
-            foreach (var rootObject in list)
+            try
             {
-                if (rootObject) rootObject.SetActive(false);
-                UnityEngine.Object.Destroy(rootObject);
+                // 先把场景所有gameObject销毁（解决加载场景比卸载快，导致逻辑异常的问题）
+                //      1. Destroy不会立即执行，导致截图可能会出现2个场景重叠的情况
+                //      2. rootGameObjects中的获取的GameObject可能为null
+                loadedScene.GetRootGameObjects(list);
+                foreach (var rootObject in list)
+                {
+                    if (rootObject) rootObject.SetActive(false);
+                    UnityEngine.Object.Destroy(rootObject);
+                }
+            }
+            finally
+            {
+                CollectionPool<List<GameObject>, GameObject>.Release(list);
             }
         }
 

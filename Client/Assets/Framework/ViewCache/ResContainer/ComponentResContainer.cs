@@ -38,6 +38,12 @@ namespace Framework.ViewCache
             if (instance == null) return null;
 
             var component = instance.GetComponent<T>();
+            if (component == null)
+            {
+                GameLog.Error($"实例化对象上未找到组件 {typeof(T).Name}: {assetName}", module: CacheFactory.CACHER_LOG_DEBUG);
+                Object.Destroy(instance);
+                return null;
+            }
             return component;
         }
 

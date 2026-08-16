@@ -43,7 +43,7 @@ namespace Core.Logging
 
         public bool IsEnabled(LogLevel logLevel)
         {
-            if (string.Equals(_categoryName, "Core.Logging.GameLogBridge", StringComparison.Ordinal))
+            if (string.Equals(_categoryName, typeof(GameLogBridge).FullName, StringComparison.Ordinal))
                 return false;
 
             var level = ToGameLogLevel(logLevel);

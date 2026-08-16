@@ -20,7 +20,7 @@ namespace Project.Demo
     {
         protected override void OnFormAwake()
         {
-            _btnClose.Click = (_, _) => GameLog.Debug("Close button clicked");
+            _btnClose.Click = (_, _) => GameLog.Debug("Close button clicked", module: nameof(DemoForm));
         }
 
         protected override void OnOpen(object data)

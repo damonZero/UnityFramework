@@ -47,9 +47,14 @@ namespace Framework.Log
 
         private static readonly object Gate = new();
         private static readonly Queue<GameLogEntry> StartupBuffer = new();
-        private static GameLogProfile _profile = CreateDefaultProfile();
+        private static GameLogProfile _profile;
         private static IGameLogSink _sink;
-        private static int _startupBufferCapacity = DefaultStartupBufferCapacity;
+        private static int _startupBufferCapacity;
+        private static bool _startupBufferCapacityConfigured;
+
+        /// <summary>有效启动缓冲容量：未显式设置时为默认 256（软重启把字段重置为 default 后据此回退默认值）。</summary>
+        private static int EffectiveStartupBufferCapacity =>
+            _startupBufferCapacityConfigured ? _startupBufferCapacity : DefaultStartupBufferCapacity;
 
         /// <summary>
         /// Wired by Core during startup. Keep the implementation outside Framework
@@ -85,7 +90,7 @@ namespace Framework.Log
             }
         }
 
-        public static GameLogProfile Profile => _profile;
+        public static GameLogProfile Profile => _profile ??= CreateDefaultProfile();
         public static int BufferedEntryCount
         {
             get
@@ -100,6 +105,7 @@ namespace Framework.Log
             lock (Gate)
             {
                 _startupBufferCapacity = Math.Max(0, capacity);
+                _startupBufferCapacityConfigured = true;
                 TrimStartupBufferLocked();
             }
         }
@@ -115,22 +121,22 @@ namespace Framework.Log
             _profile = profile ?? GameLogProfile.Silent();
         }
 
-        public static void SetMinimumLevel(GameLogLevel level) => _profile.SetMinimumLevel(level);
+        public static void SetMinimumLevel(GameLogLevel level) => Profile.SetMinimumLevel(level);
 
         public static void ApplyEnvironment(GameLogEnvironment environment) =>
-            _profile.ApplyEnvironment(environment);
+            Profile.ApplyEnvironment(environment);
 
         public static void SetModuleMinimumLevel(string module, GameLogLevel level) =>
-            _profile.SetModuleMinimumLevel(module, level);
+            Profile.SetModuleMinimumLevel(module, level);
 
         public static void SetModuleEnabled(string module, bool enabled) =>
-            _profile.SetModuleEnabled(module, enabled);
+            Profile.SetModuleEnabled(module, enabled);
 
         public static void ApplyModuleRules(System.Collections.Generic.IEnumerable<GameLogModuleRule> rules) =>
-            _profile.ApplyModuleRules(rules);
+            Profile.ApplyModuleRules(rules);
 
         public static bool IsEnabled(GameLogLevel level, string module = DefaultModule) =>
-            _profile.IsEnabled(module, level);
+            Profile.IsEnabled(module, level);
 
         [Conditional(SymbolTrace)]
         public static void Trace(
@@ -221,7 +227,7 @@ namespace Framework.Log
             string filePath = "")
         {
             module = NormalizeModule(module, filePath);
-            if (!_profile.IsEnabled(module, level))
+            if (!Profile.IsEnabled(module, level))
                 return;
 
             var entry = new GameLogEntry(level, module, message, exception);
@@ -254,7 +260,7 @@ namespace Framework.Log
 
         private static void EnqueueStartupBufferLocked(GameLogEntry entry)
         {
-            if (_startupBufferCapacity <= 0)
+            if (EffectiveStartupBufferCapacity <= 0)
                 return;
 
             StartupBuffer.Enqueue(entry);
@@ -263,7 +269,7 @@ namespace Framework.Log
 
         private static void TrimStartupBufferLocked()
         {
-            while (StartupBuffer.Count > _startupBufferCapacity)
+            while (StartupBuffer.Count > EffectiveStartupBufferCapacity)
             {
                 StartupBuffer.Dequeue();
             }

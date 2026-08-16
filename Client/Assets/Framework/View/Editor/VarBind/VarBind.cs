@@ -40,28 +40,28 @@ namespace Framework.View.Editor
 
         private VarBaseBind GetHandler(ViewObject behaviour)
         {
-            if (_handler != null) return _handler;
+            var type = GetBindType(behaviour);
+            if (_handler != null && _currentType == type) return _handler;
 
+            _currentType = type;
+            if (type == VarBindType.Prefab)
+                _handler = new VarPrefabBind();
+            else if (type == VarBindType.Scene)
+                _handler = new VarSceneBind();
+            else
+                _handler = new VarPrefabInSceneBind();
+            return _handler;
+        }
+
+        private VarBindType GetBindType(ViewObject behaviour)
+        {
             var stage = PrefabStageUtility.GetCurrentPrefabStage();
             if (stage)
-            {
-                _handler = new VarPrefabBind();
-                _currentType = VarBindType.Prefab;
-                return _handler;
-            }
+                return VarBindType.Prefab;
 
             if (behaviour.TryGetComponent<BaseScene>(out _))
-            {
-                _handler = new VarSceneBind();
-                _currentType = VarBindType.Scene;
-            }
-            else
-            {
-                _handler = new VarPrefabInSceneBind();
-                _currentType = VarBindType.PrefabInScene;
-            }
-
-            return _handler;
+                return VarBindType.Scene;
+            return VarBindType.PrefabInScene;
         }
     }
 }

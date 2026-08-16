@@ -2,6 +2,7 @@ using System;
 
 namespace Framework.Pool
 {
+    [NonCopyable]
     public struct PoolLease<T> : IPoolLease<T>
         where T : class
     {

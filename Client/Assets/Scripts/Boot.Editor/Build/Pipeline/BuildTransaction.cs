@@ -96,6 +96,21 @@ namespace Boot.Editor.Build
             public void Restore() => _setter(_original);
         }
 
+        private class IntSettingSnapshot : ISnapshot
+        {
+            private readonly string _key;
+            private readonly int _original;
+            private readonly Action<int> _setter;
+            public string Description => $"Setting: {_key}";
+
+            public IntSettingSnapshot(string key, int original, Action<int> setter)
+            {
+                _key = key; _original = original; _setter = setter;
+            }
+
+            public void Restore() => _setter(_original);
+        }
+
         private class ScriptingBackendSnapshot : ISnapshot
         {
             private readonly BuildTargetGroup _targetGroup;
@@ -109,6 +124,24 @@ namespace Boot.Editor.Build
             }
 
             public void Restore() => PlayerSettings.SetScriptingBackend(_targetGroup, _original);
+        }
+
+        private class BuildTargetSnapshot : ISnapshot
+        {
+            private readonly BuildTarget _original;
+            public string Description => $"Setting: activeBuildTarget={_original}";
+
+            public BuildTargetSnapshot(BuildTarget original)
+            {
+                _original = original;
+            }
+
+            public void Restore()
+            {
+                if (EditorUserBuildSettings.activeBuildTarget != _original)
+                    EditorUserBuildSettings.SwitchActiveBuildTarget(
+                        BuildPipeline.GetBuildTargetGroup(_original), _original);
+            }
         }
 
         // ===== 公共 API =====
@@ -134,6 +167,14 @@ namespace Boot.Editor.Build
         {
             bool original = getter();
             _snapshots.Add(new BoolSettingSnapshot(key, original, setter));
+            BuildLogger.Info($"[Transaction] Snapshot setting: {key} = {original}");
+        }
+
+        /// <summary>快照 PlayerSettings int 类设置</summary>
+        public void SnapshotIntSetting(string key, Action<int> setter, Func<int> getter)
+        {
+            int original = getter();
+            _snapshots.Add(new IntSettingSnapshot(key, original, setter));
             BuildLogger.Info($"[Transaction] Snapshot setting: {key} = {original}");
         }
 
@@ -213,13 +254,41 @@ namespace Boot.Editor.Build
                 () => PlayerSettings.GetScriptingDefineSymbols(namedTarget));
         }
 
-        /// <summary>快照 Android 签名设置</summary>
+        /// <summary>快照 Android 身份 + 签名设置（applicationId / 版本号 / keystore）</summary>
         public void SnapshotAndroidSigning()
         {
             SnapshotBoolSetting(
                 "Android.useCustomKeystore",
                 v => PlayerSettings.Android.useCustomKeystore = v,
                 () => PlayerSettings.Android.useCustomKeystore);
+            SnapshotTextSetting(
+                "Android.keystoreName",
+                v => PlayerSettings.Android.keystoreName = v,
+                () => PlayerSettings.Android.keystoreName);
+            SnapshotTextSetting(
+                "Android.keystorePass",
+                v => PlayerSettings.Android.keystorePass = v,
+                () => PlayerSettings.Android.keystorePass);
+            SnapshotTextSetting(
+                "Android.keyaliasName",
+                v => PlayerSettings.Android.keyaliasName = v,
+                () => PlayerSettings.Android.keyaliasName);
+            SnapshotTextSetting(
+                "Android.keyaliasPass",
+                v => PlayerSettings.Android.keyaliasPass = v,
+                () => PlayerSettings.Android.keyaliasPass);
+            SnapshotTextSetting(
+                "ApplicationIdentifier",
+                v => PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, v),
+                () => PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android));
+            SnapshotTextSetting(
+                "bundleVersion",
+                v => PlayerSettings.bundleVersion = v,
+                () => PlayerSettings.bundleVersion);
+            SnapshotIntSetting(
+                "Android.bundleVersionCode",
+                v => PlayerSettings.Android.bundleVersionCode = v,
+                () => PlayerSettings.Android.bundleVersionCode);
         }
 
         public void SnapshotScriptingBackend(BuildTargetGroup targetGroup)
@@ -227,6 +296,14 @@ namespace Boot.Editor.Build
             var original = PlayerSettings.GetScriptingBackend(targetGroup);
             _snapshots.Add(new ScriptingBackendSnapshot(targetGroup, original));
             BuildLogger.Info($"[Transaction] Snapshot setting: ScriptingBackend.{targetGroup} = {original}");
+        }
+
+        /// <summary>快照当前 activeBuildTarget，rollback 时切换回原平台。</summary>
+        public void SnapshotActiveBuildTarget()
+        {
+            var original = EditorUserBuildSettings.activeBuildTarget;
+            _snapshots.Add(new BuildTargetSnapshot(original));
+            BuildLogger.Info($"[Transaction] Snapshot activeBuildTarget: {original}");
         }
     }
 }

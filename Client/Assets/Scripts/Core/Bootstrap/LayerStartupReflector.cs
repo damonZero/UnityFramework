@@ -70,5 +70,51 @@ namespace Core.Bootstrap
                 onError?.Invoke(InvokeResult.InvokeFailed, typeName, real);
             }
         }
+
+        /// <summary>
+        /// 反射调用目标层 <c>XxxStartup.Reset()</c>（无参静态方法），用于 Repair/软重启时清空层级静态 scope 引用。
+        /// 失败仅通过回调记录，不抛出（Reset 幂等，失败不应阻塞重建）。
+        /// </summary>
+        /// <param name="typeName">程序集限定名，如 "General.Bootstrap.GeneralStartup, General"。</param>
+        /// <param name="onError">失败回调：(typeName, realException)。realException 已解包。</param>
+        public static void InvokeReset(
+            string typeName,
+            Action<string, Exception> onError = null)
+        {
+            try
+            {
+                var type = Type.GetType(typeName, throwOnError: false);
+                if (type == null)
+                {
+                    onError?.Invoke(typeName, new TypeLoadException($"Type not found: {typeName}"));
+                    return;
+                }
+
+                var method = type.GetMethod("Reset",
+                    BindingFlags.Public | BindingFlags.Static);
+                if (method == null)
+                {
+                    onError?.Invoke(typeName, new MissingMethodException(typeName, "Reset"));
+                    return;
+                }
+
+                if (method.GetParameters().Length != 0)
+                {
+                    onError?.Invoke(typeName, new InvalidOperationException(
+                        $"Reset signature unsupported (expected parameterless): {typeName}"));
+                    return;
+                }
+
+                method.Invoke(null, null);
+            }
+            catch (Exception e)
+            {
+                // 反射调用会包 TargetInvocationException，解包记录真实内部异常。
+                var real = e is TargetInvocationException tie && tie.InnerException != null
+                    ? tie.InnerException
+                    : e;
+                onError?.Invoke(typeName, real);
+            }
+        }
     }
 }

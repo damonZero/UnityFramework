@@ -121,7 +121,6 @@ namespace Framework.View.Navigation
         public override void Reset()
         {
             base.Reset();
-            FormOptions?.Reset();
             _layer = 0;
             _isFullScreen = -1;
         }

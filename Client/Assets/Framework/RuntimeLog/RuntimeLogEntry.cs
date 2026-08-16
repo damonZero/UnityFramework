@@ -6,7 +6,7 @@ namespace Framework.RuntimeLog
 {
     public sealed class RuntimeLogEntry
     {
-        public DateTimeOffset TimeUtc { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset TimeUtc { get; set; }
         public long Seq { get; internal set; }
         public int? Frame { get; set; }
         public int ThreadId { get; set; } = Environment.CurrentManagedThreadId;

@@ -17,6 +17,10 @@ namespace General.Bootstrap
         internal static partial void GeneralStartupFailed(ILogger logger, string failedModels);
 
         [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information), Conditional(GameLogSymbols.Warning), Conditional(GameLogSymbols.Error)]
+        [ZLoggerMessage(LogLevel.Error, "[GeneralLayerEntrypoint] Core startup blocked General layer (no models loaded): {failedSystems}")]
+        internal static partial void CoreBlocked(ILogger logger, string failedSystems);
+
+        [Conditional(GameLogSymbols.UnityEditor), Conditional(GameLogSymbols.DevelopmentBuild), Conditional(GameLogSymbols.Trace), Conditional(GameLogSymbols.Debug), Conditional(GameLogSymbols.Information), Conditional(GameLogSymbols.Warning), Conditional(GameLogSymbols.Error)]
         [ZLoggerMessage(LogLevel.Error, "[GeneralLayerEntrypoint] General root scope is not ready (GeneralStartup not invoked)")]
         internal static partial void GeneralScopeNotReady(ILogger logger);
 

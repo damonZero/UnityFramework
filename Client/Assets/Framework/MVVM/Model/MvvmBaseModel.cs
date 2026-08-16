@@ -21,6 +21,8 @@ namespace Framework.MVVM
             if (!typeof(MvvmBaseModel).IsAssignableFrom(type))
                 throw new ArgumentException($"{type.FullName} is not a subclass of {nameof(MvvmBaseModel)}");
 
+            if (Dependencies.Scope == null) return null;
+
             var flag = Dependencies.Resolver.TryResolve(type, out var instance);
             return flag ? (MvvmBaseModel)instance : null;
         }
@@ -32,7 +34,7 @@ namespace Framework.MVVM
         /// <returns></returns>
         public static T GetInjectModel<T>() where T : MvvmBaseModel
         {
-            return Dependencies.Resolver?.ResolveOrDefault<T>();
+            return Dependencies.Scope == null ? null : Dependencies.Resolver?.ResolveOrDefault<T>();
         }
 
 

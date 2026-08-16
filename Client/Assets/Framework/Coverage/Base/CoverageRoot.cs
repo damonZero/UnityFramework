@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Framework.Log;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -344,7 +345,7 @@ namespace Framework.Coverage
                 }
 
                 _happenedError = true;
-                Debug.LogError($"coverage adjust error:  {e.Message}\n{e.StackTrace}");
+                GameLog.Exception(e, "coverage adjust error", module: "Framework.Coverage");
             }
 
 

@@ -176,9 +176,10 @@ namespace Framework.ViewCache
         public virtual void Clear()
         {
             GameLog.Debug($"{this.GetType().FullName} Clear!!!!", module: CacheFactory.CACHER_LOG_DEBUG);
+            // Destroy 每次只移除一个实例，需要循环直到该 key 下的所有实例都被销毁
             foreach (var pair in _cacheDict)
             {
-                if (pair.Value.Count > 0)
+                while (pair.Value.Count > 0)
                     Destroy(pair.Key);
             }
 

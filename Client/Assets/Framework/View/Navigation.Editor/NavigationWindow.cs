@@ -224,9 +224,8 @@ namespace Framework.View.Navigation.Editor
             //     DrawChildGroup(childGroup);
             //     return true;
             // }, false);
-            foreach (var child in container.ForeachContainers(TraversalOrder.Forward, false))
+            foreach (var child in container.Children)
             {
-                if (container.Parent != container) break;
                 DrawChildGroup(child);
             }
 

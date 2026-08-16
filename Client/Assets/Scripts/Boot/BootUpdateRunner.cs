@@ -22,8 +22,11 @@ namespace Boot
             _bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
             _settings = bridge.Settings ?? throw new ArgumentNullException(nameof(bridge), "bridge.Settings is null");
             _view = bridge.View;
-            _assetRuntime = AssetRuntimeFactory.Create();
-            _assetRuntime.WrapFromExistingPackage(bridge.Config, bridge.Package);
+            _assetRuntime = AssetRuntimeFactory.CreateFromPackage(bridge.Config, bridge.Package);
+
+            // 软重启基础设施：保留资产运行时（跨 Core scope 重建复用）与持久根 Entry。
+            GameLife.GameRestart.AssetRuntime = _assetRuntime;
+            GameLife.GameRestart.bootComponent = Entry.Instance != null ? Entry.Instance.gameObject : null;
         }
 
         /// <summary>
@@ -56,7 +59,7 @@ namespace Boot
             {
                 // 热更层启动失败必须可观察：记录日志 + 通知启动 UI 显示修复。
                 // 不能让异常在 Forget() 中静默丢失（Phase 4 异常所有权）。
-                GameLog.Error($"[Boot] Startup failed: {e}", "Boot");
+                GameLog.Exception(e, "[Boot] Startup failed", "Boot");
                 _view?.SetStatus("Startup failed");
                 _view?.SetRepairVisible(true);
                 // 异常路径也刷新日志缓冲，确保失败原因落盘（AI 可读）。
@@ -71,7 +74,7 @@ namespace Boot
 
             _disposed = true;
             if (!_assetRuntimeTransferred)
-                _assetRuntime.Shutdown();
+                _assetRuntime.Destroy();
         }
 
         private async UniTask UpdateAssetsAsync()
@@ -143,9 +146,9 @@ namespace Boot
                     Category = "Boot.AOT",
                     Phase = "Boot",
                     Message = entry.Message,
-                    ExceptionType = null,
-                    ExceptionMessage = null,
-                    StackTrace = null
+                    ExceptionType = entry.Exception?.GetType().FullName,
+                    ExceptionMessage = entry.Exception?.Message,
+                    StackTrace = entry.Exception?.ToString()
                 });
             }
         }

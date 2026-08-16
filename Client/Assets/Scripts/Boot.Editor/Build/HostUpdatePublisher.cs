@@ -44,31 +44,56 @@ namespace Boot.Editor.Build
                 throw new ArgumentException("version is required", nameof(version));
 
             var target = BuildTarget.Android;
-            CompileDllCommand.CompileDll(target, true);
-            KJHybridClrBuildTools.SyncExistingOutputs();
-
-            var outputRoot = BundleBuilderHelper.GetDefaultBuildOutputRoot();
-            var parameters = new RawFileBuildParameters
+            // SyncExistingOutputs() 内部读取 EditorUserBuildSettings.activeBuildTarget，
+            // 而这里硬编码发布 Android —— 必须先切换到目标平台再同步，结束后恢复。
+            BuildTarget previousTarget = EditorUserBuildSettings.activeBuildTarget;
+            bool switched = false;
+            if (previousTarget != target)
             {
-                BuildOutputRoot = outputRoot,
-                BundledFileRoot = BundleBuilderHelper.GetStreamingAssetsRoot(),
-                BuildPipeline = EBuildPipeline.RawFileBuildPipeline.ToString(),
-                BuildBundleType = (int)EBundleType.RawBundle,
-                BuildTarget = target,
-                PackageName = "DefaultPackage",
-                PackageVersion = version,
-                FileNameStyle = EFileNameStyle.HashName,
-                VerifyBuildingResult = true,
-                BundledCopyOption = EBundledCopyOption.ClearAndCopyAll,
-                ClearBuildCacheFiles = false,
-            };
+                if (!EditorUserBuildSettings.SwitchActiveBuildTarget(
+                    UnityEditor.BuildPipeline.GetBuildTargetGroup(target), target))
+                {
+                    throw new InvalidOperationException($"Failed to switch active build target to {target} for publishing.");
+                }
+                switched = true;
+            }
 
-            var result = new RawFileBuildPipeline().Run(parameters, true);
-            if (!result.Success)
-                throw new InvalidOperationException($"Host package build failed: {result.ErrorInfo}");
+            try
+            {
+                CompileDllCommand.CompileDll(target, true);
+                KJHybridClrBuildTools.SyncExistingOutputs();
 
-            string source = Path.Combine(outputRoot, "Android", "DefaultPackage", version);
-            CopyBuildOutputToCdn(source, ServerRoot, version);
+                var outputRoot = BundleBuilderHelper.GetDefaultBuildOutputRoot();
+                var parameters = new RawFileBuildParameters
+                {
+                    BuildOutputRoot = outputRoot,
+                    BundledFileRoot = BundleBuilderHelper.GetStreamingAssetsRoot(),
+                    BuildPipeline = EBuildPipeline.RawFileBuildPipeline.ToString(),
+                    BuildBundleType = (int)EBundleType.RawBundle,
+                    BuildTarget = target,
+                    PackageName = "DefaultPackage",
+                    PackageVersion = version,
+                    FileNameStyle = EFileNameStyle.HashName,
+                    VerifyBuildingResult = true,
+                    BundledCopyOption = EBundledCopyOption.ClearAndCopyAll,
+                    ClearBuildCacheFiles = false,
+                };
+
+                var result = new RawFileBuildPipeline().Run(parameters, true);
+                if (!result.Success)
+                    throw new InvalidOperationException($"Host package build failed: {result.ErrorInfo}");
+
+                string source = Path.Combine(outputRoot, "Android", "DefaultPackage", version);
+                CopyBuildOutputToCdn(source, ServerRoot, version);
+            }
+            finally
+            {
+                if (switched)
+                {
+                    EditorUserBuildSettings.SwitchActiveBuildTarget(
+                        UnityEditor.BuildPipeline.GetBuildTargetGroup(previousTarget), previousTarget);
+                }
+            }
         }
 
         /// <summary>
@@ -90,8 +115,10 @@ namespace Boot.Editor.Build
         private static void CopyBuildOutputToCdn(string source, string cdnRoot, string version)
         {
             string archive = Path.Combine(cdnRoot, version);
-            CopyDirectory(source, archive);
+            // 先铺平复制到 cdnRoot，再复制版本归档。CopyDirectory 会先 Delete 目标目录，
+            // 若先写 cdnRoot/version 再写 cdnRoot，后者会把刚写好的版本子目录整个删掉。
             CopyDirectory(source, cdnRoot);
+            CopyDirectory(source, archive);
             BuildLogger.Info($"[HostUpdatePublisher] Published {version} to {cdnRoot}");
         }
 

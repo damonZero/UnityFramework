@@ -5,6 +5,7 @@
 //**************************************************************************************
 
 using Framework.Coverage;
+using Framework.Log;
 using UnityEngine;
 
 namespace Framework.Coverage
@@ -58,7 +59,7 @@ namespace Framework.Coverage
             AreaInfo = areaInfo;
             var trans = areaInfo.anchorTrans;
             if (trans == null || trans.Equals(null))
-                Debug.LogError($"Coverage显示或遮挡区域丢失 : {canvasCov.name}");
+                GameLog.Error($"Coverage显示或遮挡区域丢失 : {canvasCov.name}", module: "Framework.Coverage");
             CovType = type;
             if (_ctrl != null && !_ctrl.Equals(null))
                 _ctrl.OnAvailableChange -= OnAvailableChange;

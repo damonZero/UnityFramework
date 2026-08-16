@@ -28,10 +28,10 @@ namespace Framework.RuntimeLog
                     _current.Dispose();
 
                 _current = session;
-            }
 
-            if (installGameLogSink && CanInstallGameLogSink(session))
-                GameLog.Sink = session;
+                if (installGameLogSink && CanInstallGameLogSink(session))
+                    GameLog.Sink = session;
+            }
 
             return session;
         }
@@ -84,7 +84,7 @@ namespace Framework.RuntimeLog
         private static bool CanInstallGameLogSink(RuntimeLogSession session)
         {
             var sink = GameLog.Sink;
-            return sink == null || ReferenceEquals(sink, session) || sink is RuntimeLogSession;
+            return sink == null || ReferenceEquals(sink, session);
         }
     }
 }

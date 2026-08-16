@@ -47,7 +47,7 @@ namespace Framework.View.Navigation
                     if (transition is { IsEffectRunning: true }) return true;
                 }
 
-                return true;
+                return false;
             }
         }
 

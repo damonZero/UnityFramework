@@ -199,26 +199,23 @@ namespace Tests.EditMode
         }
 
         [Test]
-        public void AssetRuntime_WrapFromExistingPackage_SetsReady()
+        public void AssetRuntime_CreateFromPackage_SetsReady()
         {
-            var runtime = Framework.Asset.AssetRuntimeFactory.Create();
             var cfg = ScriptableObject.CreateInstance<Framework.Asset.AssetConfig>();
             var pkg = CreateTestPackage("WrapTest");
-            Assert.That(runtime.IsReady, Is.False);
 
-            runtime.WrapFromExistingPackage(cfg, pkg);
+            var runtime = Framework.Asset.AssetRuntimeFactory.CreateFromPackage(cfg, pkg);
             Assert.That(runtime.IsReady, Is.True);
         }
 
         [Test]
-        public void AssetRuntime_WrapFromExistingPackage_NullGuards()
+        public void AssetRuntime_CreateFromPackage_NullGuards()
         {
-            var runtime = Framework.Asset.AssetRuntimeFactory.Create();
             var cfg = ScriptableObject.CreateInstance<Framework.Asset.AssetConfig>();
             var pkg = CreateTestPackage("Guard");
 
-            Assert.That(() => runtime.WrapFromExistingPackage(null, pkg), Throws.ArgumentNullException);
-            Assert.That(() => runtime.WrapFromExistingPackage(cfg, null), Throws.ArgumentNullException);
+            Assert.That(() => Framework.Asset.AssetRuntimeFactory.CreateFromPackage(null, pkg), Throws.ArgumentNullException);
+            Assert.That(() => Framework.Asset.AssetRuntimeFactory.CreateFromPackage(cfg, null), Throws.ArgumentNullException);
         }
 
         [Test]

@@ -21,9 +21,9 @@ namespace Core.Logging
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
             Exception exception, Func<TState, Exception, string> formatter)
         {
-            // 关键：不走 ILogger.Log(logLevel, eventId, state, exception, formatter) ——
-            // 那个重载在 ZLoggerLogger 内部会回调 Logger.Log<TState>，触发 AOT 泛型实例化。
-            // 直接展开 formatter + state 为字符串，调用非泛型 ILogger.Log(logLevel, string)。
+            // 关键：不把原始 TState 透传给 ILogger.Log<TState> —— 那会在 ZLoggerLogger 内部
+            // 触发对任意 TState 的 AOT 泛型实例化。这里先把 formatter + state 展开成 string，
+            // 再以 string 作为 TState 调用 Log<string>，避开原始泛型实例化。
             if (!_logger.IsEnabled(logLevel))
                 return;
 
@@ -31,7 +31,7 @@ namespace Core.Logging
                 ? formatter(state, exception)
                 : state?.ToString() ?? string.Empty;
 
-            _logger.Log(logLevel, eventId, message, exception, (m, ex) => m.ToString());
+            _logger.Log(logLevel, eventId, message ?? string.Empty, exception, (m, _) => m);
         }
 
         public bool IsEnabled(LogLevel logLevel) => _logger.IsEnabled(logLevel);

@@ -125,8 +125,9 @@ namespace Framework.View.Navigation.Editor
         public static IEnumerator DelayUpwardsTraverse(NavigationNodeView root,
             Action<NavigationNodeView> action, float delayTime)
         {
+            if (root == null) yield break;
+
             WaitForSeconds wait = new WaitForSeconds(delayTime);
-            if (root == null) yield return wait;
             foreach (var child in root.Child)
             {
                 UpwardsTraverse(child, action);

@@ -158,7 +158,7 @@ namespace Framework.Pool
             {
                 if (!tag.IsRecycled)
                 {
-                    Debug.LogError($"[GameObjectPool] 实例 '{instance.name}' 不属于当前对象池，PrefabPath='{prefabPath}'（已拒绝入库）。");
+                    PoolDependencies.LogError?.Invoke($"[GameObjectPool] 实例 '{instance.name}' 不属于当前对象池，PrefabPath='{prefabPath}'（已拒绝入库）。");
                 }
 
                 return;
@@ -172,7 +172,7 @@ namespace Framework.Pool
 
             if (registeredPath != prefabPath)
             {
-                Debug.LogError($"[GameObjectPool] 实例被错误归还至路径 '{prefabPath}'，但其注册路径为 '{registeredPath}'（反向索引污染，已销毁不入库）。");
+                PoolDependencies.LogError?.Invoke($"[GameObjectPool] 实例被错误归还至路径 '{prefabPath}'，但其注册路径为 '{registeredPath}'（反向索引污染，已销毁不入库）。");
                 // 该实例在被错误归还时仍是 active（tag.IsRecycled==false），需补足注册路径的活跃计数，
                 // 否则 GetActiveCount(registeredPath) 会虚高 1（整体 Review 发现的 Bug-1）。
                 var regState = _states.TryGetValue(registeredPath, out var s) ? s : null;

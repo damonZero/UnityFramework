@@ -75,12 +75,14 @@ namespace Framework.View.Navigation
         /// <summary>
         /// 导航容器缓存池
         /// </summary>
+        // TODO: 目前仅 Release() 置空，未实际用于对象创建（Get<T> 走 TypePool），属于遗留死代码
         private ObjectPool<NavigateContainer> _containerPool =
             new(() => new NavigateContainer(), static c => c.Reset(), 32);
 
         /// <summary>
         /// 场景加载器缓存池
         /// </summary>
+        // TODO: 目前仅 Release() 置空，未实际用于对象创建（Get<T> 走 TypePool），属于遗留死代码
         private ObjectPool<NavigationSceneLoader> _sceneLoaderPool =
             new(() => new NavigationSceneLoader(), static s => s.Reset(), 16);
 

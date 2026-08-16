@@ -5,7 +5,7 @@ using Framework.Asset;
 using Framework.Log;
 using Framework.Timer;
 
-namespace Core
+namespace Core.Timer
 {
     /// <summary>
     /// Framework.Timer 的 Core 桥接：由 SystemManager 每帧驱动，并把计时器回调异常接入 GameLog。

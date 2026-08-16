@@ -9,7 +9,7 @@ last_updated: "2026-08-16T04:12:16.050Z"
 # Project State: KJ Unity Framework
 
 **Last Updated:** 2026-08-16
-**Current Status:** ✅ 分层启动链重构完成 + 热更闭环完整验证 + 仓库统一为 KJ 根（Client+Server 单一仓库）+ **UI 框架运行时移植完成**。构建管线 Android P0-P10 E2E 通过（含 CDN 发布）；热更 1.0.0→1.0.1→1.0.2 验证通过；UI 框架（移植自 37 参考项目：View/MVVM/Navigation/ViewCache/Touch/Coverage/DI + 编辑器工具链）已落地，DemoForm 加载/显示/点击验证通过、ViewFrameworkTests 通过。
+**Current Status:** ✅ 分层启动链重构完成 + 热更闭环完整验证 + 仓库统一为 KJ 根（Client+Server 单一仓库）+ **UI 框架运行时移植完成**。构建管线 Android P0-P10 E2E 通过（含 CDN 发布）；热更 1.0.0→1.0.1→1.0.2 验证通过；UI 框架（移植自 37 参考项目：View/MVVM/Navigation/ViewCache/Touch/Coverage/DI + 编辑器工具链）已落地，DemoForm 加载/显示/点击验证通过、ViewFrameworkTests 通过；**显示层 + UI 相机 + URP + DOTween + CameraMoveAdv + UI 3D 模型已落地**。
 
 ## 进度
 
@@ -84,8 +84,14 @@ last_updated: "2026-08-16T04:12:16.050Z"
 - [x] UI-00a: 应用层集成（`Core/ViewSystem` 编排 View/Form/Scene/Navigation 子系统 + `ScreenHelper` 安全区/分辨率 + `FormLifecycleEvent` 事件桥接 + `CacheDependencies` 接线）
 - [x] UI-00b: 编辑器工具链（`Framework/View/Editor` CSharpAutoBind/VarBind/ViewObjectEditor + `Framework/View/Navigation.Editor` GraphView/Record/TreeView + `Core.Editor/ViewSystem/Binding`）
 - [x] UI-00c: Demo + 测试（`Project/Demo/DemoForm` MvvmForm 加载/显示/点击 + `ViewFrameworkTests` + `TimerTests`）
-- [ ] UI-00d: UIEffectExtension（⛔ 依赖 URP 未装，按需后置）
+- [ ] UI-00d: UIEffectExtension 其余 UI 特效（EffectImage/FrameAnimation/ImageBlur/MaskImg/GrayUI，⛔ 依赖 37 专属 shader + Coffee.UIExtensions，按需后置；UIModelImage 已单独落地见 UI-04）
 - [ ] UI-00e: TransitionLoadingScreenshot（游戏特定，待加载界面落地后置）
+- [x] UI-01: UI 相机系统 + URP 引入（`Core/UI/UICamera` + `UICameraAdapter` + `ViewSystem.CreateUIRoot` 切 ScreenSpaceCamera + 专用 UICamera；`manifest.json` 加 URP 14.0.8 + `Core.Editor/Rendering/KJUrpSetup.cs` 一键管线 + Core/Core.Editor asmdef 加 URP 引用）
+- [x] UI-01a: UI3DFormSupport（3D UI 透视/正交切换）+ CoverageRoot 接线（修复 `FormCoverage.OnFormPostShow` NRE）+ 软重启静态字段审计（`UI3DFormSupport._recordUseList` 改可变 static 惰性重建）
+- [x] UI-02: 场景结构结论（运行时创建 UI 根，非场景化；37 的 StartScreen/UISystem/UI.unity 不适用）
+- [x] UI-03: DOTween 引入（`1External/Demigiant` 免费版 Runtime+Modules+Editor+Aot+DemiLib）+ `CameraMoveAdv` 精简拆分版（`General/Camera`，partial + 7 功能 Inspector 开关：Move/LookAround/Rotate/Around/Zoom/Inertia/MoveTo）
+- [x] UI-04: UI 3D 模型（`Framework/UIEffectExtension`：UIModelImg/UIModelCam/UIModelLocMgr/UIModelScreenFitting，专用 Camera+RenderTexture 渲染通用 GameObject 到 RawImage，不依赖 Spine）
+- [x] UI-05: View 生命周期关闭健壮性（`ViewBase.InternalExecuteShow/Hide` null 守卫 + `LifeCycleExecuteClose` 缓存判空 + `FormManager.Shutdown` `.Forget()`，修复退出/软重启的 MissingReferenceException）
 
 ## 文件清单
 
@@ -348,11 +354,16 @@ Assets/Framework/DependencyInjection/      ← 🆕 Dependencies.Scope（VContai
 Assets/Framework/Coverage/                 ← 🆕 界面覆盖区域检测（BaseCoverage/CanvasCoverage/SegmentTree）
 Assets/Framework/Touch/                    ← 🆕 自定义输入模块（StandaloneAdvInputModule + BaseTrigger/BaseButton/BaseDrag/PassTrigger）
 
-Assets/Scripts/Core/ViewSystem/            ← 🆕 ViewSystem/Form/Scene/Navigation 四子系统 + ScreenHelper + FormLifecycleEvent
-Assets/Scripts/Core/UI/                    ← 🆕 ScreenHelper（安全区/分辨率适配）
+Assets/Scripts/Core/ViewSystem/            ← 🆕 ViewSystem/Form/Scene/Navigation 四子系统 + ScreenHelper + FormLifecycleEvent + Coverage（FormCoverage/SceneCoverage）
+Assets/Scripts/Core/UI/                    ← 🆕 ScreenHelper（安全区/分辨率适配）+ UICamera（UI 相机门面）+ UICameraAdapter（分辨率自适应）+ UI3DFormSupport（3D UI 透视/正交切换）
 Assets/Scripts/Core.Editor/ViewSystem/     ← 🆕 Binding/AutoBindingRegister
+Assets/Scripts/Core.Editor/Rendering/      ← 🆕 KJUrpSetup（URP 管线一键设置）
+Assets/Scripts/General/Camera/             ← 🆕 CameraMoveAdv 精简拆分版（核心 + Move/LookAround/Rotate/Around/Zoom/Inertia/MoveTo 7 个 partial 功能文件）
 Assets/Scripts/Project/Demo/               ← 🆕 DemoForm（MvvmForm 演示）
 Assets/Scripts/Project.Editor/             ← 🆕 DemoFormPrefabCreator
+Assets/Framework/UIEffectExtension/        ← 🆕 UIModelImage（UIModelImg/UIModelCam/UIModelLocMgr/UIModelScreenFitting，UI 3D 模型渲染）
+Assets/Framework/1External/Demigiant/      ← 🆕 DOTween 免费版（Runtime+Modules+Editor+Aot + DemiLib.dll）
+Assets/Framework/1External/E7/             ← 🆕 Notch Solution（SafePadding 安全区组件）
 ```
 
 ## 外部依赖
@@ -367,6 +378,9 @@ Assets/Scripts/Project.Editor/             ← 🆕 DemoFormPrefabCreator
 | ZLogger | GitHub UPM + NuGetForUnity (Cysharp) | 2.5.10 |
 | ZLinq | GitHub UPM + NuGetForUnity (Cysharp) | 1.5.6 |
 | ZString | GitHub UPM (Cysharp) | 2.6.0 |
+| URP (Universal Render Pipeline) | UPM (com.unity.render-pipelines.universal) | 14.0.8 |
+| DOTween | 1External (Demigiant, 免费版) | — |
+| Notch Solution (E7) | 1External | — |
 
 ## 编码约束补充
 
@@ -396,10 +410,13 @@ Assets/Scripts/Project.Editor/             ← 🆕 DemoFormPrefabCreator
 
 ## 下一步
 
-UI 框架已落地（见 UI-00 系列），仅剩两处后置项：
+UI 框架 + 显示层 + 相机控制 + UI 3D 模型均已落地（见 UI-01~05），剩余按需后置项：
 
-- [ ] **UI-00d UIEffectExtension**：⛔ 依赖 URP（`Unity.RenderPipelines.Universal.Runtime`），KJ 未装 URP，需先决策是否引入；否则按需裁剪移植。
+- [ ] **UI-00d UIEffectExtension 其余特效**：EffectImage/FrameAnimation/ImageBlur/MaskImg/GrayUI（依赖 37 专属 shader + Coffee.UIExtensions）。
 - [ ] **UI-00e TransitionLoadingScreenshot**：游戏侧导航过渡截图，待 Loading 界面落地后再实现。
+- [ ] **UI-03 游戏特定渲染模块**：RenderQualityManager/Controller（耦合 Game.Config + shader 关键字）、BaseCamera/OverlayCamera/LightUtil/MixLightShadow/RoleAddLight/LightBakeDebug（依赖 37 改包 URP 字段 + Boot.Update/Coverage）、CameraColorTexture/DepthTexture（依赖改包 showColorTextrue 字段）。
+- [ ] **CameraMoveAdv 移动端触摸输入**：当前为鼠标模式（37 原版如此），移动端接入时补。
+- [ ] **PreShutdownAsync 接入**：异步 Shutdown 正确 await Close（当前同步 ISystem.Shutdown 走 fire-and-forget）。
 
 业务模块规划（依赖 UI 框架 + Config）：
 
@@ -411,7 +428,12 @@ UI 框架已落地（见 UI-00 系列），仅剩两处后置项：
 
 ## 最新验证记录
 
-- 2026-08-15: **PKG-19 HybridCLR MethodBridge 输出缓存 + P2 哈希 mtime 短路落地**：`MethodBridge.cpp` 按输入哈希缓存（AOT DLL + 桥接敏感源码 + HybridCLR Profile + 版本 + 设置 + development），命中直接回填跳过 19 分钟全量泛型分析；AOT/热更 DLL 与 AOT strip 输入哈希改为「size+mtime 短路 + 内容哈希权威」持久化清单，第三方库不变时不再逐字节读取；`HashBridgeSensitiveSources` 同样 mtime 短路。E2E 验证：Android Dev 打包 26 分钟 → 37 秒（MethodBridge 20.6min 跳过、P6 IL2CPP 4.7min→8.8s）。另修 BuildStageRegistry 过期测试（P0-P9 → P0-P10）。
+- 2026-08-16: **显示层 + 相机 + DOTween + UI 3D 模型落地（本轮）**：① UI 相机系统（`Core/UI/UICamera` + `UICameraAdapter`，`ViewSystem.CreateUIRoot` 切 ScreenSpaceCamera）；② URP 14.0.8 引入（`KJUrpSetup` 管线脚本）；③ `UI3DFormSupport`（3D UI 透视/正交切换）；④ DOTween 引入（`1External/Demigiant` 免费版）+ `CameraMoveAdv` 精简拆分版（`General/Camera`，partial + 7 功能 Inspector 开关）；⑤ UI 3D 模型（`Framework/UIEffectExtension` UIModelImage 四件套，渲染通用 GameObject 到 RawImage，不依赖 Spine）。**Bug 修复**：`CoverageRoot` 未创建 → FormCoverage NRE；`ViewBase` 异步生命周期 null 守卫（退出 MissingReferenceException）；`LifeCycleExecuteClose` 缓存已销毁 Form；`FormManager.Shutdown` 丢弃异步 Close（改 `.Forget()`）；`UIRoot` layer 不匹配 UI 相机 cullingMask；`DemoFormPrefabCreator` 用 Default 层重建 prefab；`UI3DFormSupport._recordUseList`/`UIModelLocMgr` 缓存 static readonly → 可变 static（软重启泄漏）；`DontDestroyOnLoad` 撤销（软重启设计，动态 UI 根随重启拆除）。**待验证**：UIModelImg / CameraMoveAdv 功能（用户以后测）。
+
+- 2026-08-16: **代码审查修复 + 热更登记补全 + 文档防漂移（本轮）**：① 全模块代码审查修复 9 High + ~75 Medium/Low——P6 真正应用 Android 签名/applicationId/版本号、`SystemManager` tick 异常隔离、`IAssetRuntime` 移除 YooAsset 类型泄漏（移入 `AssetRuntimeFactory.CreateFromPackage`）、`BootLoader.Repair` 幂等、`TransitionComposite.IsEffectRunning` 返回值、`AccCostCachePool` 枚举器未 MoveNext、`ViewSystem.Update` 空守卫等；② Coverage 日志从 `Debug.LogError` 改用 `GameLog`（`Framework.Coverage` 新增 `Log` 引用，tier 0→1）；③ 热更程序集补全至 **19**：新增 `Framework.Restart`/`Framework.Coverage`/`Framework.Touch`（此前被热更 Core 引用却未登记，属与 Framework.Restart 同类缺口）；④ `TimerSystem` 命名空间 `Core`→`Core.Timer`；⑤ `asmdef_dependency_validator.py` 同步（TIER/HOT/注释），跑通 ALL CHECKS PASSED。**待 Unity 验证**：Editor 编译 + 全量 EditMode 测试 + 重新生成 HybridCLR DLL + 重开 Main.unity 场景 + Formal/Audit Android 构建确认签名。
+
+- 2026-08-16: **UI 框架补齐：E7 Notch Solution 移植 + UIRoot 场景化 + 软/硬重启机制（已验证）**：① E7 Notch Solution 整体移植进 `1External/E7/NotchSolution/`（运行时/编辑器 asmdef 拆分、`.meta` GUID 保留、去 37 `*0.3f` 底部边距硬编码、删悬空 InternalsVisibleTo）；② UIRoot/UICamera/EventSystem 去 `DontDestroyOnLoad`（改场景对象，随重启拆除），安全区根改用 `SafePadding` 组件，`ScreenHelper` 从 `SafePadding.Instance` 读 `SafePaddingLdur`（手写 `Screen.safeArea` 降级为兜底）；③ 软/硬重启：`Boot/GameLife/GameRestart`（软重启按「先删 prefab → 同步释放 scope → 最后重置静态」顺序修 37 销毁顺序 bug + 修 `ViewSystem.Update` 读空静态 NRE；硬重启按平台进程外）+ `Framework/Restart/`（`SoftRestartField`/`SoftRestartAction` 特性 + `StaticReset` 反射重置器，约定+强制检查，规则见 `.claude/rules/static-restart-state.md`）+ 资产运行时软/硬释放拆分（`IAssetRuntime.Release`/`Destroy`，软重启保留 YooAsset）+ `StaticResetContractTest`（8 处存量非默认可变静态已整改为 `static readonly`/惰性初始化）+ `Boot.Editor/EditorToolBar.cs`（工具栏「软重启」图标按钮）。**已验证**：软重启连跑多轮启动链完整重建、无 NRE、jsonl 0 错误。**已收尾**：`Framework.Restart` 保持 AOT（稳定基础设施，AOT 反射可正确重置热更静态）；`asmdef_dependency_validator.py` 根路径 + 白名单 + R4 多层 Tier 已修复（ALL CHECKS PASSED）；`GameLog._startupBufferCapacity` 惰性初始化修复（回退默认 256）。
+- 2026-08-16: **UI-01 显示层基础（URP + UI 相机）落地（待 Unity 验证）**：决策引入 URP 14.0.8；`manifest.json` 加包 + 新增 `Core.Editor/Rendering/KJUrpSetup.cs` 一键设置管线（菜单 `KJ/Rendering/设置 URP 管线`，创建默认 UniversalRenderPipelineAsset + Renderer 并赋 GraphicsSettings）；Core/Core.Editor asmdef 加 `Unity.RenderPipelines.Universal.Runtime`；新增 `Core/UI/UICamera.cs`（静态门面）+ `UICameraAdapter.cs`（正交 UI 相机 + 分辨率自适应），`ViewSystem.CreateUIRoot` 从 ScreenSpaceOverlay 切 ScreenSpaceCamera + 创建专用 UICamera（只渲染 UI 层、ClearFlags=Depth）；移植 `Core/UI/UI3DFormSupport.cs`（3D UI 透视/正交切换，标准 URP API）。对照结论：37 的 Core/URP + UI Effect 模块多为游戏特定（改包 URP 字段 showColorTextrue/showDepthTextrue、Boot.Update/Coverage 依赖、Spine/Coffee.UIExtensions 第三方、Game.Config shader 关键字），仅 UI3DFormSupport 可干净移植，其余按需后置。**待 Unity 验证**：URP 包解析安装 → 跑 `KJ/Rendering/设置 URP 管线` → Editor 编译 → Play 验证 DemoForm 显示与 UICamera 层级。`MethodBridge.cpp` 按输入哈希缓存（AOT DLL + 桥接敏感源码 + HybridCLR Profile + 版本 + 设置 + development），命中直接回填跳过 19 分钟全量泛型分析；AOT/热更 DLL 与 AOT strip 输入哈希改为「size+mtime 短路 + 内容哈希权威」持久化清单，第三方库不变时不再逐字节读取；`HashBridgeSensitiveSources` 同样 mtime 短路。E2E 验证：Android Dev 打包 26 分钟 → 37 秒（MethodBridge 20.6min 跳过、P6 IL2CPP 4.7min→8.8s）。另修 BuildStageRegistry 过期测试（P0-P9 → P0-P10）。
 - 2026-07-31: **PKG-18 构建管线 1.1.0 增量优化落地**：P2 拆分并缓存 CompileDll/Il2CppDef/link.xml/AOT Strip/MethodBridge/AOTGenericReference；Stage 输入输出改用 SHA-256 内容指纹并跨版本、按平台缓存；P3 删除重复 DLL 编译；P4 默认复用 YooAsset build cache；Dashboard/CI 增加显式全量模式。用户确认 Editor 编译与 TestRunner 无报错；真实增量耗时待 E2E 报告。
 - 2026-07-20: **PLATFORM-01~04 落地**：构建管线全部 19 个文件统一使用 `BuildLogger`（GameLog + Unity Console 双写）；Dashboard 中文化并集成热更补丁发布按钮和设备安装勾选；`SimpleLogger<T>` 实现落地 Core 层，`CoreContainerRegistration` 改用 `SimpleLogger<>` 替代 `Logger<>` 注册 `ILogger<>`，从架构层面绕过 IL2CPP AOT 泛型实例化边界。
 - 2026-07-19: **BUGFIX-05/06 修复**：YooAsset Sandbox/Builtin 文件系统参数修复——`BootLoader` 和 `AssetRuntime` 中 `CreateDefaultBuiltinFileSystemParameters()` 和 `CreateDefaultSandboxFileSystemParameters()` 不再错误地把 `packageName` 当 `packageRoot` 传递，解决设备端 Host 模式 "Read-only file system" 错误。P8 ADB pull 路径修复——`pull PATH/Runtime localDir` 导致文件嵌套一层，改为 `pull PATH/Runtime/. localDir` 展平。设备验证：BootLoader→YooAsset→HybridCLR→Boot→Core→VContainer AOT 链全部通过（AOT metadata/DLL 加载、Hot-update files current、Handing control to hot-update Boot layer、ProjectBootstrapper registration ready）。但 MissingMethodException `Logger.Log<TState>` 未消除（Architecture 层面：`Logger<T>` 在 AOT 侧 DLL，HybridCLR 无法穿透其泛型实例化）。

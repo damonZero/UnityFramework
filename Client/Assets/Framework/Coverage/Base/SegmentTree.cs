@@ -64,6 +64,7 @@ namespace Framework.Coverage
         /// </summary>
         public void Build(int start, int end)
         {
+            Release(_root);
             _root = SegTreeNode.Take();
             _root.Start = start;
             _root.End = end + 1;

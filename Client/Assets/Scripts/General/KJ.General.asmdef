@@ -10,7 +10,10 @@
         "VContainer",
         "VContainer.Unity",
         "ZLinq",
-        "Framework.DependencyInjection"
+        "Framework.DependencyInjection",
+        "Framework.Touch",
+        "DOTween.Runtime",
+        "DOTween.Runtime.Aot"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

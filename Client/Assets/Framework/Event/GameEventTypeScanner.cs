@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using ZLinq;
 
 namespace Framework.Event
@@ -17,6 +18,9 @@ namespace Framework.Event
 
                 if (!type.IsValueType || type.IsEnum)
                     throw new InvalidOperationException($"[GameEvent] must be applied to a struct: {type.FullName}");
+
+                if (type.GetCustomAttribute<IsReadOnlyAttribute>() == null)
+                    throw new InvalidOperationException($"[GameEvent] struct must be readonly: {type.FullName}");
 
                 result.Add(type);
             }

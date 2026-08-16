@@ -14,6 +14,17 @@ namespace Framework.Asset
             _package = package;
             _versionOperation = versionOperation;
             Timeout = timeout;
+
+            // Auto-start the manifest load as soon as the version request succeeds
+            // so a caller that only polls IsDone never hangs waiting for an
+            // explicit StartManifest() call.
+            _versionOperation.Completed += OnVersionCompleted;
+        }
+
+        private void OnVersionCompleted(YooAsset.AsyncOperationBase _)
+        {
+            if (IsVersionSucceeded)
+                StartManifest();
         }
 
         public int Timeout { get; }

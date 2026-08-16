@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.UIElements;
 namespace Framework.View.Navigation.Editor
 {
     public abstract class NavigationNodeView : Node
@@ -145,10 +146,31 @@ namespace Framework.View.Navigation.Editor
         /// </summary>
         public bool Blinking { get; set; }
 
+        private bool _updateSubscribed;
+        private bool _stopBlinkScheduled;
+
         protected NavigationNodeView()
         {
-            // 在构造函数中注册Update回调
+            // 通过回调订阅/退订 Update：Node 随面板挂载/卸载时收/退订，避免
+            // EditorApplication.update 委托泄漏。（不能 override OnAttachToPanel ——
+            // GraphView.Node 未暴露该虚方法；UIElements 的注册回调是等价且可靠的挂载点。）
+            RegisterCallback<AttachToPanelEvent>(_ => SubscribeUpdate());
+            RegisterCallback<DetachFromPanelEvent>(_ => UnsubscribeUpdate());
+            SubscribeUpdate();
+        }
+
+        private void SubscribeUpdate()
+        {
+            if (_updateSubscribed) return;
             EditorApplication.update += Update;
+            _updateSubscribed = true;
+        }
+
+        private void UnsubscribeUpdate()
+        {
+            if (!_updateSubscribed) return;
+            EditorApplication.update -= Update;
+            _updateSubscribed = false;
         }
 
         private void Update()
@@ -178,12 +200,16 @@ namespace Framework.View.Navigation.Editor
             RefreshExpandedState();
             MarkDirtyRepaint();
 
-            // 等待一段时间后停止闪烁
+            // 等待一段时间后停止闪烁；Blinking 期间每帧都会调用，避免重复注册 delayCall
+            if (_stopBlinkScheduled) return;
+            _stopBlinkScheduled = true;
             EditorApplication.delayCall += StopBlink;
         }
 
         private void StopBlink()
         {
+            _stopBlinkScheduled = false;
+
             // 恢复边框颜色
             style.borderBottomColor = Color.white;
             style.borderLeftColor = Color.white;

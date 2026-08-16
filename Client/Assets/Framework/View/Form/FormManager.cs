@@ -176,9 +176,8 @@ namespace Framework.View
         {
             var layer = options.Layer;
             var name = options.AssetName;
-            if (layer <= 0)
-                throw new ArgumentOutOfRangeException(
-                    $"{nameof(FormManager)}.{nameof(OpenAsync)}] layer must be >= 0, but got: {layer}, name: {name}");
+            // layer 的合法范围由 GetUniqueLayer 决定：> 0 按分桶自动分配唯一层级，< 0 表示外部传入的精确层级（取 -layer），
+            // 0 是分桶 0 的起点。FormOptions.Layer 默认 -1（外部层级 1），因此这里不能拒绝 <= 0。
 
             // 1. 获取form实例：从缓存获取，或者实例化一个新的
             // ReSharper disable once MethodHasAsyncOverload
@@ -368,7 +367,12 @@ namespace Framework.View
                 foreach (var form in SafeEnumerateForms())
                 {
                     var args = new LifeCycleArgs(LifeCycleCause.Close);
-                    form.LifeCycleExecutor?.LifeCycleExecuteClose(form, args);
+                    // 异步 Close 无法在同步 Shutdown 中 await，显式 Forget 避免异常沦为「未观察任务异常」。
+                    var executor = form.LifeCycleExecutor;
+                    if (executor != null)
+                    {
+                        executor.LifeCycleExecuteClose(form, args).Forget();
+                    }
                 }
             }
             finally
@@ -408,9 +412,11 @@ namespace Framework.View
 
                 _uiRoot = null;
 
-                _forms.Clear();
+                // 不再同步清空 _forms：异步 Close 的后续（LifeCycleExecuteClose）需要从 _forms 中移除自己，
+                // 同步 Clear 会导致 Remove 失败并产生误导性错误日志；_forms 会随所有 Close 完成自然排空。
 
-                if (Cache is IDisposable disposable) disposable.Dispose();
+                // Cache 未实现 IDisposable，直接清空缓存（销毁缓存的界面实例）后置空引用。
+                Cache?.Clear();
                 Cache = null;
             }
         }
@@ -764,7 +770,14 @@ namespace Framework.View
             {
                 GameLog.Debug($"移除forms : {form.AssetName}", module: "Framework.ViewCache");
             }
-            Cache.Put(form, form.AssetName);
+
+            // 关闭流程中表单可能已被销毁（如 Shutdown 中 Unity 销毁 UI 根），此时不再缓存；
+            // 且 Shutdown 已清空并置空 Cache，异步 Close 后续执行到这里时 Cache 可能为 null，需判空避免 NRE。
+            var cache = Cache;
+            if (form != null && cache != null)
+            {
+                cache.Put(form, form.AssetName);
+            }
         }
 
         #endregion

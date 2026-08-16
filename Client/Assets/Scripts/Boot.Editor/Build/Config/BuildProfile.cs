@@ -224,8 +224,14 @@ namespace Boot.Editor.Build
             sb.Append(PackageName); sb.Append('|');
             sb.Append(Channel); sb.Append('|');
             sb.Append(PackageId); sb.Append('|');
+            sb.Append(KeystorePath); sb.Append('|');
+            sb.Append(KeystoreAlias); sb.Append('|');
+            sb.Append(KeystorePassword); sb.Append('|');
             sb.Append(AssetMode); sb.Append('|');
             sb.Append(CdnBaseUrl); sb.Append('|');
+            sb.Append(AssetDownloadTag); sb.Append('|');
+            sb.Append(StartupTypeName); sb.Append('|');
+            sb.Append(StartupMethodName); sb.Append('|');
             sb.Append(SmokeRequired);
             foreach (var d in ExtraScriptingDefines ?? Array.Empty<string>())
                 { sb.Append('|'); sb.Append(d); }

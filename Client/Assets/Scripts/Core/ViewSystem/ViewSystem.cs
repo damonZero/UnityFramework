@@ -2,7 +2,9 @@ using System;
 using Core.Systems;
 using Core.Systems.Attributes;
 using Core.UI;
+using E7.NotchSolution;
 using Framework.Asset;
+using Framework.Coverage;
 using Framework.Log;
 using Framework.Touch;
 using Framework.View.Navigation;
@@ -48,6 +50,7 @@ namespace Core.ViewSystem
             var safeRoot = CreateSafeUIRoot(_uiRoot);
             ScreenHelper.Init(_uiRoot.GetComponent<Canvas>(), _uiRoot, safeRoot);
             CreateEventSystem();
+            CreateCoverageRoot(_uiRoot, safeRoot);
 
             FormSubSystem = new FormSubSystem();
             SceneSubSystem = new SceneSubSystem();
@@ -62,7 +65,7 @@ namespace Core.ViewSystem
 
         public void Update(float deltaTime)
         {
-            NavigationSubSystem.Update(deltaTime);
+            NavigationSubSystem?.Update(deltaTime);
         }
 
         public void LateUpdate(float deltaTime)
@@ -89,6 +92,13 @@ namespace Core.ViewSystem
                 Object.Destroy(_uiRoot.gameObject);
                 _uiRoot = null;
             }
+
+            if (UICamera.Camera != null)
+            {
+                Object.Destroy(UICamera.Camera.gameObject);
+            }
+
+            UICamera.Unbind();
 
             UnwireViewCacheDependencies();
         }
@@ -125,11 +135,15 @@ namespace Core.ViewSystem
 
         private static RectTransform CreateUIRoot()
         {
+            var uiCamera = CreateUICamera();
+
             var go = new GameObject("UIRoot", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            Object.DontDestroyOnLoad(go);
+            go.layer = ResolveUiLayer(); // UI 相机只渲染 UI 层，UIRoot 必须挂到 UI 层（默认 layer 0 会渲染不到）
 
             var canvas = go.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = uiCamera;
+            canvas.planeDistance = UICamera.DefaultPlaneDistance;
 
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -137,23 +151,63 @@ namespace Core.ViewSystem
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = ScreenHelper.MatchWidthOrHeight;
 
+            uiCamera.GetComponent<UICameraAdapter>().uiRootCanvas = canvas;
+            UICamera.Bind(uiCamera, canvas);
+
             return (RectTransform)go.transform;
         }
 
         /// <summary>
-        /// 创建安全区根节点：铺满 UIRoot，由 ScreenHelper.ApplySafeArea 内缩边距。
-        /// Form 均挂载到此节点下，保证刘海屏 / 底部指示条不遮挡 UI。
+        /// 创建专用 UI 相机：正交、只渲染 UI 层、ClearFlags=Depth（不清除颜色，让 3D 场景渲染在下层）。
+        /// 对应参考项目 UI.unity 场景中的 UICamera 节点；KJ 无 UI 场景，改为运行时创建。
+        /// </summary>
+        private static Camera CreateUICamera()
+        {
+            var go = new GameObject(nameof(UICamera), typeof(Camera), typeof(UICameraAdapter));
+
+            var cam = go.GetComponent<Camera>();
+            cam.orthographic = true;
+            cam.clearFlags = CameraClearFlags.Depth;
+            cam.cullingMask = 1 << ResolveUiLayer();
+            cam.depth = 100f; // 高于主场景相机，UI 覆盖在 3D 之上
+
+            return cam;
+        }
+
+        private static int ResolveUiLayer()
+        {
+            var layer = LayerMask.NameToLayer("UI");
+            return layer >= 0 ? layer : 5; // Unity 默认 layer 5 = UI
+        }
+
+        /// <summary>
+        /// 创建安全区根节点：SafePadding（E7 Notch Solution）驱动自身 RectTransform 铺满 UIRoot 并按
+        /// Screen.safeArea 内缩边距。Form 均挂载到此节点下，保证刘海屏 / 底部指示条不遮挡 UI。
         /// </summary>
         private static RectTransform CreateSafeUIRoot(RectTransform uiRoot)
         {
+            // IsMainSafePadding 必须在 Awake 前就位（Awake 里据此设 SafePadding.Instance），
+            // 故先以 inactive 创建、赋值后再激活，确保 ScreenHelper 能读到 SafePadding.Instance。
             var go = new GameObject("SafeUIRoot", typeof(RectTransform));
+            go.layer = ResolveUiLayer(); // 与 UIRoot 一致，保证 SafeUIRoot 在 UI 层
+            go.SetActive(false);
+            var safePadding = go.AddComponent<SafePadding>();
+            safePadding.IsMainSafePadding = true;
             var rt = (RectTransform)go.transform;
             rt.SetParent(uiRoot, false);
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
+            go.SetActive(true);
             return rt;
+        }
+
+        /// <summary>
+        /// 创建 CoverageRoot（界面遮挡检测根节点）。对应参考项目 StartScreen.prefab 上的 CoverageRoot 组件
+        /// （其 root 字段指向 SafeArea）。KJ 无 UI 场景，改为运行时创建，root 指向 SafeUIRoot。
+        /// 缺失会导致 CoverageRoot.Global 恒 null，FormCoverage 在 FormPostShow 时 NRE。
+        /// </summary>
+        private static void CreateCoverageRoot(RectTransform uiRoot, RectTransform safeRoot)
+        {
+            var coverageRoot = uiRoot.gameObject.AddComponent<CoverageRoot>();
+            coverageRoot.root = safeRoot;
         }
 
         /// <summary>
@@ -168,7 +222,6 @@ namespace Core.ViewSystem
             }
 
             var go = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneAdvInputModule));
-            Object.DontDestroyOnLoad(go);
         }
     }
 }

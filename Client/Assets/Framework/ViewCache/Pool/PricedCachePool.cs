@@ -10,7 +10,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Framework.ViewCache
 {
@@ -110,6 +109,19 @@ namespace Framework.ViewCache
             }
 
 
+            // 新增 key 时检查容量：超过容量且新价格不高于最低价 key 时拒绝缓存（交由上层淘汰）
+            if (_pool.Count >= _poolCapacity)
+            {
+                if (!TryGetMinKey(out var minKey) || newPrice <= minKey.price)
+                    return false;
+
+                // 剔除最低价 key（SortedDictionary 按价格升序，首个即最低价）
+                var evictValue = _pool[minKey];
+                _pool.Remove(minKey);
+                _prices.Remove(minKey.key);
+                CacheEvict?.Invoke(minKey.key, evictValue, minKey.price);
+            }
+
             var addKey = new PricedKey(key, newPrice);
             var addValue = new Stack<TValue>();
             addValue.Push(value);
@@ -155,14 +167,29 @@ namespace Framework.ViewCache
 
             while (_pool.Count > _poolCapacity)
             {
-                var min = _pool.First();
-                var evictKey = min.Key;
-                var evictValue = min.Value;
+                if (!TryGetMinKey(out var evictKey)) break;
+                var evictValue = _pool[evictKey];
 
                 _pool.Remove(evictKey);
                 _prices.Remove(evictKey.key);
                 CacheEvict?.Invoke(evictKey.key, evictValue, evictKey.price);
             }
+        }
+
+        /// <summary>
+        /// 获取当前最低价 key（SortedDictionary 按价格升序，首个即最低价）。
+        /// 注：Framework.ViewCache 未引用 ZLinq，故用手动枚举获取首个元素，而非 AsValueEnumerable()。
+        /// </summary>
+        private bool TryGetMinKey(out PricedKey minKey)
+        {
+            foreach (var pair in _pool)
+            {
+                minKey = pair.Key;
+                return true;
+            }
+
+            minKey = default;
+            return false;
         }
 
         #region enumerate

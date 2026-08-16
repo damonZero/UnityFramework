@@ -33,11 +33,13 @@ namespace General.Bootstrap
         }
 
         /// <summary>
-        /// 显式重置 General scope 静态引用（Repair 场景，由 Core root 销毁级联触发）。
+        /// 显式重置 General scope 静态引用（Repair/软重启场景，由 Core root 销毁级联反射触发）。
+        /// 清空 _scope 与挂起的消息域配置，使下次 <see cref="Start"/> 能重建。
         /// </summary>
         public static void Reset()
         {
             _scope = null;
+            GeneralLifetimeScope.PendingMessagePipeOptions = null;
         }
     }
 }

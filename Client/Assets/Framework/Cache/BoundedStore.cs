@@ -23,6 +23,8 @@ namespace Framework.Cache
         // single-flight：同一 key 并发 miss 时复用同一个 factory 计算结果。
         private readonly object _inflightGate = new();
         private readonly Dictionary<TKey, Lazy<TValue>> _inflight = new();
+        // Clear() 递增的代数：GetOrAdd 在途 owner 用它检测「计算期间被 Clear」，避免 Clear 后被回填。
+        private long _generation;
 
         public BoundedStore(int capacity, IStoreEvictionPolicy<TKey> policy, Action<TKey, TValue>? onEvicted = null)
         {
@@ -88,6 +90,7 @@ namespace Framework.Cache
             bool isOwner;
             bool foundExisting;
             TValue existingValue;
+            long generationSnapshot = 0;
             evictions = null;
             lock (_inflightGate)
             {
@@ -95,6 +98,7 @@ namespace Framework.Cache
                 lock (_gate)
                 {
                     foundExisting = TryGetLiveValueUnsafe(key, out existingValue!, ref evictions);
+                    generationSnapshot = _generation;
                 }
 
                 if (foundExisting)
@@ -149,9 +153,13 @@ namespace Framework.Cache
                     if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
                     {
                         // 计算期间他人已写入（Put 或其它 owner 提交）→ 丢弃本线程计算结果。
+                        // 该结果从未落库，不触发 onEvicted，直接静默丢弃。
                         finalValue = existing;
-                        evictions ??= new List<(TKey Key, TValue Value)>();
-                        evictions.Add((key, computed));
+                    }
+                    else if (_generation != generationSnapshot)
+                    {
+                        // Clear() 在计算期间发生 → 丢弃计算结果、不落库，避免 Clear 后被在途 owner 回填。
+                        finalValue = computed;
                     }
                     else
                     {
@@ -227,6 +235,7 @@ namespace Framework.Cache
 
                 _values.Clear();
                 _policy.Clear();
+                _generation++;
             }
 
             InvokeEvictions(evictions);

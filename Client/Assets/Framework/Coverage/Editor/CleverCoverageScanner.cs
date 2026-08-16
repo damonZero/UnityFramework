@@ -70,7 +70,7 @@ namespace Framework.Coverage.Editor
             foreach (Transform trans in root)
             {
                 if (trans is RectTransform rt)
-                    ScanShowCoverages(rt, rtList);
+                    ScanCoverCoverages(rt, rtList);
             }
 
             if (!root.gameObject.activeInHierarchy)
@@ -97,7 +97,7 @@ namespace Framework.Coverage.Editor
 
             var rootCanvas = infoList[0].anchorTrans.GetComponentInParent<Canvas>();
             var width = ((RectTransform) rootCanvas.transform).rect.width * rootCanvas.transform.lossyScale.x;
-            var height = ((RectTransform) rootCanvas.transform).rect.height * rootCanvas.transform.lossyScale.x;
+            var height = ((RectTransform) rootCanvas.transform).rect.height * rootCanvas.transform.lossyScale.y;
             infoList.Sort(Comparer);
             var retList = new List<AreaInfo>();
             var ctx = RectCheckContext.Take(new IntRect(0, 0, width, height));

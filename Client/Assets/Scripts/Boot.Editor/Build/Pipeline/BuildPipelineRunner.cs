@@ -20,6 +20,7 @@ namespace Boot.Editor.Build
     public class BuildPipelineRunner
     {
         private const string PipelineVersion = "1.1.0";
+        private const long FullContentHashLimit = 4L * 1024 * 1024; // 4 MB: 以下全文哈希，以上采样头尾
         private readonly BuildContext _ctx;
         private readonly List<StageExecutionResult> _stageResults = new List<StageExecutionResult>();
         private bool _allPassed = true;
@@ -226,6 +227,39 @@ namespace Boot.Editor.Build
                 plan.Entries[plan.Entries.Count - 1].DependsOn.AddRange(stage.DependsOn);
             }
 
+            // 反向级联：将要运行的 Stage 不能消费「被跳过」的 ProducesArtifacts/Transactional
+            // 依赖的过期产物。例如 P5.ApplyConfig 是 Transactional，若 P6.BuildPlayer 要跑而
+            // P5 被缓存跳过，则 P5 从未应用运行时配置，P6 会打包出错误产物 —— 必须强制 P5 一起跑。
+            for (int i = plan.Entries.Count - 1; i >= 0; i--)
+            {
+                var entry = plan.Entries[i];
+                if (entry.WillSkip)
+                    continue;
+
+                var stage = stages.FirstOrDefault(s => s.Id == entry.StageId);
+                if (stage == null)
+                    continue;
+
+                foreach (string dependencyId in stage.DependsOn)
+                {
+                    var dependencyStage = stages.FirstOrDefault(s => s.Id == dependencyId);
+                    bool producesInputs = dependencyStage != null
+                        && (dependencyStage.Policy.HasFlag(BuildStagePolicy.ProducesArtifacts)
+                            || dependencyStage.Policy.HasFlag(BuildStagePolicy.Transactional));
+                    if (!producesInputs)
+                        continue;
+
+                    var dependencyEntry = plan.Entries.Find(e => e.StageId == dependencyId);
+                    if (dependencyEntry != null && dependencyEntry.WillSkip)
+                    {
+                        dependencyEntry.WillSkip = false;
+                        dependencyEntry.SkipReasonCode = null;
+                        dependencyEntry.SkipHumanReason = null;
+                        BuildLogger.Info($"[BuildPipelineRunner] {dependencyId} forced to run: downstream {entry.StageId} will run and consumes its outputs");
+                    }
+                }
+            }
+
             return plan;
         }
 
@@ -261,12 +295,22 @@ namespace Boot.Editor.Build
             try
             {
                 string fingerprintPath = Path.Combine(_ctx.Paths.CacheDir, $"{stage.Id}.fingerprint.json");
-                File.WriteAllText(fingerprintPath, JsonUtility.ToJson(fp, true));
+                AtomicWriteAllText(fingerprintPath, JsonUtility.ToJson(fp, true));
             }
             catch (Exception ex)
             {
                 BuildLogger.Warn($"[BuildPipelineRunner] Failed to write fingerprint: {ex.Message}");
             }
+        }
+
+        /// <summary>写临时文件后原子替换，避免中途崩溃留下半截损坏的缓存。</summary>
+        private static void AtomicWriteAllText(string path, string content)
+        {
+            string tmpPath = path + ".tmp";
+            File.WriteAllText(tmpPath, content);
+            if (File.Exists(path))
+                File.Delete(path);
+            File.Move(tmpPath, path);
         }
 
         private BuildStageFingerprint ComputeStageFingerprint(IBuildStage stage, bool includeOutputs)
@@ -328,10 +372,7 @@ namespace Boot.Editor.Build
             string normalized = path.Replace('\\', '/');
             if (File.Exists(path))
             {
-                var fi = new FileInfo(path);
-                sb.Append("file:").Append(normalized).Append('|')
-                    .Append(fi.Length).Append('|')
-                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                AppendFileFingerprint(sb, normalized, path);
                 return;
             }
 
@@ -345,10 +386,46 @@ namespace Boot.Editor.Build
                          .Where(f => !f.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
                          .OrderBy(f => f.Replace('\\', '/')))
             {
-                var fi = new FileInfo(file);
-                sb.Append("file:").Append(file.Replace('\\', '/')).Append('|')
-                    .Append(fi.Length).Append('|')
-                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                AppendFileFingerprint(sb, file.Replace('\\', '/'), file);
+            }
+        }
+
+        private static void AppendFileFingerprint(StringBuilder sb, string displayPath, string filePath)
+        {
+            sb.Append("file:").Append(displayPath).Append('|')
+                .Append(FileContentHash(filePath)).Append('\n');
+        }
+
+        /// <summary>
+        /// 内容哈希为准（而非 mtime+size，避免「同尺寸+同 mtime」的编辑被误判为未变化）。
+        /// 小文件全文哈希；大文件采样（长度 + 头尾 256KB）以控制成本。
+        /// </summary>
+        private static string FileContentHash(string filePath)
+        {
+            var fi = new FileInfo(filePath);
+            long length = fi.Length;
+            if (length <= FullContentHashLimit)
+            {
+                using var stream = File.OpenRead(filePath);
+                using var sha = SHA256.Create();
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+            }
+
+            using (var stream = File.OpenRead(filePath))
+            {
+                var sha = SHA256.Create();
+                sha.TransformBlock(BitConverter.GetBytes(length), 0, sizeof(long), null, 0);
+
+                var buffer = new byte[256 * 1024];
+                int read = stream.Read(buffer, 0, buffer.Length);
+                sha.TransformBlock(buffer, 0, read, null, 0);
+
+                stream.Seek(-buffer.Length, SeekOrigin.End);
+                read = stream.Read(buffer, 0, buffer.Length);
+                sha.TransformBlock(buffer, 0, read, null, 0);
+
+                sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                return BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
             }
         }
 

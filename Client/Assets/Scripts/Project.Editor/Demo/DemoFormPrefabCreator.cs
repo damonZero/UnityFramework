@@ -37,8 +37,9 @@ namespace Project.Editor.Demo
             }
 
             // 根节点：DemoForm（BaseForm 要求 Canvas）+ RectTransform + Canvas + GraphicRaycaster
-            var root = new GameObject("DemoForm",
+            var root = new GameObject(nameof(DemoForm),
                 typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(DemoForm));
+            root.layer = ResolveUiLayer();
             Stretch(root.GetComponent<RectTransform>());
 
             var canvas = root.GetComponent<Canvas>();
@@ -84,7 +85,15 @@ namespace Project.Editor.Demo
         {
             var go = new GameObject(name, components);
             go.transform.SetParent(parent, false);
+            go.layer = parent.gameObject.layer; // 继承父节点 layer，保证整棵 UI 树都在 UI 层
             return go;
+        }
+
+        /// <summary>解析 UI 层（Unity 默认 layer 5 = UI）。</summary>
+        private static int ResolveUiLayer()
+        {
+            var layer = LayerMask.NameToLayer("UI");
+            return layer >= 0 ? layer : 5;
         }
 
         private static void Stretch(RectTransform rt)

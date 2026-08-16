@@ -45,10 +45,12 @@ namespace Framework.Timer
                 return;
 
             // 快照本次 Tick 开始时的计时器数量，回调中新建的计时器不在本次 Tick 触发。
-            var snapshot = _active.Count;
-            for (var i = 0; i < snapshot; i++)
+            // 但回调可能调用 Clear() 清空列表，因此每次迭代重新校验 active.Count，防止越界。
+            var active = _active;
+            var snapshot = active.Count;
+            for (var i = 0; i < snapshot && i < active.Count; i++)
             {
-                var node = _active[i];
+                var node = active[i];
                 if (!node.IsActive || node.IsPaused)
                     continue;
 
@@ -58,7 +60,19 @@ namespace Framework.Timer
 
                 if (node.IsLoop)
                 {
-                    node.Remaining = node.Interval > 0f ? node.Remaining + node.Interval : 0f;
+                    if (node.Interval > 0f)
+                    {
+                        // 卡顿错过多个周期时，把负的 Remaining 换算成 overshoot，
+                        // 一次合并跳过已错过的周期并回正到下一个未来周期，
+                        // 避免逐帧补发（每帧只 +Interval 会在卡顿后连续多帧触发）。
+                        var overshoot = -node.Remaining;
+                        node.Remaining = node.Interval - overshoot % node.Interval;
+                    }
+                    else
+                    {
+                        node.Remaining = 0f;
+                    }
+
                     Invoke(node);
                 }
                 else

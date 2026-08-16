@@ -44,6 +44,7 @@ namespace Boot.Editor.Build
 
         /// <summary>Pipeline 版本（与 Runner 保持一致）</summary>
         private const string PipelineVersion = "1.1.0";
+        private const long FullContentHashLimit = 4L * 1024 * 1024; // 4 MB: 以下全文哈希，以上采样头尾
 
         /// <summary>使缓存失效（Profile 变更、构建完成后调用），下次 Inspect 重新计算。</summary>
         public static void Invalidate()
@@ -246,10 +247,7 @@ namespace Boot.Editor.Build
             string normalized = path.Replace('\\', '/');
             if (File.Exists(path))
             {
-                var fi = new FileInfo(path);
-                sb.Append("file:").Append(normalized).Append('|')
-                    .Append(fi.Length).Append('|')
-                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                AppendFileFingerprint(sb, normalized, path);
                 return;
             }
 
@@ -263,10 +261,46 @@ namespace Boot.Editor.Build
                          .Where(f => !f.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
                          .OrderBy(f => f.Replace('\\', '/')))
             {
-                var fi = new FileInfo(file);
-                sb.Append("file:").Append(file.Replace('\\', '/')).Append('|')
-                    .Append(fi.Length).Append('|')
-                    .Append(fi.LastWriteTimeUtc.Ticks).Append('\n');
+                AppendFileFingerprint(sb, file.Replace('\\', '/'), file);
+            }
+        }
+
+        private static void AppendFileFingerprint(StringBuilder sb, string displayPath, string filePath)
+        {
+            sb.Append("file:").Append(displayPath).Append('|')
+                .Append(FileContentHash(filePath)).Append('\n');
+        }
+
+        /// <summary>
+        /// 内容哈希为准（而非 mtime+size，避免「同尺寸+同 mtime」的编辑被误判为未变化）。
+        /// 小文件全文哈希；大文件采样（长度 + 头尾 256KB）以控制成本。
+        /// </summary>
+        private static string FileContentHash(string filePath)
+        {
+            var fi = new FileInfo(filePath);
+            long length = fi.Length;
+            if (length <= FullContentHashLimit)
+            {
+                using var stream = File.OpenRead(filePath);
+                using var sha = SHA256.Create();
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+            }
+
+            using (var stream = File.OpenRead(filePath))
+            {
+                var sha = SHA256.Create();
+                sha.TransformBlock(BitConverter.GetBytes(length), 0, sizeof(long), null, 0);
+
+                var buffer = new byte[256 * 1024];
+                int read = stream.Read(buffer, 0, buffer.Length);
+                sha.TransformBlock(buffer, 0, read, null, 0);
+
+                stream.Seek(-buffer.Length, SeekOrigin.End);
+                read = stream.Read(buffer, 0, buffer.Length);
+                sha.TransformBlock(buffer, 0, read, null, 0);
+
+                sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                return BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
             }
         }
 
