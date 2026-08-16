@@ -51,20 +51,23 @@ namespace Boot.Editor.Build
                 return;
             }
 
-            string version = string.IsNullOrWhiteSpace(profile.CdnPublishVersion)
+            // 修复：源目录固定用 VersionName（P4 构建产物所在目录），
+            // CdnPublishVersion 只作为 CDN 目标版本目录名（为空则回退 VersionName）。
+            string sourceVersion = profile.VersionName;
+            string publishVersion = string.IsNullOrWhiteSpace(profile.CdnPublishVersion)
                 ? profile.VersionName
                 : profile.CdnPublishVersion;
 
-            // P4 的 YooAsset 输出：Bundles/{Platform}/{PackageName}/{version}
+            // P4 的 YooAsset 输出：Bundles/{Platform}/{PackageName}/{VersionName}
             string outputRoot = BundleBuilderHelper.GetDefaultBuildOutputRoot();
-            string sourceDir = Path.Combine(outputRoot, profile.Platform.ToString(), profile.PackageName, version);
+            string sourceDir = Path.Combine(outputRoot, profile.Platform.ToString(), profile.PackageName, sourceVersion);
 
-            BuildLogger.Info($"[P10] Publishing to CDN: {sourceDir} -> {cdnRoot} (version={version})");
+            BuildLogger.Info($"[P10] Publishing to CDN: {sourceDir} -> {cdnRoot} (version={publishVersion})");
 
             if (!Directory.Exists(sourceDir))
                 throw new BuildFailedException(Id, $"YooAsset build output not found: {sourceDir}");
 
-            HostUpdatePublisher.PublishFromBuildOutput(sourceDir, version, cdnRoot);
+            HostUpdatePublisher.PublishFromBuildOutput(sourceDir, publishVersion, cdnRoot);
 
             // 记录产物
             context.AddArtifact(cdnRoot, "CDN hot-update package", 0);

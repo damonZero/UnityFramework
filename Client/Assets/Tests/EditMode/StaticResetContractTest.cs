@@ -24,6 +24,13 @@ namespace Tests.EditMode
             public static int DoNotResetValue = 999;       // DoNotReset → 保留
         }
 
+        /// <summary>测试目标类型：initialValue 类型与字段不匹配（int 常量落在 long 字段），用于验证故障隔离。</summary>
+        private static class ResetMismatchTarget
+        {
+            [SoftRestartField(initialValue: 1)]            // int 常量 → long 字段：类型不匹配
+            public static long MismatchedLong = 100L;
+        }
+
         [Test]
         public void Reset_ResetsMutableStaticsToDefault()
         {
@@ -50,6 +57,30 @@ namespace Tests.EditMode
 
             Assert.IsTrue(ResetTarget.ResetToTrue);
             Assert.AreEqual(999, ResetTarget.DoNotResetValue);
+        }
+
+        [Test]
+        public void Reset_OnInitialValueTypeMismatch_FallsBackToDefaultAndReports()
+        {
+            var reported = new List<string>();
+            StaticReset.OnResetError = (type, field, error) =>
+                reported.Add($"{field?.Name}:{error?.GetType().Name}");
+
+            try
+            {
+                ResetMismatchTarget.MismatchedLong = 100L;
+                StaticReset.Reset(typeof(ResetMismatchTarget));
+                Assert.AreEqual(0L, ResetMismatchTarget.MismatchedLong,
+                    "initialValue 类型不匹配应回退 default 而非抛异常中止");
+            }
+            finally
+            {
+                StaticReset.OnResetError = null;
+            }
+
+            Assert.That(reported, Has.Count.EqualTo(1));
+            Assert.That(reported[0], Does.Contain("MismatchedLong"));
+            Assert.That(reported[0], Does.Contain("ArgumentException"));
         }
 
         /// <summary>

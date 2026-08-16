@@ -1,4 +1,6 @@
+using System;
 using Framework.Asset;
+using Framework.Log;
 
 namespace Core.Bootstrap
 {
@@ -45,8 +47,14 @@ namespace Core.Bootstrap
             // 级联清空子层静态 scope 引用：否则 Repair/软重启后 GeneralStartup/ProjectStartup 的
             // _scope 仍非空，Start 防重入会提前返回，导致下一层无法重建。
             // Core 不编译期引用 General/Project，沿用分层启动链反射契约。
-            LayerStartupReflector.InvokeReset("General.Bootstrap.GeneralStartup, General");
-            LayerStartupReflector.InvokeReset("Project.Bootstrap.ProjectStartup, Project");
+            // 失败必须记录（而非静默丢弃）：否则 Repair/软重启后 General/Project 可能永不重建且无日志。
+            LayerStartupReflector.InvokeReset("General.Bootstrap.GeneralStartup, General", LogResetFailure);
+            LayerStartupReflector.InvokeReset("Project.Bootstrap.ProjectStartup, Project", LogResetFailure);
+        }
+
+        private static void LogResetFailure(string typeName, Exception error)
+        {
+            GameLog.Exception(error, $"[CoreStartup] Reset failed for {typeName}", "Core.Bootstrap.CoreStartup");
         }
     }
 }

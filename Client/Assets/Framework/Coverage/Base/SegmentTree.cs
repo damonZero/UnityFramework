@@ -178,7 +178,9 @@ namespace Framework.Coverage
             }
             else
             {
-                if (start < mid && end > mid)
+                // 修复：end 为含右端点（见「完全覆盖」判定 end >= node.End - 1），
+                // 端点恰好等于 mid 时（end == mid）应同时落在左右两子，否则会丢 mid 这一个点。
+                if (start < mid && end >= mid)
                 {
                     SetSegEnable(start, mid, enable, GetOrCreateLeft(node));
                     SetSegEnable(mid, end, enable, GetOrCreateRight(node));
@@ -252,7 +254,7 @@ namespace Framework.Coverage
             }
 
             var mid = (int) Mathf.Ceil((node.Start + node.End) * 0.5f);
-            if (start < mid && end > mid)
+            if (start < mid && end >= mid)
                 return CheckSegIsEnable(start, mid, node.Left) && CheckSegIsEnable(mid, end, node.Right);
             return CheckSegIsEnable(start, end, start < mid ? node.Left : node.Right);
         }

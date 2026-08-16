@@ -71,17 +71,19 @@ namespace Boot
         private async UniTaskVoid RunStartupAsync()
         {
             _isRunning = true;
-            var view = startupView as IBootStartupView;
-            _loader?.Dispose();
-            _loader = new BootLoader(startupSettings, view);
-
             try
             {
+                var view = startupView as IBootStartupView;
+                _loader?.Dispose();
+                // 构造也可能抛（如 settings 非法），必须包进 try，否则异常在 await 之前被 Forget() 吞掉。
+                _loader = new BootLoader(startupSettings, view);
+
                 await _loader.RunAsync();
             }
             catch (Exception e)
             {
-                BootStartupLog.Error($"[Entry] Startup failed: {e}");
+                BootStartupLog.Error(e, "[Entry] Startup failed");
+                var view = startupView as IBootStartupView;
                 view?.SetStatus("Startup failed");
                 view?.SetRepairVisible(true);
             }

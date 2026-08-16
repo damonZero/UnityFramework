@@ -150,6 +150,22 @@ namespace Tests.EditMode
         }
 
         [Test]
+        public void RuntimeLogManager_InstallReplacesSinkAndWiresNewSession()
+        {
+            var sessionA = CreateSession(maintainLatest: false, sessionId: "test-session-a");
+            RuntimeLogManager.Install(sessionA, installGameLogSink: true);
+            Assert.That(GameLog.Sink, Is.SameAs(sessionA));
+
+            var sessionB = CreateSession(maintainLatest: false, sessionId: "test-session-b");
+            RuntimeLogManager.Install(sessionB, installGameLogSink: true);
+
+            // 回归：修复前 Install 先 Dispose 旧 session，再判 CanInstallGameLogSink 读到已 Dispose 的旧 sink，
+            // 返回 false → 新 session 永不接线，GameLog.Sink 仍指向已 Dispose 的 sessionA，日志静默丢失。
+            Assert.That(GameLog.Sink, Is.SameAs(sessionB));
+            Assert.That(RuntimeLogManager.Current, Is.SameAs(sessionB));
+        }
+
+        [Test]
         public void RuntimeLogLoggerProvider_WritesMicrosoftLoggerEntries()
         {
             var session = CreateSession(maintainLatest: false);
@@ -169,7 +185,8 @@ namespace Tests.EditMode
 
         private RuntimeLogSession CreateSession(
             bool maintainLatest,
-            GameLogLevel minimumLevel = GameLogLevel.Trace)
+            GameLogLevel minimumLevel = GameLogLevel.Trace,
+            string sessionId = "test-session")
         {
             return new RuntimeLogSession(new RuntimeLogSessionOptions
             {
@@ -180,7 +197,7 @@ namespace Tests.EditMode
                 UtcNow = () => new DateTimeOffset(2026, 7, 5, 12, 0, 0, TimeSpan.Zero),
                 SessionInfo = new RuntimeLogSessionInfo
                 {
-                    SessionId = "test-session",
+                    SessionId = sessionId,
                     StartTimeUtc = new DateTimeOffset(2026, 7, 5, 12, 0, 0, TimeSpan.Zero),
                     ProjectName = "KJ",
                     UnityVersion = "2022.3.62f2",

@@ -124,8 +124,10 @@ namespace Framework.ViewCache
                     values = new Stack<TValue>();
                     values.Push(value);
                 }
-                if (values.Count < _replicaLimit)
+                else if (values.Count < _replicaLimit)
                 {
+                    // 修复：新 key 分支已 Push 一次，这里必须 else if，否则同一 value 被入栈两次
+                    //（_replicaLimit > 1 时），后续 TryGet 会把同一实例返回两次。
                     values.Push(value);
                 }
                 _pool.Add(newKey, values);

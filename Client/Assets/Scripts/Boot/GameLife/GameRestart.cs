@@ -55,27 +55,37 @@ namespace Boot.GameLife
             try { beforeRestart?.Invoke(); }
             catch (Exception e) { GameLog.Exception(e, "[GameRestart] beforeRestart failed", "Boot.GameRestart"); }
 
-            // ① 销毁所有非持久根 GameObject（先删 prefab：OnDisable/OnDestroy 此刻系统仍存活）。
-            DestroyNonPersistentRoots();
+            // 主流程故障隔离：软重启一旦中途失败会留 app 半拆解，必须落日志（不能靠 Forget 静默吞掉）。
+            try
+            {
+                // ① 销毁所有非持久根 GameObject（先删 prefab：OnDisable/OnDestroy 此刻系统仍存活）。
+                DestroyNonPersistentRoots();
 
-            // ② 释放 Core scope（同步级联 General/Project；AssetSystem 走软释放不拆 YooAsset）。
-            //    必须先于静态重置：CoreStartup.Reset 同步 Dispose 后旧系统停止 Tick，避免读空静态 NRE。
-            ResetCoreScope();
+                // ② 释放 Core scope（同步级联 General/Project；AssetSystem 走软释放不拆 YooAsset）。
+                //    必须先于静态重置：CoreStartup.Reset 同步 Dispose 后旧系统停止 Tick，避免读空静态 NRE。
+                ResetCoreScope();
 
-            // ③ 重置静态变量（约定 + 强制检查，见 Framework.Restart.StaticReset）。
-            StaticReset.ResetAll();
+                // ③ 重置静态变量（约定 + 强制检查，见 Framework.Restart.StaticReset）。
+                //    注入失败回调：让重置器把「字段级故障」路由到 GameLog，而非中止软重启（故障隔离见 StaticReset.Reset）。
+                StaticReset.OnResetError = LogStaticResetError;
+                StaticReset.ResetAll();
 
-            // ④ GC。
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+                // ④ GC。
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
 
-            await UniTask.Yield();
+                await UniTask.Yield();
 
-            // ⑤ 重新进入 CoreStartup.Start(保留的资产运行时)。
-            StartCore(AssetRuntime);
+                // ⑤ 重新进入 CoreStartup.Start(保留的资产运行时)。
+                StartCore(AssetRuntime);
 
-            await UniTask.Yield();
+                await UniTask.Yield();
+            }
+            catch (Exception e)
+            {
+                GameLog.Exception(e, "[GameRestart] SoftRestart failed", "Boot.GameRestart");
+            }
 
             try { afterRestart?.Invoke(); }
             catch (Exception e) { GameLog.Exception(e, "[GameRestart] afterRestart failed", "Boot.GameRestart"); }
@@ -103,6 +113,13 @@ namespace Boot.GameLife
                 obj.SetActive(false);   // OnDisable 同步触发（系统仍存活）
                 Object.Destroy(obj);    // OnDestroy 帧末触发
             }
+        }
+
+        /// <summary>StaticReset 失败回调：把字段级重置故障路由到 GameLog（不中止软重启）。</summary>
+        private static void LogStaticResetError(Type type, FieldInfo field, Exception error)
+        {
+            var location = field != null ? $"{type?.FullName}.{field.Name}" : type?.FullName;
+            GameLog.Exception(error, $"[GameRestart] StaticReset failed at {location}", "Boot.GameRestart");
         }
 
         /// <summary>反射调用 Core.Bootstrap.CoreStartup.Reset() 释放 Core scope（级联 General/Project）。</summary>
@@ -171,14 +188,23 @@ namespace Boot.GameLife
 
         private static async UniTaskVoid HardRestartAsync(string appVer, string resVer, string reason)
         {
+            try
+            {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            RestartOutAppAndroid();
+                RestartOutAppAndroid();
 #elif UNITY_IOS && !UNITY_EDITOR
-            Application.Quit();
-            // TODO: iOS 重启地址（参考项目用 Application.OpenURL 拉起）。
+                Application.Quit();
+                // TODO: iOS 重启地址（参考项目用 Application.OpenURL 拉起）。
 #else
-            Application.Quit();
+                Application.Quit();
 #endif
+            }
+            catch (Exception e)
+            {
+                // 平台重启 API 失败不能吞掉：否则下方的保底 Application.Quit 永远不执行，app 卡住。
+                GameLog.Exception(e, "[GameRestart] HardRestart failed", "Boot.GameRestart");
+            }
+
             // 平台差异的强行退出保底，避免造成卡住错觉。
             await UniTask.Delay(1000);
             Application.Quit();

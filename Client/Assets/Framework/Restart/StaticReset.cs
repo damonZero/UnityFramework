@@ -18,6 +18,13 @@ namespace Framework.Restart
     /// </summary>
     public static class StaticReset
     {
+        /// <summary>
+        /// 重置失败回调（由 Boot 层注入 GameLog，避免 StaticReset 引入日志依赖——本程序集零依赖、零 Unity 引用）。
+        /// 未注入时静默（吞异常继续重置其余字段）。标记 DoNotReset：该委托跨软重启保留，避免被 ResetAll 清空。
+        /// </summary>
+        [SoftRestartField(SoftRestartAction.DoNotReset)]
+        public static Action<Type, FieldInfo, Exception> OnResetError;
+
         /// <summary>重置单个类型的所有可变静态字段（供单测直接调用）。</summary>
         public static void Reset(Type type)
         {
@@ -31,23 +38,56 @@ namespace Framework.Restart
 
             foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                if (field.IsLiteral) continue;   // const
-                if (field.IsInitOnly) continue;  // static readonly（基础设施，自动保留）
-
-                var attr = field.GetCustomAttribute<SoftRestartFieldAttribute>();
-                if (attr != null)
+                try
                 {
-                    if (attr.Action == SoftRestartAction.DoNotReset) continue;
-                    if (attr.HasInitialValue)
-                    {
-                        SetField(field, attr.InitialValue);
-                        continue;
-                    }
+                    ResetField(field);
                 }
-
-                // 默认：重置为 default。
-                SetField(field, field.FieldType.IsValueType ? Activator.CreateInstance(field.FieldType) : null);
+                catch (Exception e)
+                {
+                    // 故障隔离：单个字段重置失败（如 initialValue 类型不匹配、字段无 setter）不得中止整个软重启，
+                    // 否则此时 Core scope 已 Dispose、StartCore 尚未执行，app 会停在半拆解状态。
+                    OnResetError?.Invoke(type, field, e);
+                }
             }
+        }
+
+        /// <summary>重置单个字段：按 const/readonly/[SoftRestartField] 分类处理。</summary>
+        private static void ResetField(FieldInfo field)
+        {
+            if (field.IsLiteral) return;   // const
+            if (field.IsInitOnly) return;  // static readonly（基础设施，自动保留）
+
+            var attr = field.GetCustomAttribute<SoftRestartFieldAttribute>();
+            if (attr != null)
+            {
+                if (attr.Action == SoftRestartAction.DoNotReset) return;
+                if (attr.HasInitialValue)
+                {
+                    SetInitialValue(field, attr.InitialValue);
+                    return;
+                }
+            }
+
+            // 默认：重置为 default。
+            SetField(field, field.FieldType.IsValueType ? Activator.CreateInstance(field.FieldType) : null);
+        }
+
+        /// <summary>设置 initialValue：先校验类型可赋值，避免 SetValue 抛 ArgumentException 中止软重启。</summary>
+        private static void SetInitialValue(FieldInfo field, object value)
+        {
+            if (value != null && !field.FieldType.IsInstanceOfType(value))
+            {
+                // initialValue 类型与字段不匹配（如 [SoftRestartField(initialValue: 1)] 落在 long 字段）。
+                // 直接 SetValue 会抛 ArgumentException；这里回退到 default 重置并记录错误，保证软重启不被中止。
+                var error = new ArgumentException(
+                    $"SoftRestartField initialValue type mismatch: field '{field.Name}' is {field.FieldType.Name}, " +
+                    $"but initialValue is {value.GetType().Name}");
+                OnResetError?.Invoke(field.DeclaringType, field, error);
+                SetField(field, field.FieldType.IsValueType ? Activator.CreateInstance(field.FieldType) : null);
+                return;
+            }
+
+            SetField(field, value);
         }
 
         /// <summary>
@@ -70,7 +110,16 @@ namespace Framework.Restart
                     if (type == null) continue;
                     if (type.IsDefined(typeof(CompilerGeneratedAttribute), false)) continue;
                     if (!IsTargetNamespace(type.Namespace)) continue;
-                    Reset(type);
+
+                    // 类型级故障隔离：单个类型重置异常（如 GetFields 对个别类型抛异常）不中止整个 ResetAll。
+                    try
+                    {
+                        Reset(type);
+                    }
+                    catch (Exception e)
+                    {
+                        OnResetError?.Invoke(type, null, e);
+                    }
                 }
             }
         }

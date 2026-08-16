@@ -74,62 +74,12 @@ namespace Framework.Cache
                 throw new ArgumentNullException(nameof(factory));
             }
 
-            // 快路径（命中直接返回，不进入 inflight 协议）。
-            List<(TKey Key, TValue Value)>? evictions = null;
-            lock (_gate)
+            // 外层循环：非 owner 等待后若复查仍未命中（值在 owner 落库后被淘汰/过期/移除），
+            // 不能返回已被 onEvicted 清理的陈旧值，应重试重新走 single-flight（见下方 continue）。
+            while (true)
             {
-                if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
-                {
-                    return existing;
-                }
-            }
-            InvokeEvictions(evictions);
-
-            // single-flight：同一 key 仅一个 owner 执行 factory。
-            Lazy<TValue> ownerLazy;
-            bool isOwner;
-            bool foundExisting;
-            TValue existingValue;
-            long generationSnapshot = 0;
-            evictions = null;
-            lock (_inflightGate)
-            {
-                // 二次检查（可能已被 Put / 另一 owner 提交）。
-                lock (_gate)
-                {
-                    foundExisting = TryGetLiveValueUnsafe(key, out existingValue!, ref evictions);
-                    generationSnapshot = _generation;
-                }
-
-                if (foundExisting)
-                {
-                    ownerLazy = null!;
-                    isOwner = false;
-                }
-                else if (_inflight.TryGetValue(key, out var existingLazy))
-                {
-                    ownerLazy = existingLazy;
-                    isOwner = false;
-                }
-                else
-                {
-                    ownerLazy = new Lazy<TValue>(() => factory(key), LazyThreadSafetyMode.ExecutionAndPublication);
-                    _inflight[key] = ownerLazy;
-                    isOwner = true;
-                }
-            }
-            InvokeEvictions(evictions);
-
-            if (foundExisting)
-            {
-                return existingValue!;
-            }
-
-            if (!isOwner)
-            {
-                // 等待 owner 计算完成，再读取最终落库值。
-                _ = ownerLazy.Value;
-                evictions = null;
+                // 快路径（命中直接返回，不进入 inflight 协议）。
+                List<(TKey Key, TValue Value)>? evictions = null;
                 lock (_gate)
                 {
                     if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
@@ -139,48 +89,106 @@ namespace Framework.Cache
                 }
                 InvokeEvictions(evictions);
 
-                return ownerLazy.Value;
-            }
-
-            TValue finalValue;
-            evictions = null;
-
-            try
-            {
-                var computed = ownerLazy.Value;
-                lock (_gate)
+                // single-flight：同一 key 仅一个 owner 执行 factory。
+                Lazy<TValue> ownerLazy;
+                bool isOwner;
+                bool foundExisting;
+                TValue existingValue;
+                long generationSnapshot = 0;
+                evictions = null;
+                lock (_inflightGate)
                 {
-                    if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
+                    // 二次检查（可能已被 Put / 另一 owner 提交）。
+                    lock (_gate)
                     {
-                        // 计算期间他人已写入（Put 或其它 owner 提交）→ 丢弃本线程计算结果。
-                        // 该结果从未落库，但仍需经 onEvicted 清理工厂分配的丢弃值（释放资源，避免泄漏）。
-                        finalValue = existing;
-                        (evictions ??= new List<(TKey Key, TValue Value)>()).Add((key, computed));
+                        foundExisting = TryGetLiveValueUnsafe(key, out existingValue!, ref evictions);
+                        generationSnapshot = _generation;
                     }
-                    else if (_generation != generationSnapshot)
+
+                    if (foundExisting)
                     {
-                        // Clear() 在计算期间发生 → 丢弃计算结果、不落库，避免 Clear 后被在途 owner 回填。
-                        finalValue = computed;
+                        ownerLazy = null!;
+                        isOwner = false;
+                    }
+                    else if (_inflight.TryGetValue(key, out var existingLazy))
+                    {
+                        ownerLazy = existingLazy;
+                        isOwner = false;
                     }
                     else
                     {
-                        PutUnsafe(key, computed, ref evictions);
-                        finalValue = computed;
+                        ownerLazy = new Lazy<TValue>(() => factory(key), LazyThreadSafetyMode.ExecutionAndPublication);
+                        _inflight[key] = ownerLazy;
+                        isOwner = true;
                     }
                 }
-            }
-            finally
-            {
-                // H2 修复：factory 抛异常时 Lazy 进入 faulted 态；必须在 finally 中清除 inflight，
-                // 否则该 key 永久故障、后续 GetOrAdd 复抛缓存异常。
-                lock (_inflightGate)
-                {
-                    _inflight.Remove(key);
-                }
-            }
+                InvokeEvictions(evictions);
 
-            InvokeEvictions(evictions);
-            return finalValue;
+                if (foundExisting)
+                {
+                    return existingValue!;
+                }
+
+                if (!isOwner)
+                {
+                    // 等待 owner 计算完成，再读取最终落库值。
+                    _ = ownerLazy.Value;
+                    evictions = null;
+                    lock (_gate)
+                    {
+                        if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
+                        {
+                            return existing;
+                        }
+                    }
+                    InvokeEvictions(evictions);
+
+                    // 复查仍未命中：owner 落库后、本次复查前，值被淘汰/TTL 过期/Remove 移除。
+                    // 此时 ownerLazy.Value 可能已被 onEvicted 销毁（如 GameObject 已 Destroy），
+                    // 返回它会让调用方拿到已失效对象。重试重新走 single-flight，而非返回陈旧值。
+                    continue;
+                }
+
+                TValue finalValue;
+                evictions = null;
+
+                try
+                {
+                    var computed = ownerLazy.Value;
+                    lock (_gate)
+                    {
+                        if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
+                        {
+                            // 计算期间他人已写入（Put 或其它 owner 提交）→ 丢弃本线程计算结果。
+                            // 该结果从未落库，但仍需经 onEvicted 清理工厂分配的丢弃值（释放资源，避免泄漏）。
+                            finalValue = existing;
+                            (evictions ??= new List<(TKey Key, TValue Value)>()).Add((key, computed));
+                        }
+                        else if (_generation != generationSnapshot)
+                        {
+                            // Clear()/Remove() 在计算期间发生 → 丢弃计算结果、不落库，避免回填已清除/删除的 key。
+                            finalValue = computed;
+                        }
+                        else
+                        {
+                            PutUnsafe(key, computed, ref evictions);
+                            finalValue = computed;
+                        }
+                    }
+                }
+                finally
+                {
+                    // H2 修复：factory 抛异常时 Lazy 进入 faulted 态；必须在 finally 中清除 inflight，
+                    // 否则该 key 永久故障、后续 GetOrAdd 复抛缓存异常。
+                    lock (_inflightGate)
+                    {
+                        _inflight.Remove(key);
+                    }
+                }
+
+                InvokeEvictions(evictions);
+                return finalValue;
+            }
         }
 
         public void Put(TKey key, TValue value)
@@ -205,6 +213,9 @@ namespace Framework.Cache
                     _values.Remove(key);
                     _policy.OnRemoved(key);
                     removed = true;
+                    // 递增代数：使「计算期间」的在途 GetOrAdd owner 丢弃结果，避免复活被显式删除的 key。
+                    // 与 Clear 的 _generation++ 同机制；代价是并发无关的 Remove 会让在途 owner 少缓存一次（仍返回正确值）。
+                    _generation++;
                 }
                 else
                 {

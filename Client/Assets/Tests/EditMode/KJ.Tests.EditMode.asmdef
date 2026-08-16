@@ -25,7 +25,8 @@
         "Framework.ViewCache",
         "Framework.MVVM",
         "Framework.View.Navigation",
-        "Framework.Restart"
+        "Framework.Restart",
+        "Framework.Coverage"
     ],
     "includePlatforms": [
         "Editor"

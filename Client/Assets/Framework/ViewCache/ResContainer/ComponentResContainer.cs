@@ -50,7 +50,8 @@ namespace Framework.ViewCache
         public override void DestroyObj(T component)
         {
             if (component == null) return;
-            Object.Destroy(component);
+            // 修复：InstanceAsync 实例化的是整个 prefab（GameObject），这里只 Destroy 组件会泄漏宿主 GameObject 及其子节点。
+            Object.Destroy(component.gameObject);
         }
     }
 }

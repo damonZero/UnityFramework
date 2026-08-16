@@ -17,7 +17,7 @@ namespace Boot.Editor.Build
     {
         public override string Id => "P6.Player";
         public override string DisplayName => "Build Player (IL2CPP)";
-        public override int Version => 2;
+        public override int Version => 3;
         public override int Order => 6;
         public override string Category => "Player";
         public override IReadOnlyList<string> DependsOn { get; } = new[]
@@ -64,7 +64,9 @@ namespace Boot.Editor.Build
                 () => EditorUserBuildSettings.allowDebugging);
             bool isDev = profile.DevelopmentBuild;
             EditorUserBuildSettings.development = isDev;
-            EditorUserBuildSettings.allowDebugging = isDev;
+            // 修复：allowDebugging（脚本调试）应遵循独立的 ScriptDebugging 配置，
+            // 而非绑定 DevelopmentBuild —— 否则「release + 脚本调试」的 QA/Profiling Profile 会静默失效。
+            EditorUserBuildSettings.allowDebugging = profile.ScriptDebugging;
 
             // 3. Android 平台预检
             if (buildTarget == BuildTarget.Android)
@@ -99,15 +101,18 @@ namespace Boot.Editor.Build
             if (Directory.Exists(playerOutputPath))
                 Directory.Delete(playerOutputPath, true);
 
+            // 修复：Development 与 AllowDebugging 是两个独立开关，分别遵循 DevelopmentBuild 与 ScriptDebugging。
+            BuildOptions buildOptions = BuildOptions.None;
+            if (isDev) buildOptions |= BuildOptions.Development;
+            if (profile.ScriptDebugging) buildOptions |= BuildOptions.AllowDebugging;
+
             var options = new BuildPlayerOptions
             {
                 scenes = GetEnabledScenes(),
                 locationPathName = playerOutputPath,
                 target = buildTarget,
                 targetGroup = targetGroup,
-                options = isDev
-                    ? BuildOptions.Development | BuildOptions.AllowDebugging
-                    : BuildOptions.None,
+                options = buildOptions,
             };
 
             BuildLogger.Info($"[P6] Output: {playerOutputPath}");

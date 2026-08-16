@@ -25,7 +25,14 @@ namespace Framework.RuntimeLog
             lock (Gate)
             {
                 if (_current != null && !ReferenceEquals(_current, session))
+                {
+                    // 修复：先清空 GameLog.Sink（它可能仍指向即将被 Dispose 的旧 session），
+                    // 否则下方 CanInstallGameLogSink 会读到已 Dispose 的旧 sink 而误判为「不可安装」，
+                    // 导致新 session 永不接线、日志静默丢失。与 DisposeCurrent 的清理逻辑保持一致。
+                    if (ReferenceEquals(GameLog.Sink, _current))
+                        GameLog.Sink = null;
                     _current.Dispose();
+                }
 
                 _current = session;
 
