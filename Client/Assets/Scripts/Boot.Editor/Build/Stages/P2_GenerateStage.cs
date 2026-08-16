@@ -260,8 +260,8 @@ namespace Boot.Editor.Build
                     isSensitive = BridgeSensitiveTokens.Any(token => text.IndexOf(token, StringComparison.Ordinal) >= 0);
                     if (isSensitive)
                     {
-                        using var sha = SHA256.Create();
-                        hash = ToHex(sha.ComputeHash(Encoding.UTF8.GetBytes(text)));
+                        using var sha256 = SHA256.Create();
+                        hash = ToHex(sha256.ComputeHash(Encoding.UTF8.GetBytes(text)));
                     }
                     else
                     {

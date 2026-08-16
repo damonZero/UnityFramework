@@ -269,5 +269,8 @@ HYB-03 (done, 2026-07-07):
 - A dedicated startup-update manifest is still the `Boot` hot-update assembly
   itself, loaded via the configured hot-update list; `AssetConfig`/`AssetConstants`
   live in AOT-shared `Framework.AssetShared` so the loader can read them.
-- 10 hot-update assemblies: `Boot, Core, General, Project, Pool, Cache, Event,
-  Asset, Log, RuntimeLog`.
+- 16 hot-update assemblies (HYB-03 established 10, since extended with `Timer`,
+  `Framework.ViewCache`, `Framework.DependencyInjection`, `Framework.View`,
+  `Framework.MVVM`, `Framework.View.Navigation`): the authoritative list is
+  `ProjectSettings/HybridCLRSettings.asset` -> `hotUpdateAssemblies`; tests validate
+  it dynamically against the asmdef graph rather than a hardcoded list.

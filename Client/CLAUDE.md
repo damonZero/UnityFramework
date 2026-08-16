@@ -54,7 +54,7 @@ Boot ──▶ Core ──▶ General ──▶ Project
 
 - **AOT 壳 `Launcher`（`KJ.Launcher.asmdef`）**：只做"找到并加载热更代码"。引用仅 `UniTask / YooAsset / HybridCLR.Runtime / AssetShared`。**硬约束：不得引用任何 `Framework.*` 包或热更程序集**（靠 asmdef 强制）。通过反射字符串 `"Boot.BootUpdateRunner, Boot"` 调用热更入口，不编译期依赖 Boot。
 - **热更 `Boot`（`KJ.Boot.asmdef`）**：启动更新编排（资源版本检查/下载/重试/更新 UI）。引用 `Asset / Log / RuntimeLog / UniTask / AssetShared / YooAsset / Launcher`。不再引用 `HybridCLR.Runtime`（AOT 壳代为加载）。
-- **10 个热更程序集**：`Boot, Core, General, Project, Pool, Cache, Event, Asset, Log, RuntimeLog`（事实源 `ProjectSettings/HybridCLRSettings.asset` 的 `hotUpdateAssemblies`）。
+- **16 个热更程序集**：`Boot, Core, General, Project, Pool, Cache, Event, Asset, Log, RuntimeLog, Timer, Framework.ViewCache, Framework.DependencyInjection, Framework.View, Framework.MVVM, Framework.View.Navigation`（事实源 `ProjectSettings/HybridCLRSettings.asset` 的 `hotUpdateAssemblies`；新增程序集只改 asset 与对应 asmdef，测试动态校验）。
 - **`Framework.AssetShared`（AOT 共享）**：承载 `AssetConfig` / `AssetConstants`（namespace 保留 `Framework.Asset`），供 AOT 壳与热更层双向引用，解决 AssetConfig 跨边界共享。
 - **AOT 阶段日志**：`BootStartupLog`（纯文本 + 内存），不依赖 `Framework.Log`/`RuntimeLog`；热更层初始化后由 `BootUpdateRunner.ReplayEarlyLogs()` 回放至 RuntimeLog session。
 - **反射入口契约**：`BootLoader` 用字面串 `"Boot.BootUpdateRunner, Boot"` 反射解析；程序集名是启动契约的一部分，改名需同步 `BootLoader` 与 `HybridCLRSettings`。
@@ -66,7 +66,7 @@ Boot ──▶ Core ──▶ General ──▶ Project
 - 唯一配置源是 `BuildProfile`，Dashboard 的目标平台不跟随 Unity Build Settings。
 - YooAsset builtin 真包位于 `BundleBuilderHelper.GetStreamingAssetsRoot()/{PackageName}`，当前即 `Assets/StreamingAssets/yoo/DefaultPackage`，禁止硬编码成 `Assets/StreamingAssets/DefaultPackage`。
 - 当前 `DefaultPackage` 只有 `PackRawFile` 收集器，P4 必须使用 `RawFileBuildPipeline + EBundleType.RawBundle`，确保 manifest 与 `.rawfile` 内容类型一致。
-- P3 复用 `KJHybridClrBuildTools.SyncExistingOutputs()`，只同步 HybridCLR 配置声明的 10 个热更 DLL 与 3 个 AOT metadata；不得递归复制整个输出根，也不得删除 P2 生成的裁剪 AOT 目录。
+- P3 复用 `KJHybridClrBuildTools.SyncExistingOutputs()`，只同步 HybridCLR 配置声明的热更 DLL（`hotUpdateAssemblies`）与 AOT metadata（`patchAOTAssemblies`）；不得递归复制整个输出根，也不得删除 P2 生成的裁剪 AOT 目录。
 - Android APK 构建必须事务化关闭 `EditorUserBuildSettings.exportAsGoogleAndroidProject`，结束后恢复原设置。
 - 影响产物的 Stage 代码变更必须递增 `IBuildStage.Version`。本轮将执行的 `ProducesArtifacts` / `Transactional` 依赖必须级联禁止下游跳过。
 

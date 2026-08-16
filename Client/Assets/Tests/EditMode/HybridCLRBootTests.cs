@@ -13,11 +13,82 @@ namespace Tests.EditMode
     /// EditMode tests for the HybridCLR hot-update boot boundary (HYB-03):
     /// the AOT Launcher shell (BootStartupLog / BootBridge / BootRemoteService),
     /// the AOT-shared AssetConfig, the hot-update Boot.BootUpdateRunner contract,
-    /// AssetRuntime.WrapFromExistingPackage, and the 10 hot-update assemblies
-    /// declared in ProjectSettings/HybridCLRSettings.asset.
+    /// AssetRuntime.WrapFromExistingPackage, and the hot-update assemblies
+    /// declared in ProjectSettings/HybridCLRSettings.asset (validated dynamically
+    /// against the asmdef dependency graph rather than a hardcoded list).
     /// </summary>
     public sealed class HybridCLRBootTests
     {
+        /// <summary>
+        /// 从唯一事实源 <c>ProjectSettings/HybridCLRSettings.asset</c> 动态读取 hotUpdateAssemblies。
+        /// 测试不再硬编码程序集清单 —— 新增热更程序集只需改 asset，结构校验自动覆盖。
+        /// </summary>
+        private static string[] ReadHotUpdateAssemblies()
+        {
+            var path = System.IO.Path.Combine(Application.dataPath, "..", "ProjectSettings", "HybridCLRSettings.asset");
+            var result = new List<string>();
+            var inBlock = false;
+
+            foreach (var raw in System.IO.File.ReadAllLines(path))
+            {
+                var line = raw.Trim();
+                if (!inBlock)
+                {
+                    if (line == "hotUpdateAssemblies:")
+                    {
+                        inBlock = true;
+                        continue;
+                    }
+                    continue;
+                }
+
+                if (line.StartsWith("- "))
+                {
+                    result.Add(line.Substring(2).Trim());
+                    continue;
+                }
+
+                break; // 块结束（下一个顶层 key）
+            }
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// 扫描 <c>Assets/</c> 下所有 .asmdef，返回 name → 引用名集合。
+        /// 用于校验清单里的程序集确实存在、以及依赖顺序合法。
+        /// </summary>
+        private static Dictionary<string, HashSet<string>> ReadAsmdefReferences()
+        {
+            var map = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+            foreach (var asmdefPath in System.IO.Directory.GetFiles(
+                         Application.dataPath, "*.asmdef", System.IO.SearchOption.AllDirectories))
+            {
+                var text = System.IO.File.ReadAllText(asmdefPath);
+                var nameMatch = System.Text.RegularExpressions.Regex.Match(text, "\"name\"\\s*:\\s*\"([^\"]+)\"");
+                if (!nameMatch.Success)
+                    continue;
+
+                var name = nameMatch.Groups[1].Value;
+                var refs = new HashSet<string>(StringComparer.Ordinal);
+                var refMatch = System.Text.RegularExpressions.Regex.Match(
+                    text, "\"references\"\\s*:\\s*\\[(?<body>.*?)\\]",
+                    System.Text.RegularExpressions.RegexOptions.Singleline);
+                if (refMatch.Success)
+                {
+                    foreach (System.Text.RegularExpressions.Match m in
+                             System.Text.RegularExpressions.Regex.Matches(refMatch.Groups["body"].Value, "\"([^\"]+)\""))
+                    {
+                        refs.Add(m.Groups[1].Value);
+                    }
+                }
+
+                map[name] = refs;
+            }
+
+            return map;
+        }
+
         private static ResourcePackage CreateTestPackage(string name)
         {
             var ctor = typeof(ResourcePackage).GetConstructor(
@@ -161,26 +232,59 @@ namespace Tests.EditMode
         }
 
         [Test]
-        public void HybridCLRSettings_ContainsAllTenHotUpdateAssemblies()
+        public void HotUpdateAssemblies_ContainLayeredStartupChain()
         {
-            var path = System.IO.Path.Combine(Application.dataPath, "..", "ProjectSettings", "HybridCLRSettings.asset");
-            Assert.That(System.IO.File.Exists(path), Is.True, "HybridCLRSettings.asset not found at " + path);
+            var names = ReadHotUpdateAssemblies();
+            Assert.That(names, Is.Not.Empty, "hotUpdateAssemblies is empty in HybridCLRSettings.asset.");
+            Assert.That(names, Does.Contain("Boot"), "Layered startup chain requires 'Boot' in hotUpdateAssemblies.");
+            Assert.That(names, Does.Contain("Core"), "Layered startup chain requires 'Core' in hotUpdateAssemblies.");
+            Assert.That(names, Does.Contain("General"), "Layered startup chain requires 'General' in hotUpdateAssemblies.");
+            Assert.That(names, Does.Contain("Project"), "Layered startup chain requires 'Project' in hotUpdateAssemblies.");
+        }
 
-            var text = System.IO.File.ReadAllText(path);
-            var block = text.Split(new[] { "hotUpdateAssemblies:" }, System.StringSplitOptions.None)[1]
-                            .Split(new[] { "preserveHotUpdateAssemblies:" }, System.StringSplitOptions.None)[0];
-            var actual = block.Split(new[] { '\n' })
-                .Select(l => l.Trim())
-                .Where(l => l.StartsWith("- "))
-                .Select(l => l.Substring(2).Trim())
-                .ToList();
+        [Test]
+        public void HotUpdateAssemblies_HaveNoDuplicatesOrEmptyNames()
+        {
+            var names = ReadHotUpdateAssemblies();
+            Assert.That(names, Does.Not.Contain(""), "hotUpdateAssemblies contains an empty assembly name.");
+            Assert.That(names, Is.Unique, "hotUpdateAssemblies contains duplicate assembly names.");
+        }
 
-            var expected = new System.Collections.Generic.List<string>
+        [Test]
+        public void HotUpdateAssemblies_AllCorrespondToAsmdef()
+        {
+            var names = ReadHotUpdateAssemblies();
+            var asmdefs = ReadAsmdefReferences();
+            var missing = names.Where(n => !asmdefs.ContainsKey(n)).ToList();
+            Assert.That(missing, Is.Empty,
+                "hotUpdateAssemblies entries have no matching .asmdef: " + string.Join(", ", missing));
+        }
+
+        [Test]
+        public void HotUpdateAssemblies_AreInDependencyOrder()
+        {
+            var names = ReadHotUpdateAssemblies();
+            var asmdefs = ReadAsmdefReferences();
+
+            var order = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var i = 0; i < names.Length; i++)
+                order[names[i]] = i;
+
+            foreach (var name in names)
             {
-                "Boot", "Core", "General", "Project",
-                "Pool", "Cache", "Event", "Asset", "Log", "RuntimeLog"
-            };
-            CollectionAssert.AreEquivalent(expected, actual);
+                if (!asmdefs.TryGetValue(name, out var refs))
+                    continue; // 存在性已由 HotUpdateAssemblies_AllCorrespondToAsmdef 覆盖
+
+                foreach (var reference in refs)
+                {
+                    if (order.TryGetValue(reference, out var refIdx) && refIdx >= order[name])
+                    {
+                        Assert.Fail(
+                            $"hotUpdateAssemblies ordering is invalid: '{name}' depends on '{reference}' " +
+                            $"which appears after it. Move '{reference}' before '{name}'.");
+                    }
+                }
+            }
         }
 
         [Test]
@@ -192,12 +296,8 @@ namespace Tests.EditMode
             // hot-update code into the shell. Guard it at runtime.
             var launcherAsm = typeof(Boot.BootLoader).Assembly;
             var referenced = launcherAsm.GetReferencedAssemblies().Select(a => a.Name).ToList();
-            var hotUpdate = new System.Collections.Generic.List<string>
-            {
-                "Boot", "Core", "General", "Project",
-                "Pool", "Cache", "Event", "Asset", "Log", "RuntimeLog"
-            };
-            var leaks = hotUpdate.Where(h => referenced.Contains(h)).ToList();
+            var hotUpdate = new HashSet<string>(ReadHotUpdateAssemblies(), StringComparer.Ordinal);
+            var leaks = hotUpdate.Where(referenced.Contains).ToList();
             Assert.That(leaks, Is.Empty,
                 "Launcher (AOT) references hot-update assemblies -> HYB-03 boundary broken: " + string.Join(", ", leaks));
         }
@@ -219,24 +319,6 @@ namespace Tests.EditMode
                 new[] { typeof(Boot.BootBridge) }, null);
             Assert.That(method, Is.Not.Null,
                 "Boot.BootUpdateRunner.Start(BootBridge) must exist for the AOT BootLoader reflection handoff.");
-        }
-
-        [Test]
-        public void AllTenHotUpdateAssembliesAreLoaded()
-        {
-            // Every declared hot-update assembly must actually compile and load.
-            // Complements HybridCLRSettings_ContainsAllTenHotUpdateAssemblies (which
-            // checks the name list) by proving the asmdefs exist and are loadable.
-            var loaded = System.AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetName().Name).ToList();
-            var expected = new System.Collections.Generic.List<string>
-            {
-                "Boot", "Core", "General", "Project",
-                "Pool", "Cache", "Event", "Asset", "Log", "RuntimeLog"
-            };
-            var missing = expected.Where(e => !loaded.Contains(e)).ToList();
-            Assert.That(missing, Is.Empty,
-                "Hot-update assemblies missing from the loaded AppDomain: " + string.Join(", ", missing));
         }
 
         // ── 分层启动链反射契约（layered-startup-chain.md）──

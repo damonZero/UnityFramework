@@ -1,0 +1,20 @@
+{
+    "name": "Framework.View.Navigation",
+    "rootNamespace": "Framework.View.Navigation",
+    "references": [
+        "UniTask",
+        "ZString",
+        "Log",
+        "Pool",
+        "Framework.View"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

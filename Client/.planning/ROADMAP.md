@@ -3,7 +3,7 @@
 > **用途：** 记录框架需要哪些模块、每个模块当前处于什么状态、它依赖什么。
 > **不做：** 固定执行顺序、工时估计、强制时间表。什么时候做什么模块取决于当时的需求和优先级判断。
 
-**Last Updated:** 2026-07-20
+**Last Updated:** 2026-08-15
 
 ---
 
@@ -32,6 +32,7 @@
 | 热更闭环验证 | Boot + HybridCLR + YooAsset + Core/General/Project | AOT 泛型修复（补 `Microsoft.Extensions.Logging` AOT metadata）后热更完整走通：CDN 发布 → 设备版本检测（1.0.0→1.0.1→1.0.2）→ 增量下载 → 新代码运行（`Hot-update runtime marker: v1.0.2`）；设备端启动链全通、零错误 |
 | Dashboard 缓存预检 | `Assets/Scripts/Boot.Editor/Build/Diagnostics/BuildCachePreview.cs` + `BuildDashboardWindow.cs` | 阶段视图三态缓存状态（🟢命中/🟡重跑/⚪总是执行）；复用 Runner 指纹逻辑不构建判断；结果缓存（Profile 哈希失效）；指纹路径用「大小 + mtime」替代内容 SHA-256（30s→亚秒），Runner 同步保持一致 |
 | P4 增量构建修复 | `Assets/Scripts/Boot.Editor/Build/Stages/P4_BuildAssetStage.cs` | YooAsset 3.0.3 `TaskPrepare` 要求输出目录不存在；增量构建前清理 `Bundles/{Platform}/{Package}/{version}`，修复 ErrorCode115 |
+| Timer | `Framework/Timer/` + `Core/Timer/` | 纯 C# tick-based 计时器调度器（一次性/循环、暂停/恢复、全局 TimeScale、节点池化最小 GC、句柄版本号防复用）；`TimerSystem`（`[CoreSystem]`+`ITickableSystem`）由 SystemManager 每帧驱动，异常接入 GameLog；EditMode 测试覆盖 |
 | HybridCLR MethodBridge 缓存 | `Assets/Scripts/Boot.Editor/Build/Stages/P2_GenerateStage.cs` | `MethodBridge.cpp` 纯函数输出缓存（键=AOT DLL+桥接敏感源码+版本+设置+development，命中回填跳过 19 分钟泛型分析）；P2 目录/源码哈希改「size+mtime 短路+内容 SHA-256 权威」清单，第三方库不变只 stat 不读文件；打包 26min→37s，P6 IL2CPP 编译缓存随命中保留 |
 
 ---
@@ -61,7 +62,6 @@
 
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
-| Timer | Low | `Core/Timer/` | ISystem | Tick-based（非协程），一次性 + 循环，暂停/恢复，最小 GC |
 | Object Pool | Low-Medium | `Framework/Pool/` | Framework.Asset | ✅ 代码已重构完成（见上方"已完成"）；`PoolService.cs` DI 桥接；`BoundedStore` 替代旧 `Cache`；Pool/Cache 相关 EditMode 单测全绿 |
 | PERF-01 已实现模块性能治理 | Low-Medium | `Core/Systems/`, `Core/Bootstrap/`, `General/Bootstrap/`, `Boot/` | ZLogger, ZLinq, Pool/Cache | 接入 ZLogger + VContainer 日志注册；将 SystemManager/ModelLifecycle 生命周期日志迁移为 `[ZLoggerMessage]`；启动期反射扫描和注册链路去普通 LINQ/临时数组；补 Unity Editor 编译/Test Runner 验证 |
 | LOG-TOOLS 日志工具面板/打包接入 | Medium | `Assets/Framework/Log.Editor/` + build pipeline | Framework.Log | 参考旧 DebugSwitches，实现模块树 Editor 面板、保存/加载 GameLogConfig、打包时注入 `KJ_LOG_*` 符号和模块规则；跨层入口才放 `Assets/Editor/` |
@@ -143,7 +143,7 @@
 ```
 Framework.Asset ← YooAsset adapter
 Core.AssetSystem ← ISystem + Framework.Asset
-Timer ← ISystem
+Timer ← （Framework.Timer 无依赖；Core.TimerSystem ← ITimerManager）
 ObjectPool ← Framework.Asset
 PERF-01 ← Framework.Log + ZLogger + ZLinq + Pool/Cache
 LOG-AI-01 ← Framework.Log + Framework.RuntimeLog + ZLogger + Boot/Core.Logging

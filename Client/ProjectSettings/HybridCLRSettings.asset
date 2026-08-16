@@ -24,6 +24,12 @@ MonoBehaviour:
   - RuntimeLog
   - Pool
   - Asset
+  - Timer
+  - Framework.ViewCache
+  - Framework.DependencyInjection
+  - Framework.View
+  - Framework.MVVM
+  - Framework.View.Navigation
   - Boot
   - Core
   - General
@@ -45,6 +51,7 @@ MonoBehaviour:
   - Utf8StringInterpolation
   - ZLinq
   - ZLogger
+  - R3
   - Microsoft.Extensions.Logging.Abstractions
   - Microsoft.Extensions.Logging
   outputLinkFile: HybridCLRGenerate/link.xml

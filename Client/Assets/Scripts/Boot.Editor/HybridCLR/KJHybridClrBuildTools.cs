@@ -44,7 +44,10 @@ namespace Boot.Editor.HybridCLR
             var packageName = GetAssetPackageName(config);
 
             EnsureYooAssetCollector(packageName);
-            var result = EditorSimulateBuildInvoker.Build(packageName, (int)EBundleType.VirtualRawBundle);
+            // 临时验证 UI 框架：DefaultPackage 现同时含 DLL 原生文件与 UI prefab，
+            // 用 VirtualAssetBundle 让 prefab 按资源包加载（Editor 下 DLL 热更已跳过，不受影响）。
+            // 正式方案见 .planning/YOOASSET_RESOURCE_COLLECTION.md（多 Package 拆分）。
+            var result = EditorSimulateBuildInvoker.Build(packageName, (int)EBundleType.VirtualAssetBundle);
             if (result == null || string.IsNullOrWhiteSpace(result.PackageRootDirectory))
                 throw new InvalidOperationException("YooAsset EditorSimulate build did not return a package root directory.");
 

@@ -1,0 +1,21 @@
+{
+    "name": "Framework.MVVM",
+    "rootNamespace": "Framework.MVVM",
+    "references": [
+        "UniTask",
+        "R3.Unity",
+        "VContainer",
+        "Framework.View",
+        "Framework.DependencyInjection",
+        "Log"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

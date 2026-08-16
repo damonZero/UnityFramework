@@ -4,7 +4,11 @@
     "references": [
         "Core",
         "Log",
-        "RuntimeLog"
+        "RuntimeLog",
+        "Framework.View.Editor",
+        "Framework.Touch",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

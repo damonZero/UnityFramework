@@ -8,6 +8,7 @@
         "UniTask",
         "Cache",
         "Pool",
+        "Timer",
         "Log",
         "RuntimeLog",
         "Core",
@@ -19,7 +20,11 @@
         "Launcher",
         "AssetShared",
         "YooAsset",
-        "Boot"
+        "Boot",
+        "Framework.View",
+        "Framework.ViewCache",
+        "Framework.MVVM",
+        "Framework.View.Navigation"
     ],
     "includePlatforms": [
         "Editor"

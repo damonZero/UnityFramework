@@ -69,6 +69,7 @@ ASMDEFS = [
     "Assets/Framework/Event/Event.asmdef",
     "Assets/Framework/Log/Log.asmdef",
     "Assets/Framework/RuntimeLog/RuntimeLog.asmdef",
+    "Assets/Framework/Timer/Timer.asmdef",
     "Assets/Framework/AssetShared/Framework.AssetShared.asmdef",
     "Assets/Framework/Asset.Editor/Framework.Asset.Editor.asmdef",
     "Assets/Framework/TestKit/TestKit.asmdef",
@@ -130,15 +131,15 @@ def layer_of(name):
     if name in ("Boot.Editor", "Core.Editor", "Framework.Asset.Editor"): return "Editor"
     if name == "TestKit": return "Test"
     if name in ("AssetShared", "Log", "Cache", "Event", "Pool",
-                "RuntimeLog", "Asset"): return "Framework"
+                "RuntimeLog", "Asset", "Timer"): return "Framework"
     return "Other"
 
-FRAMEWORK = {"AssetShared", "Log", "Cache", "Event", "Pool", "RuntimeLog", "Asset"}
-TIER0 = {"AssetShared", "Log", "Cache"}            # leaves
+FRAMEWORK = {"AssetShared", "Log", "Cache", "Event", "Pool", "RuntimeLog", "Asset", "Timer"}
+TIER0 = {"AssetShared", "Log", "Cache", "Timer"}            # leaves
 TIER1 = {"Event", "Pool", "RuntimeLog", "Asset"}   # composites
 SCRIPTS = {"Boot", "Core", "General", "Project", "Launcher"}
 HOT = {"Boot", "Core", "General", "Project", "Pool", "Cache",
-       "Event", "Asset", "Log", "RuntimeLog"}
+       "Event", "Asset", "Log", "RuntimeLog", "Timer"}
 
 ENGINE_OK = {"UnityEngine", "UnityEngine.CoreModule", "UnityEngine.AssetBundleModule",
              "UnityEditor", "Assembly-CSharp", "mscorlib", "netstandard", "System",

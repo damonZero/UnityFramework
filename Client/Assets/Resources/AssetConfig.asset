@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Mode: 2
   PackageName: DefaultPackage
-  EditorSimulatePackageRoot: Bundles/Android/DefaultPackage/Simulate
+  EditorSimulatePackageRoot: Bundles\Android\DefaultPackage\Simulate
   CdnBaseUrl: http://10.0.2.2:8080/CDN/Android/DefaultPackage
   DownloadTimeout: 60
   DownloadMaxConcurrency: 10

@@ -18,7 +18,7 @@ MonoBehaviour:
   Packages:
   - PackageName: DefaultPackage
     PackageDesc: 
-    EnableAddressable: 0
+    EnableAddressable: 1
     SupportExtensionless: 1
     LocationToLower: 0
     IncludeAssetGUID: 0
@@ -45,4 +45,17 @@ MonoBehaviour:
         PackRuleName: PackRawFile
         FilterRuleName: CollectAll
         AssetTags: hotupdate
+        UserData: 
+    - GroupName: GameRes
+      GroupDesc: 
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/GameRes/UI
+        CollectorGUID: e1f2a3b4c5d60718293a4b5c6d7e8f90
+        CollectorType: 0
+        AddressRuleName: AddressByFileNameAndExt
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
         UserData: 

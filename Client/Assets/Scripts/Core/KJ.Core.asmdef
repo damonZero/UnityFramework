@@ -6,6 +6,7 @@
         "Event",
         "Pool",
         "Cache",
+        "Timer",
         "VContainer",
         "MessagePipe",
         "MessagePipe.VContainer",
@@ -14,7 +15,14 @@
         "RuntimeLog",
         "ZLinq",
         "ZLogger.Unity",
-        "AssetShared"
+        "AssetShared",
+        "Framework.DependencyInjection",
+        "Framework.ViewCache",
+        "Framework.View",
+        "Framework.MVVM",
+        "Framework.View.Navigation",
+        "Framework.Coverage",
+        "Framework.Touch"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

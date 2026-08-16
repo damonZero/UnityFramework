@@ -211,6 +211,9 @@ MonoBehaviour:
     - assemblyName: ZLogger
       fileName: AotMetadata/ZLogger.dll.bytes
       assetPath: Assets/GameRes/HotUpdate/AotMetadata/ZLogger.dll.bytes
+    - assemblyName: R3
+      fileName: AotMetadata/R3.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/AotMetadata/R3.dll.bytes
     - assemblyName: Microsoft.Extensions.Logging.Abstractions
       fileName: AotMetadata/Microsoft.Extensions.Logging.Abstractions.dll.bytes
       assetPath: Assets/GameRes/HotUpdate/AotMetadata/Microsoft.Extensions.Logging.Abstractions.dll.bytes
@@ -236,6 +239,24 @@ MonoBehaviour:
     - assemblyName: Asset
       fileName: Dlls/Asset.dll.bytes
       assetPath: Assets/GameRes/HotUpdate/Dlls/Asset.dll.bytes
+    - assemblyName: Timer
+      fileName: Dlls/Timer.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Timer.dll.bytes
+    - assemblyName: Framework.ViewCache
+      fileName: Dlls/Framework.ViewCache.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Framework.ViewCache.dll.bytes
+    - assemblyName: Framework.DependencyInjection
+      fileName: Dlls/Framework.DependencyInjection.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Framework.DependencyInjection.dll.bytes
+    - assemblyName: Framework.View
+      fileName: Dlls/Framework.View.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Framework.View.dll.bytes
+    - assemblyName: Framework.MVVM
+      fileName: Dlls/Framework.MVVM.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Framework.MVVM.dll.bytes
+    - assemblyName: Framework.View.Navigation
+      fileName: Dlls/Framework.View.Navigation.dll.bytes
+      assetPath: Assets/GameRes/HotUpdate/Dlls/Framework.View.Navigation.dll.bytes
     - assemblyName: Boot
       fileName: Dlls/Boot.dll.bytes
       assetPath: Assets/GameRes/HotUpdate/Dlls/Boot.dll.bytes

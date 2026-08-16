@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Framework.Aop;
 using Framework.Log;
@@ -472,46 +473,96 @@ namespace Boot.Editor.Build.Tests
         }
 
         [Test]
-        public void HotUpdateAssemblies_AreConfiguredInDependencyOrder()
+        public void HotUpdateAssemblies_MatchBetweenSettingsAndScene()
         {
-            string settings = File.ReadAllText("ProjectSettings/HybridCLRSettings.asset").Replace("\r\n", "\n");
-            string scene = File.ReadAllText("Assets/GameRes/Scene/Boot/Main.unity").Replace("\r\n", "\n");
-            string[] expected = { "Cache", "Event", "Log", "RuntimeLog", "Pool", "Asset", "Boot", "Core", "General", "Project" };
-
-            int settingsCursor = settings.IndexOf("  hotUpdateAssemblies:\n", StringComparison.Ordinal);
-            int sceneCursor = scene.IndexOf("    hotUpdateAssemblies:\n", StringComparison.Ordinal);
-            Assert.GreaterOrEqual(settingsCursor, 0);
-            Assert.GreaterOrEqual(sceneCursor, 0);
-
-            foreach (string assemblyName in expected)
-            {
-                settingsCursor = settings.IndexOf($"  - {assemblyName}\n", settingsCursor, StringComparison.Ordinal);
-                sceneCursor = scene.IndexOf($"    - assemblyName: {assemblyName}\n", sceneCursor, StringComparison.Ordinal);
-                Assert.GreaterOrEqual(settingsCursor, 0, $"HybridCLRSettings order is invalid at {assemblyName}");
-                Assert.GreaterOrEqual(sceneCursor, 0, $"Boot scene order is invalid at {assemblyName}");
-                settingsCursor++;
-                sceneCursor++;
-            }
+            var settingsNames = ReadSettingsList("hotUpdateAssemblies");
+            var sceneNames = ReadSceneAssemblyNames("hotUpdateAssemblies");
+            CollectionAssert.AreEqual(settingsNames, sceneNames,
+                "Boot scene hotUpdateAssemblies drifted from HybridCLRSettings.asset. Re-run 'KJ/HybridCLR/Maintenance/Prepare Boot Scene'.");
         }
 
         [Test]
-        public void AotMetadata_CoversGeneratedPatchedAssemblyList()
+        public void AotMetadata_MatchBetweenSettingsAndScene()
         {
-            string settings = File.ReadAllText("ProjectSettings/HybridCLRSettings.asset");
-            string scene = File.ReadAllText("Assets/GameRes/Scene/Boot/Main.unity");
-            string[] expected =
-            {
-                "mscorlib", "System", "System.Core", "System.Runtime.CompilerServices.Unsafe",
-                "UnityEngine.CoreModule", "UniTask", "MessagePipe", "VContainer", "YooAsset",
-                "Utf8StringInterpolation", "ZLinq", "ZLogger", "Microsoft.Extensions.Logging.Abstractions",
-            };
+            var settingsNames = ReadSettingsList("patchAOTAssemblies");
+            var sceneNames = ReadSceneAssemblyNames("aotMetadataAssemblies");
+            CollectionAssert.AreEqual(settingsNames, sceneNames,
+                "Boot scene aotMetadataAssemblies drifted from HybridCLRSettings.patchAOTAssemblies. Re-run 'KJ/HybridCLR/Maintenance/Prepare Boot Scene'.");
+        }
 
-            foreach (string assemblyName in expected)
+        private static string[] ReadSettingsList(string blockKey)
+        {
+            var path = Path.Combine(Application.dataPath, "..", "ProjectSettings", "HybridCLRSettings.asset");
+            var lines = File.ReadAllLines(path);
+            var result = new List<string>();
+            var inBlock = false;
+
+            foreach (var raw in lines)
             {
-                StringAssert.Contains($"  - {assemblyName}", settings);
-                StringAssert.Contains($"    - assemblyName: {assemblyName}", scene);
-                StringAssert.Contains($"Assets/GameRes/HotUpdate/AotMetadata/{assemblyName}.dll.bytes", scene);
+                var line = raw.Trim();
+                if (!inBlock)
+                {
+                    if (line == blockKey + ":")
+                    {
+                        inBlock = true;
+                        continue;
+                    }
+                    continue;
+                }
+
+                if (line.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    result.Add(line.Substring(2).Trim());
+                    continue;
+                }
+
+                break; // 块结束
             }
+
+            return result.ToArray();
+        }
+
+        private static string[] ReadSceneAssemblyNames(string blockKey)
+        {
+            var path = Path.Combine(Application.dataPath, "GameRes", "Scene", "Boot", "Main.unity");
+            var lines = File.ReadAllLines(path);
+            var result = new List<string>();
+            var inBlock = false;
+
+            foreach (var raw in lines)
+            {
+                var line = raw.Trim();
+                if (line.Length == 0)
+                    continue;
+
+                if (!inBlock)
+                {
+                    if (line == blockKey + ":")
+                    {
+                        inBlock = true;
+                        continue;
+                    }
+                    continue;
+                }
+
+                if (line.StartsWith("- assemblyName: ", StringComparison.Ordinal))
+                {
+                    result.Add(line.Substring("- assemblyName: ".Length).Trim());
+                    continue;
+                }
+
+                // 每个条目是 3 行：- assemblyName / fileName / assetPath，子键行跳过。
+                if (line.StartsWith("fileName: ", StringComparison.Ordinal) ||
+                    line.StartsWith("assetPath: ", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                break; // 兄弟 key / 块结束
+            }
+
+            Assert.That(result, Is.Not.Empty, "Boot scene missing or empty '" + blockKey + "' block.");
+            return result.ToArray();
         }
 
         private sealed class ManualAopClock : IAopClock

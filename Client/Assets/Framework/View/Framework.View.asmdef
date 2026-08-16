@@ -1,0 +1,20 @@
+{
+    "name": "Framework.View",
+    "rootNamespace": "Framework.View",
+    "references": [
+        "UniTask",
+        "ZString",
+        "Log",
+        "Framework.ViewCache",
+        "Pool"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

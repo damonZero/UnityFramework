@@ -1,0 +1,19 @@
+{
+    "name": "Framework.View.Editor",
+    "rootNamespace": "Framework.View.Editor",
+    "references": [
+        "Framework.View",
+        "ZString"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

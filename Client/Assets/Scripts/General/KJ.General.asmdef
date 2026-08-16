@@ -9,7 +9,8 @@
         "MessagePipe.VContainer",
         "VContainer",
         "VContainer.Unity",
-        "ZLinq"
+        "ZLinq",
+        "Framework.DependencyInjection"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

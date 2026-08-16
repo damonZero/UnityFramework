@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v4.10.1
 milestone_name: milestone
 status: unknown
-last_updated: "2026-07-31T00:00:00.000Z"
+last_updated: "2026-08-16T04:12:16.050Z"
 ---
 
 # Project State: KJ Unity Framework
@@ -28,6 +28,7 @@ last_updated: "2026-07-31T00:00:00.000Z"
 - [x] RES-02: AssetHandle<T> / AssetInstanceHandle / AssetSceneHandle / AssetDownloadHandle / IAssetSystem — Framework 统一 API + 实例生命周期管理 + 场景串行化加载卸载
 - [x] RES-03: `Core.AssetSystem` 薄编排 — 复用 Boot 已初始化的资源运行时，负责 Shutdown 和 AssetSystemReadyEvent 发布
 - [x] POOL-01: PoolService.cs — Framework/Pool + Framework/Cache + Framework.Asset 的 DI 桥接
+- [x] TIMER-01: `Framework.Timer` — 纯 C# tick-based 计时器调度器（一次性/循环、暂停/恢复、全局 TimeScale、节点池化最小 GC、句柄版本号防复用误操作）+ `Core.TimerSystem`（`[CoreSystem]`+`ITickableSystem` 每帧驱动，异常经 `GameLog` 落盘）+ EditMode 测试
 - [x] TEST-01: `Framework.TestKit` — 基于 Unity Test Framework / NUnit 的通用断言、Fake、Probe、Fixture、手动时间驱动
 - [x] BOOT-CHAIN-02: Boot 收敛为更新壳（Entry 序列化启动配置；Boot 仅更新资源/代码并反射调用热更层正式入口；VContainer root 由 ProjectStartup 创建）
 - [x] MODEL-01: General/Project Model 生命周期接入（`ModelLifecycle` 由 VContainer `IPostStartable` 在 Core 系统 Start 后驱动 `LoadAll()`）
@@ -38,7 +39,7 @@ last_updated: "2026-07-31T00:00:00.000Z"
 - [x] HYB-00: HybridCLR 热更边界固化（托管 DLL 下发 / 需重启生效 / 真正换包规则）
 - [x] HYB-01: HybridCLR 最小加载闭环代码落地（Boot 加载 AOT metadata + Core/General/Project DLL 后反射调用 ProjectStartup；Unity Editor/Player 验证待 HYB-02 工具链）
 - [x] HYB-02A: 热更构建同步工具（`KJ/HybridCLR/*` Editor 菜单：生成/编译 HybridCLR 产物，同步 `.dll.bytes` RawFile，维护 YooAsset collector，回写打开的 Entry 序列化配置；日常 smoke 与完整构建前生成已拆分；工具归属 `Assets/Scripts/Boot.Editor/HybridCLR/`）
-- [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
+- [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；13 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
 - [x] PKG-00: 构建打包全流程管线设计（BuildProfile-only P0-P9 编排，见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`）
 - [x] PKG-01: KJBuildPipeline 编排器入口（`Build(BuildProfile)` + 默认 Profile 菜单 + CI）
 - [x] PKG-02: YooAsset 生产构建 Stage（当前 `DefaultPackage` 为纯 RawFile，使用 `RawFileBuildPipeline + RawBundle` → StreamingAssets；与旧 `EditorSimulateBuildInvoker` 不同 API）
@@ -152,6 +153,8 @@ Assets/Scripts/
 ├── Core/
 │   ├── KJ.Core.asmdef          ← 引用 Asset+Event+Pool+Cache+Log+RuntimeLog+VContainer+MessagePipe+MessagePipe.VContainer+UniTask+ZLinq+ZLogger.Unity+AssetShared（共 13）；不引用 General/Project
 │   ├── PoolService.cs          ← [CoreSystem] Framework.Pool DI 桥接 + 集合池快捷入口
+│   ├── Timer/
+│   │   └── TimerSystem.cs      ← [CoreSystem] Framework.Timer 桥接，每帧驱动 Tick + 异常接入 GameLog
 │   ├── Logging/
 │   │   ├── GameLogBridge.cs    ← IGameLogSink 到 RuntimeLog + Core ZLogger 管线的桥接（adapter，不是 CoreSystem）
 │   │   ├── RuntimeLogBootstrap.cs       ← Core 侧 RuntimeLog session 创建/补全：Unity 信息、资源信息、路径、frame provider
@@ -285,6 +288,13 @@ Assets/Framework/
 │   ├── RuntimeLogPhaseResolver.cs    ← Boot/HybridCLR/Core.Asset/Core.Init/ModelLifecycle 等 phase 归类
 │   ├── RuntimeLogFileName.cs
 │   └── RuntimeLogSessionId.cs
+├── Timer/
+│   ├── Timer.asmdef             ← 零依赖，noEngineReferences=true（Tier0 叶子）
+│   ├── ITimerManager.cs         ← 计时器调度器接口
+│   ├── TimerManager.cs          ← 核心实现（tick-based，节点池化，最小 GC）
+│   ├── TimerHandle.cs           ← 值类型句柄（版本号防节点复用误操作）
+│   ├── TimerNode.cs             ← 内部池化节点
+│   └── TimerDependencies.cs     ← 异常日志静态委托注入
 └── TestKit/
     ├── TestKit.asmdef                ← 引用 Unity Test Framework / NUnit，autoReferenced=false
     ├── Assertions/AssertEx.cs        ← NUnit 断言扩展
@@ -356,8 +366,9 @@ Assets/Framework/BuildPipeline/           ← 🆕 构建管线纯数据契约�
 
 - **`.asmdef` 文件是唯一事实源**。`.planning/STATE.md` / `CODEMAP.md` 的引用清单由 `.asmdef` 派生；文档漂移由仓库根目录的 `asmdef_dependency_validator.py` 检测：
   `python asmdef_dependency_validator.py [ROOT]` 输出真实引用表并校验全部红线（Launcher 最小依赖、Boot 不引用上层/pkg、Framework→Scripts 禁止、Framework 分层单向、无环、HybridCLR 一致性、Editor 隔离）。改 `.asmdef` 后重跑该脚本，文档以脚本输出为准更新。
+
 - **Framework 两层单向约定（已通过校验，当前即 acyclic / one-way）**：
-  - Tier0 叶子（禁止引用任何 Framework 包）：`AssetShared`、`Log`、`Cache`、`BuildPipeline`。
+  - Tier0 叶子（禁止引用任何 Framework 包）：`AssetShared`、`Log`、`Cache`、`Timer`、`BuildPipeline`。
   - Tier1 组合（只允许引用**更低 Tier** 的 Framework 包 + Packages）：`Event`、`Pool`、`RuntimeLog`、`Asset`。
   - 当前合法依赖边：`Pool→Cache`、`RuntimeLog→Log`、`Asset→Log+AssetShared`（均 T1→T0）。
   - 红线：禁止 Tier0→Tier1（向上）、禁止 Tier1→Tier1（横向）；新增/修改 Framework 引用必须先确认方向，否则校验失败。`TestKit` 为测试层（`autoReferenced=false`，不进生产包），不受此约束但也不应被生产代码引用。

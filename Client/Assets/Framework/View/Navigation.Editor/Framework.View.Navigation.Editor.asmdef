@@ -1,0 +1,25 @@
+{
+    "name": "Framework.View.Navigation.Editor",
+    "rootNamespace": "Framework.View.Navigation.Editor",
+    "references": [
+        "Framework.View",
+        "Framework.View.Navigation",
+        "Pool",
+        "Log",
+        "ZString",
+        "UniTask",
+        "Unity.EditorCoroutines.Editor",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -3,6 +3,7 @@ using Core.Systems;
 using Framework.Asset;
 using Framework.Log;
 using Framework.RuntimeLog;
+using Framework.Timer;
 using MessagePipe;
 using Microsoft.Extensions.Logging;
 using VContainer;
@@ -70,6 +71,11 @@ namespace Core.Bootstrap
                 builder.RegisterInstance(assetSystem)
                     .As<IAssetSystem>();
             }
+
+            // ── Framework Timer ──
+            builder.Register<TimerManager>(Lifetime.Singleton)
+                .As<ITimerManager>()
+                .AsSelf();
 
             // ── Core Types (scans [CoreSystem] types including GameLogBridge) ──
             builder.RegisterCoreTypes(options, typeof(CoreContainerRegistration).Assembly);

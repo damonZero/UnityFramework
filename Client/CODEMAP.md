@@ -35,11 +35,12 @@ Launcher (AOT) ──▶ Boot (HotUpdate) ──▶ Core ──▶ General ─�
 |-------|--------------|
 | Launcher (AOT) | UniTask, YooAsset, HybridCLR.Runtime, AssetShared |
 | Boot (HotUpdate) | Asset, Log, RuntimeLog, UniTask, AssetShared, YooAsset, Launcher |
-| Core | Asset, AssetShared, Event, Log, RuntimeLog, Pool, Cache, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, ZLinq, ZLogger |
+| Core | Asset, AssetShared, Event, Log, RuntimeLog, Pool, Cache, Timer, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, ZLinq, ZLogger |
 | General | Core, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer, ZLinq |
 | Project | Asset, Core, General, Event, Log, VContainer, VContainer.Unity, MessagePipe, MessagePipe.VContainer |
 | Framework.Pool | UniTask, Cache |
 | Framework.Cache | (none) |
+| Framework.Timer | (none) |
 | Framework.AssetShared | (none) |
 
 ---
@@ -114,13 +115,14 @@ References: `Boot`, `Log`, `Asset`, `Framework.BuildPipeline`, `Framework.Asset.
 ### Layer: Core (Assembly: `KJ.Core`, Namespace: `Core`)
 
 Asmdef: `Assets/Scripts/Core/KJ.Core.asmdef`
-References: Asset, AssetShared, Event, Pool, Cache, Log, RuntimeLog, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, ZLinq, ZLogger
+References: Asset, AssetShared, Event, Pool, Cache, Timer, Log, RuntimeLog, VContainer, MessagePipe, MessagePipe.VContainer, UniTask, ZLinq, ZLogger
 
 | File | Path | Key Types | Description |
 |------|------|-----------|-------------|
 | `ISystem.cs` | `Assets/Scripts/Core/Systems/ISystem.cs` | `ISystem`, `ITickableSystem : ISystem` | Core lifecycle contracts. |
 | `SystemManager.cs` | `Assets/Scripts/Core/Systems/SystemManager.cs` | `SystemManager : IStartable, ITickable, ILateTickable, IFixedTickable, IDisposable, ICoreStartupStatus` | Manages `ISystem` instances via VContainer. Priority-sorted Init/Shutdown + Tick dispatch. |
 | `PoolService.cs` | `Assets/Scripts/Core/PoolService.cs` | `PoolService : ISystem` `[CoreSystem]` | DI bridge for Framework.Pool. Injects `PoolDependencies.LoadAssetAsync` / `ReleaseAssetByPath`. Creates `GameObjectPool`. Exposes `CollectionPool.RentList<>()` shortcuts. Priority=110. |
+| `TimerSystem.cs` | `Assets/Scripts/Core/Timer/TimerSystem.cs` | `TimerSystem : ISystem, ITickableSystem` `[CoreSystem]` | DI bridge for Framework.Timer. Drives `Tick(deltaTime)` each frame, wires callback exceptions into `GameLog`. Priority=120. |
 | `CoreSystemAttribute.cs` | `Assets/Scripts/Core/Systems/Attributes/CoreSystemAttribute.cs` | `CoreSystemAttribute : Attribute` | Marks a Core system class for reflection-based DI registration. |
 | `CoreTypeRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreTypeRegistration.cs` | `static CoreTypeRegistration` | Reflection scanner: `[GameEvent]` → MessageBroker, `[CoreSystem]` → `AsSelf().AsImplementedInterfaces()`. |
 | `CoreContainerRegistration.cs` | `Assets/Scripts/Core/Bootstrap/CoreContainerRegistration.cs` | `static CoreContainerRegistration` | Entry: `RegisterCoreServices()` → MessagePipe + CoreTypes + SystemManager + CoreLayerEntrypoint. |
@@ -251,6 +253,19 @@ References: Log (`noEngineReferences=true`)
 | `RuntimeLogJson.cs` | `Assets/Framework/RuntimeLog/RuntimeLogJson.cs` | (static) | No-dependency JSON serializer. |
 | `RuntimeLogPhaseResolver.cs` | `Assets/Framework/RuntimeLog/RuntimeLogPhaseResolver.cs` | `RuntimeLogPhaseResolver` | Phase classification: Boot/HybridCLR/Core.Asset/Core.Init/ModelLifecycle. |
 
+### Framework: Timer (Assembly: `Timer`, Namespace: `Framework.Timer`)
+
+Asmdef: `Assets/Framework/Timer/Timer.asmdef`
+References: (none — zero external dependencies, `noEngineReferences=true`)
+
+| File | Path | Key Types | Description |
+|------|------|-----------|-------------|
+| `ITimerManager.cs` | `Assets/Framework/Timer/ITimerManager.cs` | `ITimerManager` (interface) | Scheduler contract: `ScheduleOnce` / `ScheduleLoop` / `Tick` / `Clear`, `TimeScale`, `ActiveCount`. |
+| `TimerManager.cs` | `Assets/Framework/Timer/TimerManager.cs` | `TimerManager : ITimerManager` | Pure C# tick-based scheduler. Pooled `TimerNode` nodes, snapshot tick (callbacks scheduled mid-tick defer to next tick), deferred compaction. |
+| `TimerHandle.cs` | `Assets/Framework/Timer/TimerHandle.cs` | `TimerHandle` (readonly struct) | Value-type handle. Version guard prevents stale handles from mutating reused nodes. `Pause` / `Resume` / `Cancel`. |
+| `TimerNode.cs` | `Assets/Framework/Timer/TimerNode.cs` | `TimerNode` (internal) | Pooled timer node. |
+| `TimerDependencies.cs` | `Assets/Framework/Timer/TimerDependencies.cs` | `static TimerDependencies` | Static delegate injection: `LogError` (wired by Core). |
+
 ---
 
 ## Key Interfaces and Contracts
@@ -259,11 +274,11 @@ References: Log (`noEngineReferences=true`)
 - `int Priority` — lower values initialize first
 - `void Init()` — called in priority order by SystemManager
 - `void Shutdown()` — called in reverse priority order
-- Implementations: `StartupProbeSystem`, `AssetSystem`, `PoolService`
+- Implementations: `StartupProbeSystem`, `AssetSystem`, `PoolService`, `TimerSystem`
 
 ### `ITickableSystem : ISystem` (Core.Systems)
 - `void Update(float)`, `void LateUpdate(float)`, `void FixedUpdate(float)`
-- No current implementations (reserved for future systems).
+- Implementation: `TimerSystem` (drives `Framework.Timer.TimerManager.Tick` each frame).
 
 ### `IAssetSystem` (Framework.Asset)
 - `UniTask<AssetHandle<T>> LoadAssetHandleAsync<T>(string path)` — caller-managed lifecycle
@@ -327,6 +342,7 @@ References: Log (`noEngineReferences=true`)
 | `StartupProbeSystem` | `Core.Systems` | 0 | `ISystem` | (none) |
 | `AssetSystem` | `Core.Asset` | 100 | `ISystem` | `IAssetRuntime`, `IPublisher<AssetSystemReadyEvent>` |
 | `PoolService` | `Core` | 110 | `ISystem` | `IAssetSystem` |
+| `TimerSystem` | `Core` | 120 | `ISystem`, `ITickableSystem` | `ITimerManager` |
 
 ### Registration Flow (layered startup chain)
 
@@ -430,9 +446,9 @@ SystemManager.Start() → InitAll()
 
 ## Hot-Update Assembly List
 
-HYB-03 established 10 hot-update assemblies (single source of truth: `ProjectSettings/HybridCLRSettings.asset`):
+HYB-03 established 10 hot-update assemblies; since extended to 13 (single source of truth: `ProjectSettings/HybridCLRSettings.asset`):
 
-`Boot`, `Core`, `General`, `Project`, `Pool`, `Cache`, `Event`, `Asset`, `Log`, `RuntimeLog`
+`Boot`, `Core`, `General`, `Project`, `Pool`, `Cache`, `Event`, `Asset`, `Log`, `RuntimeLog`, `Timer`, `Framework.ViewCache`, `Framework.DependencyInjection`
 
 AOT-only: `Launcher` (never in hotUpdateAssemblies).
 
@@ -470,7 +486,6 @@ AOT-only: `Launcher` (never in hotUpdateAssemblies).
 
 ## Directories Not Yet Created / Modules Not Yet Implemented
 
-- `Core/Timer/` — tick-based timer system
 - `Core/UI/` — UIManager + UIWindow
 - `Core/Network/` — NetManager, Session, MessageRouter, Protobuf
 - `General/Config/` — Luban config manager

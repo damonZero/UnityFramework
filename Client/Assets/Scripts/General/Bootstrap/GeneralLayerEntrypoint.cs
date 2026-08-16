@@ -51,6 +51,9 @@ namespace General.Bootstrap
                 return;
             }
 
+            // 静态 Scope 供 MVVM 等框架层按需解析 ViewModel/Model（子 scope 可向上回溯父链）。
+            Framework.DependencyInjection.Dependencies.Scope = generalScope;
+
             // 反射启动 Project（General 不编译期引用 Project）。
             // 契约：Project.Bootstrap.ProjectStartup.Start(LifetimeScope)
             const string startupTypeName = "Project.Bootstrap.ProjectStartup, Project";
