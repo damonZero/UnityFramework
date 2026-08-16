@@ -34,6 +34,9 @@
 | P4 增量构建修复 | `Assets/Scripts/Boot.Editor/Build/Stages/P4_BuildAssetStage.cs` | YooAsset 3.0.3 `TaskPrepare` 要求输出目录不存在；增量构建前清理 `Bundles/{Platform}/{Package}/{version}`，修复 ErrorCode115 |
 | Timer | `Framework/Timer/` + `Core/Timer/` | 纯 C# tick-based 计时器调度器（一次性/循环、暂停/恢复、全局 TimeScale、节点池化最小 GC、句柄版本号防复用）；`TimerSystem`（`[CoreSystem]`+`ITickableSystem`）由 SystemManager 每帧驱动，异常接入 GameLog；EditMode 测试覆盖 |
 | HybridCLR MethodBridge 缓存 | `Assets/Scripts/Boot.Editor/Build/Stages/P2_GenerateStage.cs` | `MethodBridge.cpp` 纯函数输出缓存（键=AOT DLL+桥接敏感源码+版本+设置+development，命中回填跳过 19 分钟泛型分析）；P2 目录/源码哈希改「size+mtime 短路+内容 SHA-256 权威」清单，第三方库不变只 stat 不读文件；打包 26min→37s，P6 IL2CPP 编译缓存随命中保留 |
+| UI 框架运行时（37 View 移植） | `Framework/View/` + `Framework/View.Navigation/` + `Framework/MVVM/` + `Framework/ViewCache/` + `Framework/DependencyInjection/` + `Framework/Coverage/` + `Framework/Touch/` | Form/Node/Scene 三种显示单元 + 导航 + 轻量 MVVM + View 缓存 + 覆盖检测 + 自定义输入模块；穿透契约统一为 IsClickPass/IsDragPass；DemoForm 加载/显示/点击验证通过 |
+| UI 应用层集成 | `Core/ViewSystem/` + `Core/UI/ScreenHelper.cs` + `FormLifecycleEvent.cs` | ViewSystem/Form/Scene/Navigation 四子系统编排 + 安全区/分辨率适配 + Form 生命周期事件桥接 + CacheDependencies 接线 |
+| UI 编辑器工具链 | `Framework/View/Editor/` + `Framework/View/Navigation.Editor/` + `Core.Editor/ViewSystem/Binding/` | CSharpAutoBind 代码生成 + VarBind + ViewObjectEditor + Navigation GraphView/Record/TreeView |
 
 ---
 
@@ -72,7 +75,7 @@
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
 | ConfigManager (Luban) | Medium | `General/Config/` | Framework.Asset | Luban v4.10.1 集成，二进制格式，懒加载策略，快速 ID 查找 |
-| Login | Medium | `General/Login/` | UIManager, NetManager, ConfigManager | 登录/公告/服务器列表/账号状态属于业务层；Boot 只负责更新界面和修复入口 |
+| Login | Medium | `General/Login/` | ViewSystem, NetManager, ConfigManager | 登录/公告/服务器列表/账号状态属于业务层；Boot 只负责更新界面和修复入口 |
 
 ### 资源分包与本地化（后期规划）
 
@@ -88,11 +91,12 @@
 
 ### UI
 
+> ✅ **UI 框架已落地（2026-08-16）**：原计划的 UIManager/UIWindow/窗口模式已由 37 参考项目的 View 框架替代——`Framework/View`（Form/Node/Scene + FormLayer 6 层排序）+ `Framework/View.Navigation`（导航模式 + 窗口栈）+ `Framework/MVVM`。见「已完成」。
+
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
-| UIManager | Medium-High | `Core/UI/` | ISystem, Framework.Asset | 6 层排序（Background/Normal/Popup/Top/Loading/System），窗口注册/打开/关闭 |
-| UIWindow | Low | `Core/UI/` | UIManager | 基类，OnInit/OnOpen/OnClose/OnPause/OnResume 生命周期 |
-| 窗口模式 | Low | `Core/UI/` | UI-01, UI-02 | Normal/Single/HideOthers/Overlay 四种打开模式 + 窗口栈导航 |
+| UIEffectExtension | Medium-High | `Framework/UIEffect/` | URP（未装） | ⛔ 阻塞：依赖 `Unity.RenderPipelines.Universal.Runtime`，需先决策是否引入 URP |
+| TransitionLoadingScreenshot | Medium | `Core/ViewSystem/` | Navigation | 游戏侧导航过渡截图，待 Loading 界面落地 |
 
 ### 网络
 
@@ -110,7 +114,7 @@
 |------|--------|------|------|------|
 | AudioManager | Low-Medium | `General/Audio/` | Framework.Asset, ObjectPool | BGM/SFX/Voice 通道，音量控制，AudioSource 池化 |
 | RedDot | Medium | `General/RedDot/` | Event backend | 树形节点，事件驱动传播，脏标记优化 |
-| Guide | High | `General/Guide/` | Event backend, UIManager, ConfigManager | 步骤式状态机，配置驱动，事件触发过渡 |
+| Guide | High | `General/Guide/` | Event backend, ViewSystem, ConfigManager | 步骤式状态机，配置驱动，事件触发过渡 |
 | Localization | Medium | `General/L10N/` | ConfigManager, Framework.Asset | 键值查找，运行时切换，Luban 配置表集成；后续与 L10N-PACK-01 多语言资源包打通 |
 
 ### 热更新
@@ -133,7 +137,7 @@
 | 可视化脚本编辑器 | 独立产品级工程，集成第三方即可 |
 | 内置 Analytics / Crash | 耦合特定服务，提供扩展点即可 |
 | 自定义序列化格式 | Protobuf + JSON 已覆盖当前需求；Luban 配置表待集成 |
-| 完整 MVVM 绑定框架 | 游戏 UI 是事件驱动刷新，不需要持续数据绑定 |
+| 完整 MVVM 数据绑定框架（双向/持续绑定） | 游戏 UI 是事件驱动刷新；已移植 37 的轻量 MVVM 分层（MvvmForm/BaseModel/BaseViewModel + VContainer 注入），但不做持续数据绑定 |
 | 事件总线字符串 ID | 已用 MessagePipe 强类型替代 |
 
 ---
@@ -148,15 +152,15 @@ ObjectPool ← Framework.Asset
 PERF-01 ← Framework.Log + ZLogger + ZLinq + Pool/Cache
 LOG-AI-01 ← Framework.Log + Framework.RuntimeLog + ZLogger + Boot/Core.Logging
 LOG-AI-02 ← LOG-AI-01 + Core.Editor
-UIManager ← ISystem + Framework.Asset
-UIWindow ← UIManager
+ViewSystem ← ISystem + Framework.Asset + Framework.View + Framework.View.Navigation + Framework.MVVM
+BaseForm ← Framework.View
 ConfigManager (Luban) ← Framework.Asset
 AudioManager ← Framework.Asset + ObjectPool
 NetManager ← ISystem + Event backend
 Session ← NetManager
 MessageRouter ← Event backend + Protobuf
 RedDot ← Event backend
-Guide ← Event backend + UIManager + ConfigManager
+Guide ← Event backend + ViewSystem + ConfigManager
 Localization ← ConfigManager + Framework.Asset
 RES-PACK-01 ← Framework.Asset + Build Pipeline v2
 RES-PACK-02 ← RES-PACK-01 + Boot + Framework.Asset
@@ -164,7 +168,7 @@ RES-PACK-03 ← RES-PACK-01 + RES-PACK-02 + RuntimeLog
 L10N-PACK-01 ← Localization + ConfigManager + RES-PACK-01
 RES-PACK-04 ← Build Pipeline v2 + RuntimeLog
 HybridCLR ← Framework.Asset + Boot
-UIManager ← HybridCLR boundary + ISystem + Framework.Asset
+ViewSystem ← HybridCLR boundary + ISystem + Framework.Asset + Framework.View
 ConfigManager (Luban) ← HybridCLR boundary + Framework.Asset
 ```
 

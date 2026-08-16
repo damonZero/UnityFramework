@@ -8,8 +8,8 @@ last_updated: "2026-08-16T04:12:16.050Z"
 
 # Project State: KJ Unity Framework
 
-**Last Updated:** 2026-08-15
-**Current Status:** ✅ 分层启动链重构完成（Phase 0-4）+ 热更闭环完整验证 + 仓库统一为 KJ 根（Client+Server 单一仓库）。Android P0-P10 E2E 构建通过（含 CDN 发布 P10）；AOT 泛型修复（补 `Microsoft.Extensions.Logging` AOT metadata）；CDN 发布集成（`PublishToCdn` 可勾选 + `P10_PublishCdnStage`）；热更验证 1.0.0→1.0.1（版本热更）→1.0.2（内容级热更，设备运行新代码打印 `v1.0.2` 标记）全部通过。
+**Last Updated:** 2026-08-16
+**Current Status:** ✅ 分层启动链重构完成 + 热更闭环完整验证 + 仓库统一为 KJ 根（Client+Server 单一仓库）+ **UI 框架运行时移植完成**。构建管线 Android P0-P10 E2E 通过（含 CDN 发布）；热更 1.0.0→1.0.1→1.0.2 验证通过；UI 框架（移植自 37 参考项目：View/MVVM/Navigation/ViewCache/Touch/Coverage/DI + 编辑器工具链）已落地，DemoForm 加载/显示/点击验证通过、ViewFrameworkTests 通过。
 
 ## 进度
 
@@ -80,8 +80,12 @@ last_updated: "2026-08-16T04:12:16.050Z"
 - [x] DASH-03: 指纹性能优化（路径指纹从内容 SHA-256 改为「文件大小 + LastWriteTimeUtc.Ticks」，`BuildCachePreview` 与 `BuildPipelineRunner` 同步；Dashboard 阶段视图 30s → 亚秒；首次构建后重写新格式指纹）。
 - [x] BUGFIX-07: P4 增量构建失败（YooAsset 3.0.3 `TaskPrepare` 要求输出目录不存在，`ClearBuildCacheFiles=false` 时残留 `Bundles/{Platform}/{Package}/{version}` 报 ErrorCode115；P4 构建前清理包输出目录）。
 - [x] PKG-19: HybridCLR MethodBridge 输出缓存 + P2 哈希 mtime 短路（`P2_GenerateStage`：`MethodBridge.cpp` 纯函数缓存，键 = AOT DLL 哈希 + 桥接敏感源码哈希 + HybridCLR Profile + Unity/HybridCLR 版本 + 泛型迭代次数 + development，命中直接回填跳过 19 分钟全量泛型分析；AOT DLL / 热更 DLL / AOT strip 输入哈希改「size+mtime 短路 + 内容 SHA-256 权威」持久化清单，第三方库不变时只 stat 不读文件；`HashBridgeSensitiveSources` 套同款 mtime 清单）。E2E 验证：Android Dev 打包 26 分钟 → 37 秒（MethodBridge 20.6min→跳过、P6 IL2CPP 4.7min→8.8s，IL2CPP 编译缓存随 MethodBridge 命中得以保留）；顺带修 `BuildStageRegistry_RegistersP0ToP9InOrder` 过期测试 → P0-P10。
-- [ ] UI-01: UISystem（UI 管理）
-- [ ] UI-02: UIWindow 基类
+- [x] UI-00: UI 框架运行时移植（`Framework/View` Form/Node/Scene 生命周期状态机 + `Framework/View.Navigation` 导航 + `Framework/MVVM` MvvmForm/Node/Scene + `Framework/ViewCache` + `Framework/DependencyInjection` + `Framework/Coverage` + `Framework/Touch` 自定义输入模块，穿透契约统一 IsClickPass/IsDragPass）
+- [x] UI-00a: 应用层集成（`Core/ViewSystem` 编排 View/Form/Scene/Navigation 子系统 + `ScreenHelper` 安全区/分辨率 + `FormLifecycleEvent` 事件桥接 + `CacheDependencies` 接线）
+- [x] UI-00b: 编辑器工具链（`Framework/View/Editor` CSharpAutoBind/VarBind/ViewObjectEditor + `Framework/View/Navigation.Editor` GraphView/Record/TreeView + `Core.Editor/ViewSystem/Binding`）
+- [x] UI-00c: Demo + 测试（`Project/Demo/DemoForm` MvvmForm 加载/显示/点击 + `ViewFrameworkTests` + `TimerTests`）
+- [ ] UI-00d: UIEffectExtension（⛔ 依赖 URP 未装，按需后置）
+- [ ] UI-00e: TransitionLoadingScreenshot（游戏特定，待加载界面落地后置）
 
 ## 文件清单
 
@@ -333,6 +337,22 @@ Assets/Framework/BuildPipeline/           ← 🆕 构建管线纯数据契约�
 │   └── AiBuildHandoff.cs            ← AI 可读交接数据（失败阶段/阻断问题/日志路径/建议）
 └── CI/
     └── BuildExitCode.cs             ← CI 退出码（0/10/20/…/99）
+
+Assets/Framework/View/                     ← 🆕 UI 框架运行时核心（Form/Node/Scene 生命周期状态机 + 组件系统 + VarBind 运行时）
+Assets/Framework/View.Navigation/          ← 🆕 导航系统（NavigationManager + Behaviour/Options/Transition/State）
+Assets/Framework/View/Editor/              ← 🆕 CSharpAutoBind/VarBind/ViewObjectEditor（Editor-only）
+Assets/Framework/View/Navigation.Editor/   ← 🆕 GraphView/Record/TreeView（Editor-only）
+Assets/Framework/MVVM/                     ← 🆕 MvvmForm/Node/Scene + BaseModel/BaseViewModel
+Assets/Framework/ViewCache/                ← 🆕 View 缓存（Cache/CacheFactory/FIFO/LRU/Statistics + CacheDependencies）
+Assets/Framework/DependencyInjection/      ← 🆕 Dependencies.Scope（VContainer 挂载点）
+Assets/Framework/Coverage/                 ← 🆕 界面覆盖区域检测（BaseCoverage/CanvasCoverage/SegmentTree）
+Assets/Framework/Touch/                    ← 🆕 自定义输入模块（StandaloneAdvInputModule + BaseTrigger/BaseButton/BaseDrag/PassTrigger）
+
+Assets/Scripts/Core/ViewSystem/            ← 🆕 ViewSystem/Form/Scene/Navigation 四子系统 + ScreenHelper + FormLifecycleEvent
+Assets/Scripts/Core/UI/                    ← 🆕 ScreenHelper（安全区/分辨率适配）
+Assets/Scripts/Core.Editor/ViewSystem/     ← 🆕 Binding/AutoBindingRegister
+Assets/Scripts/Project/Demo/               ← 🆕 DemoForm（MvvmForm 演示）
+Assets/Scripts/Project.Editor/             ← 🆕 DemoFormPrefabCreator
 ```
 
 ## 外部依赖
@@ -376,20 +396,18 @@ Assets/Framework/BuildPipeline/           ← 🆕 构建管线纯数据契约�
 
 ## 下一步
 
-Phase 1 剩余事项：
+UI 框架已落地（见 UI-00 系列），仅剩两处后置项：
 
-- **当前优先级：ZLogger AOT 修复设备验证**。`SimpleLogger<T>` 已落地，待一键打包 → 设备验证 MissingMethodException 是否消除。
-  - [ ] **Host 热更闭环验证**：基线 APK 安装 → Server 发布 1.0.1 → 不重装重启 → 确认新版本下载/加载/启动链完整
-  - [ ] **Standalone E2E 构建**：使用 BuildProfile 跑完整 Standalone IL2CPP 构建与 smoke
-  - [ ] **资源加载矩阵**：RawFile bytes、cached/owned 资源加载、实例化、场景加载/卸载
-- RES-VERIFY-02: PlayMode 覆盖（EditorSimulate + Player Offline）
+- [ ] **UI-00d UIEffectExtension**：⛔ 依赖 URP（`Unity.RenderPipelines.Universal.Runtime`），KJ 未装 URP，需先决策是否引入；否则按需裁剪移植。
+- [ ] **UI-00e TransitionLoadingScreenshot**：游戏侧导航过渡截图，待 Loading 界面落地后再实现。
+
+业务模块规划（依赖 UI 框架 + Config）：
+
+- CFG-01~02: Luban 配置表集成（`General/Config/`）
 - LOGIN-01: General/Login 业务模型
-
-Phase 2 规划：
-
-- NET-01~05: 网络层
-- UI-03~04: 窗口模式 + 窗口栈
-- CFG-01~02: Luban 配置表集成
+- NET-01~05: 网络层（NetManager/Session/Protobuf/MessageRouter）
+- AUDIO-01: AudioManager
+- REDDOT-01: RedDot 红点系统
 
 ## 最新验证记录
 
