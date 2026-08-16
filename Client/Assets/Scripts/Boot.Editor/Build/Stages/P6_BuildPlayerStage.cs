@@ -62,11 +62,17 @@ namespace Boot.Editor.Build
                 "EditorUserBuildSettings.allowDebugging",
                 v => EditorUserBuildSettings.allowDebugging = v,
                 () => EditorUserBuildSettings.allowDebugging);
+            context.Transaction.SnapshotBoolSetting(
+                "EditorUserBuildSettings.connectProfiler",
+                v => EditorUserBuildSettings.connectProfiler = v,
+                () => EditorUserBuildSettings.connectProfiler);
             bool isDev = profile.DevelopmentBuild;
             EditorUserBuildSettings.development = isDev;
             // 修复：allowDebugging（脚本调试）应遵循独立的 ScriptDebugging 配置，
             // 而非绑定 DevelopmentBuild —— 否则「release + 脚本调试」的 QA/Profiling Profile 会静默失效。
             EditorUserBuildSettings.allowDebugging = profile.ScriptDebugging;
+            // 修复：EnableProfiler 此前是死字段，现落地到 connectProfiler。
+            EditorUserBuildSettings.connectProfiler = profile.EnableProfiler;
 
             // 3. Android 平台预检
             if (buildTarget == BuildTarget.Android)
@@ -105,6 +111,7 @@ namespace Boot.Editor.Build
             BuildOptions buildOptions = BuildOptions.None;
             if (isDev) buildOptions |= BuildOptions.Development;
             if (profile.ScriptDebugging) buildOptions |= BuildOptions.AllowDebugging;
+            if (profile.EnableProfiler) buildOptions |= BuildOptions.ConnectWithProfiler;
 
             var options = new BuildPlayerOptions
             {

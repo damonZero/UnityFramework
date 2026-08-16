@@ -5,6 +5,7 @@
 //**************************************************************************************
 
 using System;
+using Framework.Log;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -204,7 +205,7 @@ namespace Framework.Touch
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                GameLog.Exception(e, "UIDragItem.OnEndDrag failed", module: "Framework.Touch");
             }
 
             if (isCloneDrag)

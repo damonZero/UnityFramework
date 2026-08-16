@@ -32,7 +32,6 @@ MonoBehaviour:
   StartupMethodName: Start
   CdnBaseUrl: http://10.0.2.2:8080/CDN/Android/DefaultPackage
   AssetMode: 2
-  EnableRuntimeLog: 1
   EnableGm: 0
   EnableDebugUi: 0
   SmokeEnabled: 1

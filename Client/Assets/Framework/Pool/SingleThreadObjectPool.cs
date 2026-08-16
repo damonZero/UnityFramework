@@ -12,10 +12,7 @@ namespace Framework.Pool
         private readonly Action<T> _reset;
         private readonly int _maxIdle;
         private readonly HashSet<T> _idleSet;
-
-#if UNITY_ASSERTIONS
         private readonly int _ownerThreadId;
-#endif
 
         public SingleThreadObjectPool(Func<T> factory, Action<T> reset, int maxIdle)
         {
@@ -24,10 +21,7 @@ namespace Framework.Pool
             _maxIdle = Math.Max(0, maxIdle);
             _idle = new Stack<T>(_maxIdle > 0 ? _maxIdle : 4);
             _idleSet = new HashSet<T>(ReferenceComparer.Instance);
-
-#if UNITY_ASSERTIONS
             _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
-#endif
         }
 
         public T Rent()
@@ -72,12 +66,12 @@ namespace Framework.Pool
 
         private void AssertOwnerThread()
         {
-#if UNITY_ASSERTIONS
+            // 无条件校验（不只 UNITY_ASSERTIONS）：release 下跨线程 Rent/Return 会静默损坏共享池，
+            // 必须所有构建都拦截（与 GameObjectPool 的无条件主线程断言对齐）。
             if (Thread.CurrentThread.ManagedThreadId != _ownerThreadId)
             {
                 throw new InvalidOperationException("SingleThreadObjectPool can only be used from the thread that created it.");
             }
-#endif
         }
 
         private sealed class ReferenceComparer : IEqualityComparer<T>

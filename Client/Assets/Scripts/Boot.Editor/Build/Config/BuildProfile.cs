@@ -93,12 +93,6 @@ namespace Boot.Editor.Build
         [Tooltip("Player 运行时资源模式")]
         public AssetConfig.PlayMode AssetMode = AssetConfig.PlayMode.Offline;
 
-        // ===== Logging =====
-
-        [Header("Logging")]
-        [Tooltip("是否启用 RuntimeLog (JSONL)")]
-        public bool EnableRuntimeLog = true;
-
         // ===== Feature Flags =====
 
         [Header("Feature Flags")]
@@ -220,7 +214,6 @@ namespace Boot.Editor.Build
             sb.Append(EnableProfiler); sb.Append('|');
             sb.Append(EnableGm); sb.Append('|');
             sb.Append(EnableDebugUi); sb.Append('|');
-            sb.Append(EnableRuntimeLog); sb.Append('|');
             sb.Append(PackageName); sb.Append('|');
             sb.Append(Channel); sb.Append('|');
             sb.Append(PackageId); sb.Append('|');

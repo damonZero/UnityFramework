@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Framework.Log;
 using Framework.View;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -51,7 +52,7 @@ namespace Core.UI
 #if UNITY_EDITOR
             if (!RecordUseList.Contains(obj))
             {
-                Debug.LogError($"{obj.AssetName} 没有记录打开信息就隐藏，需要检查 OnShow/OnHide 是否匹配");
+                GameLog.Error($"{obj.AssetName} 没有记录打开信息就隐藏，需要检查 OnShow/OnHide 是否匹配", module: "Core.UI.UI3DFormSupport");
                 return;
             }
 #endif
@@ -65,7 +66,7 @@ namespace Core.UI
 #if UNITY_EDITOR
             if (RecordUseList.Contains(obj))
             {
-                Debug.LogError($"{obj.AssetName} 重复加载！需要检查");
+                GameLog.Error($"{obj.AssetName} 重复加载！需要检查", module: "Core.UI.UI3DFormSupport");
                 return;
             }
 #endif

@@ -1,7 +1,9 @@
 {
     "name": "Framework.Touch",
     "rootNamespace": "Framework.Touch",
-    "references": [],
+    "references": [
+        "Log"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

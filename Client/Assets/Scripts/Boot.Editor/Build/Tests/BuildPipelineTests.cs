@@ -109,7 +109,7 @@ namespace Boot.Editor.Build.Tests
             string before = profile.ComputeHybridClrProfileHash();
 
             profile.CdnBaseUrl = "https://cdn.example.invalid";
-            profile.EnableRuntimeLog = !profile.EnableRuntimeLog;
+            profile.EnableProfiler = !profile.EnableProfiler;
             profile.SmokeTimeoutSec = 300;
 
             Assert.AreEqual(before, profile.ComputeHybridClrProfileHash());
@@ -124,7 +124,7 @@ namespace Boot.Editor.Build.Tests
             string before = profile.ComputeAssetBuildProfileHash();
 
             profile.SmokeTimeoutSec = 300;
-            profile.EnableRuntimeLog = !profile.EnableRuntimeLog;
+            profile.EnableProfiler = !profile.EnableProfiler;
             Assert.AreEqual(before, profile.ComputeAssetBuildProfileHash());
 
             profile.PackageName = "ExpansionPackage";

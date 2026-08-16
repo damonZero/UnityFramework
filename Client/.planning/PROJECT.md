@@ -10,6 +10,7 @@
 - 网络通信: Google.Protobuf 3.35.1
 - 异步: UniTask v2.5.11
 - 事件: MessagePipe
+- 响应式: R3 (com.cysharp.r3, MVVM 用)
 - 日志: Framework.Log 稳定门面 + Framework.RuntimeLog 文件 session + ZLogger 2.5.10 Unity Console provider；AI 运行日志落盘规范见 `.planning/AI_RUNTIME_LOGGING.md`
 - 性能工具: ZString 2.6.0, ZLinq 1.5.6
 - UI: UGUI (内置)
