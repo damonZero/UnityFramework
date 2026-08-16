@@ -89,8 +89,10 @@ namespace Boot.Editor.Build
             string version = string.IsNullOrWhiteSpace(profile.CdnPublishVersion)
                 ? profile.VersionName
                 : profile.CdnPublishVersion;
-            string versionFile = Path.Combine(cdnRoot, "DefaultPackage.version");
-            string manifest = Path.Combine(cdnRoot, $"DefaultPackage_{version}.bytes");
+            // 修复：包名跟随 BuildProfile.PackageName（非硬编码 DefaultPackage），否则多包布局时发布成功但 Verify 失败。
+            string packageName = profile.PackageName;
+            string versionFile = Path.Combine(cdnRoot, $"{packageName}.version");
+            string manifest = Path.Combine(cdnRoot, $"{packageName}_{version}.bytes");
 
             if (!File.Exists(versionFile))
                 throw new InvalidOperationException($"CDN version file missing: {versionFile}");

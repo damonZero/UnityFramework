@@ -1231,7 +1231,13 @@ namespace Framework.View.Navigation
         {
             //只清理内存不改变当前状态,完全清理后改为清理状态
             if (targetState == NavigationStateType.Clear && Cache.Visible())
+            {
+                // 修复：PreChangeStateAsync 已把 PendingState 置为 Clear，此处早退会让 PendingState 卡在 Clear，
+                // 后续 Open/Close 在 PreChangeStateAsync 排队等待 120 帧后超时抛 NavigationException（死锁）。
+                // 早退前必须复位 PendingState（状态未实际切换，故不动 CurrentState、不触发 AfterStateChangeEvent）。
+                ResetPendingState();
                 return;
+            }
             await base.PostChangeStateAsync(targetState);
         }
 

@@ -213,12 +213,14 @@ namespace Framework.View.Navigation
 
         private async UniTask OnContainerAfterStateChange(NavigationBehaviour container, NavigationStateType state)
         {
+            // 修复：先广播 AfterContainerStateChange，此时容器 Name/Children 仍完好；
+            // 否则 RemoveClosedContainer 会先 Recycle（Reset 清空 Name/Children），订阅者读到已重置实例。
+            await AfterContainerStateChange.InvokeAsync(container, state);
+
             if (state == NavigationStateType.Close)
             {
                 await RemoveClosedContainer(container, state);
             }
-
-            await AfterContainerStateChange.InvokeAsync(container, state);
         }
 
         private async UniTask OnLoaderBeforeStateChange(NavigationBehaviour loader, NavigationStateType state)

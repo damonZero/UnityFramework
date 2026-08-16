@@ -127,11 +127,19 @@ namespace Framework.MVVM
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        protected static T GetInjectable<T>() where T : class, DependencyInjection.IInjectable
+        protected T GetInjectable<T>() where T : class, DependencyInjection.IInjectable
         {
             try
             {
-                var success = Dependencies.TryResolve<T>(out var result);
+                // 修复：优先从本视图的 child scope（_lifetimeScope）解析，VContainer 会向上回溯父链到环境叶子 scope；
+                // 之前只查 Dependencies（叶子），CreateContainer 注册在 child scope 的 ViewModel/Model 不可见。
+                T result;
+                bool success;
+                if (_lifetimeScope != null)
+                    success = _lifetimeScope.Container.TryResolve<T>(out result);
+                else
+                    success = Dependencies.TryResolve<T>(out result);
+
                 if (!success)
                 {
                     // FIXME by fred

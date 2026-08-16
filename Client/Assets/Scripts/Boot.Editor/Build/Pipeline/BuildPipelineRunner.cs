@@ -20,7 +20,6 @@ namespace Boot.Editor.Build
     public class BuildPipelineRunner
     {
         private const string PipelineVersion = "1.1.0";
-        private const long FullContentHashLimit = 4L * 1024 * 1024; // 4 MB: 以下全文哈希，以上采样头尾
         private readonly BuildContext _ctx;
         private readonly List<StageExecutionResult> _stageResults = new List<StageExecutionResult>();
         private bool _allPassed = true;
@@ -398,35 +397,14 @@ namespace Boot.Editor.Build
 
         /// <summary>
         /// 内容哈希为准（而非 mtime+size，避免「同尺寸+同 mtime」的编辑被误判为未变化）。
-        /// 小文件全文哈希；大文件采样（长度 + 头尾 256KB）以控制成本。
+        /// 全文哈希（SHA256 流式计算，不整体载入内存），保证中间字节变化也能被检测到。
+        /// 早期「>4MB 只采样头尾」会在中间字节变化、长度/头尾不变时产生假缓存命中，已移除。
         /// </summary>
         private static string FileContentHash(string filePath)
         {
-            var fi = new FileInfo(filePath);
-            long length = fi.Length;
-            if (length <= FullContentHashLimit)
-            {
-                using var stream = File.OpenRead(filePath);
-                using var sha = SHA256.Create();
-                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
-            }
-
-            using (var stream = File.OpenRead(filePath))
-            {
-                var sha = SHA256.Create();
-                sha.TransformBlock(BitConverter.GetBytes(length), 0, sizeof(long), null, 0);
-
-                var buffer = new byte[256 * 1024];
-                int read = stream.Read(buffer, 0, buffer.Length);
-                sha.TransformBlock(buffer, 0, read, null, 0);
-
-                stream.Seek(-buffer.Length, SeekOrigin.End);
-                read = stream.Read(buffer, 0, buffer.Length);
-                sha.TransformBlock(buffer, 0, read, null, 0);
-
-                sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                return BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
-            }
+            using var stream = File.OpenRead(filePath);
+            using var sha = SHA256.Create();
+            return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
         }
 
         private static string Sha256(string text)

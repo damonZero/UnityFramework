@@ -1135,14 +1135,9 @@ namespace Framework.View
         /// </summary>
         async UniTask IViewLifeCycle.ExecuteClose(LifeCycleArgs args)
         {
-            if (PendingPhase == ViewPhase.Opened)
-            {
-                Log.Error($"'{name}' is opening, cannot execute close! " +
-                          $"CurrentPhase={CurrentPhase}, PendingPhase={PendingPhase}", this);
-                return;
-            }
-
             // 如果已经处于关闭流程中（PendingPhase=Closed），或已经完全关闭（CurrentPhase=Closed），则不需要重复关闭
+            // 修复：不再在「打开中（PendingPhase=Opened）」直接丢弃关闭请求——之前会让表单永远开着。
+            // 关闭请求统一走下方 AcquireLifecycleSlot 的 FIFO 队列，等 Open 完成后串行执行。
             if (CurrentPhase == ViewPhase.Closed || PendingPhase == ViewPhase.Closed) return;
 
             var slotOk = await AcquireLifecycleSlot();
@@ -1158,9 +1153,11 @@ namespace Framework.View
                     await InternalExecuteHide(args);
                 }
 
-                if (CurrentPhase != ViewPhase.Hidden)
+                if (CurrentPhase != ViewPhase.Hidden && CurrentPhase != ViewPhase.Opened)
                 {
-                    // View只能从Hidden转换Closed
+                    // View 只能从 Hidden 或 Opened 转换到 Closed。
+                    // Opened：_pendingHide 路径（Open 期间收到隐藏请求）会跳过首次 Show，停在 Opened；
+                    // 此时未渲染过，可直接关闭，不必先 Hide。
                     Log.Error($"'{name}' should not do ExecuteClose when CurrentPhase is {CurrentPhase}! " +
                               $"Should be hidden first.", this);
                     return;
@@ -1180,9 +1177,9 @@ namespace Framework.View
                 }
 
                 // 在调用 OnClose 前完成状态转变，确保 OnClose 及其之后的回调中 CurrentPhase 已处于 Closed
-                if (CurrentPhase != ViewPhase.Hidden)
+                if (CurrentPhase != ViewPhase.Hidden && CurrentPhase != ViewPhase.Opened)
                     Log.Error($"[Phase Assertion] Close: unexpected CurrentPhase={CurrentPhase}," +
-                              $"  expected: Hidden, name={name}", this);
+                              $"  expected: Hidden/Opened, name={name}", this);
                 if (PendingPhase != ViewPhase.Closed)
                     Log.Error($"[Phase Assertion] Close: unexpected PendingPhase={PendingPhase}," +
                               $"  expected: Closed, name={name}", this);

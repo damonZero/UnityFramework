@@ -20,6 +20,7 @@ namespace Framework.Asset
         private readonly Dictionary<string, UniTask> _sceneUnloadTasks = new();
         private readonly HashSet<YooAsset.AssetHandle> _ownedAssetHandles = new();
         private readonly HashSet<YooAsset.SceneHandle> _ownedSceneHandles = new();
+        private readonly Dictionary<string, int> _sceneRefCounts = new();
         // startup/teardown path; pooled only if Pool referenced
         private readonly List<AssetCacheKey> _releaseKeys = new();
         private readonly Dictionary<AssetCacheKey, PendingAssetLoad> _loadingTasks = new();
@@ -140,11 +141,16 @@ namespace Framework.Asset
 
             foreach (var handle in _ownedSceneHandles)
             {
-                try { UnloadSceneSynchronously(handle); } catch (Exception e) { GameLog.Exception(e, "[AssetRuntime] Error unloading owned scene handle", module: "Framework.Asset"); }
+                if (handle == null) continue;
+                // 修复：UnloadSceneOperation 不支持 WaitForCompletion（基类直接 throw YooInternalException），
+                // 之前 UnloadSceneSynchronously 同步卸载抛异常被吞，导致 handle.Release() 永不执行 → 场景资源泄漏。
+                // YooAsset 的 UnloadSceneAsync 卸载成功后会自动释放引用计数，无需再手动 Release；改 fire-and-forget 异步卸载。
+                try { handle.UnloadSceneAsync().ToUniTask().Forget(); } catch (Exception e) { GameLog.Exception(e, "[AssetRuntime] Error unloading owned scene handle", module: "Framework.Asset"); }
             }
 
             _sceneHandles.Clear();
             _sceneUnloadTasks.Clear();
+            _sceneRefCounts.Clear();
             _ownedAssetHandles.Clear();
             _ownedSceneHandles.Clear();
         }
@@ -410,17 +416,20 @@ namespace Framework.Asset
                 _sceneUnloadTasks.Remove(path);
             }
 
-            if (_sceneHandles.TryGetValue(path, out var oldHandle))
+            if (_sceneHandles.TryGetValue(path, out var existing))
             {
-                // Only unload an already-completed handle; an in-progress load is
-                // awaited rather than unloaded mid-load.
-                if (!oldHandle.IsDone)
-                    await UniTask.WaitUntil(() => oldHandle.IsDone);
-                await StartSceneUnloadAsync(path, oldHandle);
+                // 同路径复用（single-flight）：已加载/加载中直接复用同一句柄，不卸载先调用者的场景、不重复加载。
+                // 引用计数管理共享句柄生命周期：最后一个 AssetSceneHandle 释放时才真正卸载。
+                if (!existing.IsDone)
+                    await UniTask.WaitUntil(() => existing.IsDone);
+                _sceneRefCounts.TryGetValue(path, out var refCount);
+                _sceneRefCounts[path] = refCount + 1;
+                return new AssetSceneHandle(existing, null, h => ReleaseSceneReferenceAsync(path, h));
             }
 
             var handle = _defaultPackage.LoadSceneAsync(path, mode);
             _sceneHandles[path] = handle;
+            _sceneRefCounts[path] = 1;
 
             while (!handle.IsDone)
             {
@@ -433,17 +442,13 @@ namespace Framework.Asset
             {
                 GameLog.Error($"[AssetRuntime] Scene load failed: {path} - {handle.Error}", module: "Framework.Asset");
                 _sceneHandles.Remove(path);
+                _sceneRefCounts.Remove(path);
                 await handle.UnloadSceneAsync().ToUniTask();
                 return null;
             }
 
             _ownedSceneHandles.Add(handle);
-            return new AssetSceneHandle(handle, h =>
-            {
-                _ownedSceneHandles.Remove(h);
-                if (_sceneHandles.TryGetValue(path, out var current) && ReferenceEquals(current, h))
-                    _sceneHandles.Remove(path);
-            }, h => StartSceneUnloadAsync(path, h));
+            return new AssetSceneHandle(handle, null, h => ReleaseSceneReferenceAsync(path, h));
         }
 
         public AssetDownloadHandle CreateDownloader(string tag = null)
@@ -568,6 +573,8 @@ namespace Framework.Asset
                 StartSceneUnloadAsync(path, sceneHandle).Forget();
                 _sceneHandles.Remove(path);
                 _ownedSceneHandles.Remove(sceneHandle);
+                // 强制释放：清除引用计数，让残留 AssetSceneHandle 的 Dispose 变 no-op，避免二次卸载。
+                _sceneRefCounts.Remove(path);
             }
         }
 
@@ -643,6 +650,25 @@ namespace Framework.Asset
             return parameters;
         }
 
+        /// <summary>
+        /// 释放场景句柄的一个引用；引用计数归零时真正卸载（single-flight 共享句柄的生命周期管理）。
+        /// </summary>
+        private async UniTask ReleaseSceneReferenceAsync(string path, YooAsset.SceneHandle handle)
+        {
+            if (!_sceneRefCounts.TryGetValue(path, out var count))
+                return;
+
+            if (count > 1)
+            {
+                _sceneRefCounts[path] = count - 1;
+                return;
+            }
+
+            // 最后一个引用释放 → 真正卸载场景并清理跟踪。
+            _sceneRefCounts.Remove(path);
+            await StartSceneUnloadAsync(path, handle);
+        }
+
         private async UniTask StartSceneUnloadAsync(string path, YooAsset.SceneHandle handle)
         {
             if (handle == null)
@@ -669,20 +695,6 @@ namespace Framework.Asset
                 _ownedSceneHandles.Remove(handle);
                 _sceneUnloadTasks.Remove(path);
             }
-        }
-
-        private static void UnloadSceneSynchronously(YooAsset.SceneHandle handle)
-        {
-            if (handle == null)
-                return;
-
-            // main-thread blocking — used only during teardown
-            var operation = handle.UnloadSceneAsync();
-            operation.WaitForCompletion();
-
-            // Fully release the scene handle so its ref count is dropped and the
-            // wrapper's IsValid guard prevents a later Dispose from re-unloading.
-            handle.Release();
         }
 
         private readonly struct AssetCacheKey : IEquatable<AssetCacheKey>

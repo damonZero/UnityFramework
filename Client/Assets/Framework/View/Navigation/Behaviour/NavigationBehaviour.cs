@@ -393,6 +393,15 @@ namespace Framework.View.Navigation
         }
 
         /// <summary>
+        /// 复位 PendingState（供子类在跳过 <see cref="PostChangeStateAsync"/> 的早退路径中调用，避免状态机卡死）。
+        /// 仅清 PendingState，不改变 CurrentState、不触发 AfterStateChangeEvent（状态未实际切换）。
+        /// </summary>
+        protected void ResetPendingState()
+        {
+            PendingState = NavigationStateType.None;
+        }
+
+        /// <summary>
         /// 取消所有等待中的状态切换请求
         /// </summary>
         private void CancelAllWaiters()
