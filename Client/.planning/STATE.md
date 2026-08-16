@@ -39,7 +39,7 @@ last_updated: "2026-08-16T04:12:16.050Z"
 - [x] HYB-00: HybridCLR 热更边界固化（托管 DLL 下发 / 需重启生效 / 真正换包规则）
 - [x] HYB-01: HybridCLR 最小加载闭环代码落地（Boot 加载 AOT metadata + Core/General/Project DLL 后反射调用 ProjectStartup；Unity Editor/Player 验证待 HYB-02 工具链）
 - [x] HYB-02A: 热更构建同步工具（`KJ/HybridCLR/*` Editor 菜单：生成/编译 HybridCLR 产物，同步 `.dll.bytes` RawFile，维护 YooAsset collector，回写打开的 Entry 序列化配置；日常 smoke 与完整构建前生成已拆分；工具归属 `Assets/Scripts/Boot.Editor/HybridCLR/`）
-- [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；13 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
+- [x] HYB-03: HybridCLR 热更边界裂变（AOT `Launcher` 壳 + 热更 `Boot`；19 热更程序集；`AssetConfig`/`AssetConstants` 迁入 AOT 共享 `Framework.AssetShared`；`IRemoteService` 死锁修复 `BootRemoteService`；AOT 极简日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；对应 EditMode 测试 45/45 全绿、含 15 例 HYB-03 边界用例）
 - [x] PKG-00: 构建打包全流程管线设计（BuildProfile-only P0-P9 编排，见 `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md`）
 - [x] PKG-01: KJBuildPipeline 编排器入口（`Build(BuildProfile)` + 默认 Profile 菜单 + CI）
 - [x] PKG-02: YooAsset 生产构建 Stage（当前 `DefaultPackage` 为纯 RawFile，使用 `RawFileBuildPipeline + RawBundle` → StreamingAssets；与旧 `EditorSimulateBuildInvoker` 不同 API）
@@ -355,13 +355,19 @@ Assets/Framework/Coverage/                 ← 🆕 界面覆盖区域检测（B
 Assets/Framework/Touch/                    ← 🆕 自定义输入模块（StandaloneAdvInputModule + BaseTrigger/BaseButton/BaseDrag/PassTrigger）
 
 Assets/Scripts/Core/ViewSystem/            ← 🆕 ViewSystem/Form/Scene/Navigation 四子系统 + ScreenHelper + FormLifecycleEvent + Coverage（FormCoverage/SceneCoverage）
-Assets/Scripts/Core/UI/                    ← 🆕 ScreenHelper（安全区/分辨率适配）+ UICamera（UI 相机门面）+ UICameraAdapter（分辨率自适应）+ UI3DFormSupport（3D UI 透视/正交切换）
+Assets/Scripts/Core/UI/                    ← 🆕 ScreenHelper（安全区/分辨率适配 + 世界↔UI 坐标换算）+ UICamera（UI 相机门面）+ UICameraAdapter（分辨率自适应）+ UI3DFormSupport（3D UI 透视/正交切换）+ LookAtCamera（公告板）
+Assets/Scripts/Core/UnityExtension/        ← 🆕 CameraExtension（World/Screen/Viewport/UI 坐标互转 + GetSceneGroundPosXYZ 地面取点）
+Assets/Scripts/Core/URP/                   ← 🆕 URP 相机栈（CameraStackBase/CameraStackOverlay/BaseCamera/OverlayCamera，标准 URP renderType/cameraStack 管理 1 Base + N Overlay）+ CameraColorTexture/CameraDepthTexture（按需纹理，标准 requiresColor/DepthTexture）
+Assets/Scripts/Core/Timeline/              ← 🆕 UIFlow（UI 跟随）+ CameraSwitch/FadeScene（过场切镜）Timeline 片段/轨道
 Assets/Scripts/Core.Editor/ViewSystem/     ← 🆕 Binding/AutoBindingRegister
 Assets/Scripts/Core.Editor/Rendering/      ← 🆕 KJUrpSetup（URP 管线一键设置）
-Assets/Scripts/General/Camera/             ← 🆕 CameraMoveAdv 精简拆分版（核心 + Move/LookAround/Rotate/Around/Zoom/Inertia/MoveTo 7 个 partial 功能文件）
+Assets/Scripts/General/Camera/             ← 🆕 CameraMoveAdv 精简拆分版（核心 + Move/LookAround/Rotate/Around/Zoom/Inertia/MoveTo 7 个 partial 功能文件 + MoveCamByAxisLocalX/偏移累计管理）+ CameraDrag/CameraRoll/CameraAngle
+Assets/Scripts/General/GravitySensor/      ← 🆕 GravityCamera（重力感应旋转镜头）
+Assets/Scripts/General/Utils/              ← 🆕 CameraUtil（视口/屏幕/UI 区域判定与坐标换算）
 Assets/Scripts/Project/Demo/               ← 🆕 DemoForm（MvvmForm 演示）
 Assets/Scripts/Project.Editor/             ← 🆕 DemoFormPrefabCreator
 Assets/Framework/UIEffectExtension/        ← 🆕 UIModelImage（UIModelImg/UIModelCam/UIModelLocMgr/UIModelScreenFitting，UI 3D 模型渲染）
+Assets/Framework/URPExtension/             ← 🆕 URP RenderFeature 门面（CustomRenderFeature Show/Hide + CommandBufferPass/CommandRenderer/InstancingRenderPass/SetupAble/MaterialPropertyBlockCache）
 Assets/Framework/1External/Demigiant/      ← 🆕 DOTween 免费版（Runtime+Modules+Editor+Aot + DemiLib.dll）
 Assets/Framework/1External/E7/             ← 🆕 Notch Solution（SafePadding 安全区组件）
 ```
@@ -378,6 +384,7 @@ Assets/Framework/1External/E7/             ← 🆕 Notch Solution（SafePadding
 | ZLogger | GitHub UPM + NuGetForUnity (Cysharp) | 2.5.10 |
 | ZLinq | GitHub UPM + NuGetForUnity (Cysharp) | 1.5.6 |
 | ZString | GitHub UPM (Cysharp) | 2.6.0 |
+| R3 | GitHub (Cysharp) | — (com.cysharp.r3, path=src/R3.Unity/Assets/R3.Unity) |
 | URP (Universal Render Pipeline) | UPM (com.unity.render-pipelines.universal) | 14.0.8 |
 | DOTween | 1External (Demigiant, 免费版) | — |
 | Notch Solution (E7) | 1External | — |
@@ -427,6 +434,12 @@ UI 框架 + 显示层 + 相机控制 + UI 3D 模型均已落地（见 UI-01~05�
 - REDDOT-01: RedDot 红点系统
 
 ## 最新验证记录
+
+- 2026-08-16: **相机系统剩余可移植项落地（CAMERA.md Phase 2/3/5/6）**：① **Phase 2 按需纹理**——`CameraColorTexture`/`CameraDepthTexture`（`Core/URP`，37 私有 `showColorTextrue`/`showDepthTextrue` 改标准 `requiresColorTexture`/`requiresDepthTexture`，引用计数归零关闭）；② **Phase 3 RenderFeature 门面**——`Framework/URPExtension`（新 asmdef 引用 URP；`CustomRenderFeature` Show/Hide 注册门面 + `CommandBufferPass`/`CommandRenderer`/`InstancingRenderPass`/`SetupAble`/`MaterialPropertyBlockCache`）；③ **Phase 5 Timeline**——`Core/Timeline`（`UIFlow` UI 跟随 + `CameraSwitch` 过场切镜 + `FadeScene`）；④ **Phase 6 操控工具**——`CameraDrag`/`CameraRoll`/`CameraAngle`（`General/Camera`）+ `GravityCamera`（`General/GravitySensor`）+ `LookAtCamera`（`Core/UI`）。**后置（游戏特定/阻塞）**：Phase 3.6 `Instancing/*`+`OverDrawStatic`（GPU 植被实例化 + compute 诊断）；Phase 4 `Mirror`/`PlanarShadow`/`HighQualityShadow`（依赖 37 额外 URP 私有 `SetCustomShadowDistance`/`isSupports` + URP 内部 `MainLightShadowCasterPass`/`RenderObjectsPass` + 游戏 shader）；Phase 7 三个 Editor（`CameraMoveDevEditor` 面向旧 37 CameraMoveAdv API、`CoverageCheckerInEditor` 依赖 Spine、`CameraAngleEditor` 随 CameraAngle 改默认 Inspector）；Phase 6.8 `VirtualCameraMov`（依赖 Cinemachine）；Phase 8 战斗相机。**待 Unity 验证**：Editor 编译 + Play 下按需纹理/操控组件/Timeline 跟随正常。
+
+- 2026-08-16: **URP 相机栈落地（CAMERA.md Phase 1）**：`Core/URP/` 移植 37 的相机栈四件套——`CameraStackBase`（静态 `Stack` + `MainCamera`/`MainData` + `AddOverlay`/`RemoveOverlay`/`ResetStack`，标准 URP `renderType`/`cameraStack`）、`CameraStackOverlay`（`order` + OnEnable/OnDisable 挂栈/出栈）、`BaseCamera`（主相机自注册为 Base + Editor 校验 cullingMask 不含 UI 层）、`OverlayCamera`（场景相机 + Coverage 遮挡挂接）。**Phase 0 决策落地**：不 fork URP，37 私有字段 `ShotInUI`→不移植、`isUICamera`→`CompareTag`、`showDepth/ColorTextrue`→标准 `requiresDepth/ColorTexture`（见 CAMERA.md Phase 0）；`Boot*` 改名 `CameraStack*`（落 Core，KJ Boot 是 AOT 壳不引用 URP）、去 `uiCamera/uiData`（复用 `Core.UI.UICamera`）、修软重启静态集合泄漏（readonly 集合 OnDestroy 清空）。**待 Unity 验证**：Editor 编译 + Play 下「主相机 + UI 相机 + 特效相机」并存时 `Stack` 维护 1 Base + N Overlay。
+
+- 2026-08-16: **相机操控工具补全（CAMERA.md Phase 6.1/6.6/6.7）**：① `CameraMoveAdv` 补齐 `MoveCamByAxisLocalX`（X 轴受限补间平移）+ 偏移累计管理 API（`GetZoomOffset`/`ResetZoomOffset`/`SetOffset`），DOTween 补间（MoveCamByPos/RotateYCamByPos）与 7 功能 Inspector 开关均已就绪；② 移植 `CameraUtil`（`General/Utils`，视口/屏幕/UI 区域判定与坐标换算，37 `UtilUIKit.IsInScreen` 内联为包围盒重叠，`Debug.LogWarning` → `GameLog`）；③ 移植 `CameraExtension`（`Core/UnityExtension`，World/Screen/Viewport/UI 坐标互转 + `GetSceneGroundPosXYZ` 地面取点），并给 `ScreenHelper` 补 `WorldPointToUIPoint`/`UIPointToWorldPoint` 两个坐标换算方法。纯 C# 无 URP 依赖。**待 Unity 验证**：Editor 编译 + Play 下各操控组件驱动相机、CameraUtil 判定正确。
 
 - 2026-08-16: **DI 门面封装 + 持久层语义文档化**：`Framework.DependencyInjection.Dependencies` 从裸 `Scope`（`LifetimeScope`）重构为环境容器门面（`Resolve`/`TryResolve`/`ResolveOrDefault`/`CreateChild`，null 兜底内聚，不暴露容器类型）；删除 `Framework.MVVM.Dependencies` 转发壳，MVVM（`MvvmBaseModel`/`BaseViewModel`/`MvvmForm`/`MvvmNode`/`MvvmScene`）直接调门面。明确两点语义并写入 `static-restart-state.md`——「叶子 scope / 父容器恒为叶子（无需按层指定父容器）」与「DI scope 留 `DontDestroyOnLoad` 持久层（跨场景存活 + 软重启两级拆除）」。**待验证**：Unity 编译（`Framework.DependencyInjection` + `Framework.MVVM` asmdef）。
 

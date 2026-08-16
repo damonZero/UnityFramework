@@ -3,7 +3,7 @@
 > **用途：** 记录框架需要哪些模块、每个模块当前处于什么状态、它依赖什么。
 > **不做：** 固定执行顺序、工时估计、强制时间表。什么时候做什么模块取决于当时的需求和优先级判断。
 
-**Last Updated:** 2026-08-15
+**Last Updated:** 2026-08-16
 
 ---
 
@@ -23,7 +23,7 @@
 | LOG-AI-02 首版日志收集与 AI 分析入口 | `Assets/Scripts/Core.Editor/Logging/` | `KJ/Runtime Logs/*` 菜单：打开 latest、生成摘要、导出诊断包、清理本地日志 |
 | TestKit 测试基础设施 | `Framework/TestKit/` | 基于 Unity Test Framework / NUnit，提供通用断言、Fake、Probe、Fixture 和手动时间驱动；具体测试用例放 `Assets/Tests/` |
 | HYB-02A 热更同步工具 | `Assets/Scripts/Boot.Editor/HybridCLR/` + `Assets/GameRes/HotUpdate/` | 生成/同步 HybridCLR 热更 DLL 与 AOT metadata 为 YooAsset RawFile，并回写 Boot Entry 序列化配置；Editor Play 准备走 `Prepare Runtime Assets And Boot`，生产构建统一走 Dashboard P0-P9 的内容感知增量流程 |
-| HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；10 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
+| HYB-03 热更边界裂变 | `Assets/Scripts/Boot/Launcher/` + `Assets/Framework/AssetShared/` | AOT `Launcher` 壳 + 热更 `Boot`；19 热更程序集；`AssetConfig`/`AssetConstants` 迁入 `Framework.AssetShared`；`BootRemoteService` 修复 IRemoteService 死锁；AOT 日志 `BootStartupLog`；反射入口 `"Boot.BootUpdateRunner, Boot"`；EditMode 测试 45/45 全绿含 15 例 HYB-03 边界 |
 | Build Pipeline 构建打包管线 | `Assets/Scripts/Boot.Editor/Build/` + `Assets/Framework/BuildPipeline/` + `.planning/` | BuildProfile-only 配置；`BuildPipelineRunner` Plan 驱动 P0-P9；1.1.0 使用 SHA-256 内容指纹、跨版本/平台隔离缓存和依赖级联；P2 拆分 HybridCLR 六子步骤，P3 不重复编译，P4 复用未变化 YooAsset bundle；Dashboard/CI 可显式强制全量。`BuildTransaction` 回滚配置与 build flags；YooAsset/HybridCLR/Player/Verify/Smoke/Report 全链路。 |
 | AOT 泛型修复 (ZLogger) | `Assets/Scripts/Core/Logging/SimpleLogger.cs` | `SimpleLogger<T>` 替代 `Logger<T>` 注册为 `ILogger<>` 实现，将泛型 `Log<TState>` 展开为字符串调非泛型 `ILogger.Log(string)`，绕过 IL2CPP AOT 侧 `Microsoft.Extensions.Logging.Logger` 泛型实例化边界。待设备验证。 |
 | AOP-PERF-01 打包耗时监控雏形 | `Assets/Framework/Aop/` + `Assets/Scripts/Boot.Editor/Build/Telemetry/` | Editor-only 显式 Observability 首版：单调时钟 Span/session、父子关系、有界 Collector 和故障隔离；监控 P2/P3/P4/P6 内部关键步骤；性能明细进入 build_report JSON/Markdown schema 1.1.0。Unity 编译与定向 EditMode 14/14 通过，真实打包报告待 E2E；Runtime 开放前必须完成 HybridCLR 归属评审。 |
@@ -95,8 +95,10 @@
 
 | 模块 | 复杂度 | 位置 | 依赖 | 说明 |
 |------|--------|------|------|------|
-| UIEffectExtension | Medium-High | `Framework/UIEffect/` | URP（未装） | ⛔ 阻塞：依赖 `Unity.RenderPipelines.Universal.Runtime`，需先决策是否引入 URP |
+| TMP 文本体系（t2d/t3d 轻量版） | Medium | 待定（`Framework/View/` 或 `Core/UI/`） | TMP + 字体资产 | P33 `Core/TextMeshPro/` 的轻量移植：预制样式(描边/投影/外发光/渐变/扫光) + 文本属性表(textTid) + 简化色号 `<color=c17>`。分阶段：P0 字体资产+简化色号 → P1 TextStyle+文本属性表 → P2 表情/竖排/状态元素按需；不移植 Lua 配置驱动与编辑器批量工具。详见 `.planning/TMP_TEXT_SYSTEM.md` |
+| UIEffectExtension | Medium-High | `Framework/UIEffectExtension/` | URP 14.0.8（已装） | 🟡 UIModelImage（UI 3D 模型）已落地（UI-04）；其余 EffectImage/FrameAnimation/ImageBlur/MaskImg/GrayUI 依赖 37 专属 shader + Coffee.UIExtensions，按需后置 |
 | TransitionLoadingScreenshot | Medium | `Core/ViewSystem/` | Navigation | 游戏侧导航过渡截图，待 Loading 界面落地 |
+| CoverageCheckerInEditor（Editor Coverage 校验工具） | Low | `Core.Editor/ViewSystem/Coverage/` | Framework.Coverage（+ Spine 可选） | 37 的 Editor-only 工具：进 Play 模式遍历相机，校验界面/场景是否漏挂 Coverage 组件。`CoverageChecker.uiCamera` / `.baseCamera` 是它的排除项——KJ 两字段为序列化占位字段（运行时无消费，`baseCamera=null` 与 37 prefab 一致，非移植遗漏）。待有「编辑器校验场景漏挂 Coverage」需求再移植；`SkeletonCoverageChild` 依赖 Spine 可裁剪 |
 
 ### 网络
 
@@ -174,4 +176,4 @@ ConfigManager (Luban) ← HybridCLR boundary + Framework.Asset
 
 ---
 
-*Boards updated: 2026-07-17*
+*Boards updated: 2026-08-16*

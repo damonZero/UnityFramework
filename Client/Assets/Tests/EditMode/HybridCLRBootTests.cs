@@ -320,7 +320,7 @@ namespace Tests.EditMode
                 "Boot.BootUpdateRunner.Start(BootBridge) must exist for the AOT BootLoader reflection handoff.");
         }
 
-        // ── 分层启动链反射契约（layered-startup-chain.md）──
+        // ── 分层启动链反射契约（.planning/STATE.md LAYER-00）──
 
         [Test]
         public void BootStartupSettings_DefaultStartupTypeIsCore()

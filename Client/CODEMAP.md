@@ -502,18 +502,18 @@ AOT-only: `Launcher` (never in hotUpdateAssemblies).
 | Document | Location |
 |----------|----------|
 | Project overview | `.planning/PROJECT.md` |
-| Requirements | `.planning/REQUIREMENTS.md` |
 | Roadmap & module status | `.planning/ROADMAP.md` |
 | Current state & file listing | `.planning/STATE.md` |
-| Architecture research | `.planning/research/ARCHITECTURE.md` |
 | Directory structure spec | `.planning/目录结构规范.md` |
-| DI/Event knowledge graph | `.planning/research/DI_EVENT_KNOWLEDGE_GRAPH.md` |
-| Stack decisions | `.planning/research/STACK.md` |
-| Pitfalls | `.planning/research/PITFALLS.md` |
 | Hot-update boundary | `.planning/HOT_UPDATE_BOUNDARY.md` |
 | AI runtime logging | `.planning/AI_RUNTIME_LOGGING.md` |
+| Camera system & render pipeline port | `.planning/CAMERA.md` |
+| TMP text system analysis | `.planning/TMP_TEXT_SYSTEM.md` |
+| UI framework port review | `.planning/UI_FRAMEWORK_REVIEW_37.md` |
+| YooAsset resource collection plan | `.planning/YOOASSET_RESOURCE_COLLECTION.md` |
 | Build pipeline workflow | `ProgressDoc/Result/hybridclr_workflow.md` §4 |
 | Build pipeline design & impl | `ProgressDoc/Discuss/资源系统/Hy3_构建打包全流程管线_需求分析与设计.md` |
+| Archived (plans/research/requirements/review) | `.planning/archive/` |
 
 ---
 

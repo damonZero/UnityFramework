@@ -11,7 +11,7 @@ metadata:
 
 # KJ General 层 — 通用业务架构
 
-源码在 `Assets/Scripts/General/`，完整文档见 `CODEMAP.md` Layer: General 章节，分层启动链见 `.planning/plans/layered-startup-chain.md`。
+源码在 `Assets/Scripts/General/`，完整文档见 `CODEMAP.md` Layer: General 章节，分层启动链见 `.planning/STATE.md`。
 
 ## 架构速查
 

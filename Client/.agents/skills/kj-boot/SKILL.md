@@ -9,7 +9,7 @@ metadata:
 
 # KJ Boot 层 — 启动更新壳（HYB-03 裂变 + 分层启动链）
 
-源码在 `Assets/Scripts/Boot/`，完整边界设计见 `.planning/HOT_UPDATE_BOUNDARY.md`，分层启动链见 `.planning/plans/layered-startup-chain.md`。
+源码在 `Assets/Scripts/Boot/`，完整边界设计见 `.planning/HOT_UPDATE_BOUNDARY.md`，分层启动链见 `.planning/STATE.md`。
 
 ## 架构速查
 

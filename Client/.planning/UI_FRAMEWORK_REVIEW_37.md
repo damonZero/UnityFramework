@@ -19,10 +19,12 @@
 | **D7** Coverage 系统 | ✅ | `Framework/Coverage/`（运行时 + Editor）+ `Scripts/Core/ViewSystem/Coverage/FormCoverage.cs`、`SceneCoverage.cs` + `FormFullScreenJudge` 接线 |
 | **D8** Touch 系统 | ✅ | `Framework/Touch/` + `SetEventSystemEnable` 接线 + 前缀表补 Touch 类型 + `ViewSystem.CreateEventSystem`（补 EventSystem + StandaloneAdvInputModule） |
 | **D6** Navigation 编辑器 | ✅ | `Framework/View/Navigation.Editor/`（GraphView/Record/TreeView 全量，SafeTypePool→TypePool 适配） |
-| **D9** UIEffectExtension | ⛔ 阻塞 | **依赖 URP（`Unity.RenderPipelines.Universal.Runtime`），KJ 未装 URP**，需先决策是否引入 URP |
+| **D9** UIEffectExtension | 🟡 部分 | URP 14.0.8 已引入；`UIModelImage`（UI 3D 模型四件套）已落地（见 STATE UI-04）；其余 EffectImage/FrameAnimation/ImageBlur/MaskImg/GrayUI 依赖 37 专属 shader + Coffee.UIExtensions，按需后置 |
 | **D10** TransitionLoadingScreenshot | ⏸️ 游戏特定 | 依赖 37 的 `LoadingForm`（KJ 尚无），待加载界面落地后再做 |
 
 > 附：`CoverageChecker`（依赖 UIEffectExtension）与 `SkeletonCoverageChild`（依赖 Spine）同因上层依赖缺失暂缓，已在上表 D9 一并说明。
+
+> 附2（2026-08-16）：`CoverageChecker` 本体已随 D7 落地可编译（`UIModelCam` 位于 `Framework/UIEffectExtension`）。其上的 `uiCamera` / `baseCamera` 两字段是**序列化占位字段**——运行时 `OnCreateCamera` 从不读取，唯一消费方是 37 的 Editor-only 工具 `Core.Editor/ViewSystem/Coverage/CoverageCheckerInEditor.cs`（遍历相机校验漏挂 Coverage，遇 `uiCamera`/`baseCamera` 跳过）。KJ 未移植该 Editor 工具；37 的 `StartScreen.prefab` 中 `baseCamera=null`（未启用独立 base 相机），KJ 同为 null，属设计如此而非移植遗漏。待有编辑器校验场景需求再补（见 ROADMAP UI 待实现）。
 
 ### 本次会话最终验证结果（2026-08-16）
 
