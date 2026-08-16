@@ -43,3 +43,6 @@ static bool N = true;   // 软重启后 N 变 false（default），而不是回�
 - 特性：`Framework.Restart.SoftRestartFieldAttribute` / `SoftRestartAction` / `SoftRestartClassAttribute`。
 - 软重启入口：`Boot.GameLife.GameRestart`（`SoftRestart` / `HardRestart`）。
 - 软重启销毁顺序铁律：**先删 prefab（OnDisable/OnDestroy 时系统仍存活）→ 同步释放 Core scope → 最后重置静态**；`CoreStartup.Reset()` 必须 `scope.Dispose()` 同步释放（不能只 `Object.Destroy`，否则旧系统仍在 Tick 读空静态会 NRE）。
+- **DI scope 必须留在 `DontDestroyOnLoad` 持久层**（`CoreLifetimeScope` 由 `CoreStartup.Start` 显式挂；`GeneralLifetimeScope`/`ProjectLifetimeScope` 经 `CreateChild` 的 `SetParent` 继承）。不要因为「反正软重启会拆」就改放到场景上，两个原因：
+  1. **跨场景存活**：框架有场景加载（`BaseScene`/`NewSceneManager`/`LoadSceneAsync`），正常切游戏场景不能把 DI 容器一起卸载（VContainer 的 `LifetimeScope` 不会自动 DontDestroyOnLoad）。
+  2. **软重启两级拆除**：`GameRestart.DestroyNonPersistentRoots()` 靠 `obj.scene == bootComponent.scene` **跳过 DontDestroyOnLoad 场景**，让 scope 走 `ResetCoreScope` → `CoreStartup.Reset` 的**同步 `Dispose()`**（先于静态重置）。若放场景上，会被 sweep 当普通根对象 `Object.Destroy`（帧末才 OnDestroy→Dispose，落在静态重置之后），破坏上面的销毁顺序铁律。

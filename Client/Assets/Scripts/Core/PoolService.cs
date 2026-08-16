@@ -2,6 +2,7 @@ using System;
 using Core.Systems;
 using Core.Systems.Attributes;
 using Framework.Asset;
+using Framework.Log;
 using Framework.Pool;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace Core
         {
             PoolDependencies.LoadAssetAsync = async (path, parent) => await _assetSystem.LoadAssetAsync<GameObject>(path);
             PoolDependencies.ReleaseAssetByPath = path => _assetSystem.Release<GameObject>(path);
+            PoolDependencies.LogError = msg => GameLog.Error(msg, module: "Framework.Pool");
             _gameObjectPool = new GameObjectPool(null, 64);
         }
 
@@ -33,6 +35,7 @@ namespace Core
             _gameObjectPool = null;
             PoolDependencies.LoadAssetAsync = null;
             PoolDependencies.ReleaseAssetByPath = null;
+            PoolDependencies.LogError = null;
         }
 
         public GameObjectPool GameObjectPool => _gameObjectPool;

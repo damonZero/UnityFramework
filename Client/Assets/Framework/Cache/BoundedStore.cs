@@ -153,8 +153,9 @@ namespace Framework.Cache
                     if (TryGetLiveValueUnsafe(key, out var existing, ref evictions))
                     {
                         // 计算期间他人已写入（Put 或其它 owner 提交）→ 丢弃本线程计算结果。
-                        // 该结果从未落库，不触发 onEvicted，直接静默丢弃。
+                        // 该结果从未落库，但仍需经 onEvicted 清理工厂分配的丢弃值（释放资源，避免泄漏）。
                         finalValue = existing;
+                        (evictions ??= new List<(TKey Key, TValue Value)>()).Add((key, computed));
                     }
                     else if (_generation != generationSnapshot)
                     {

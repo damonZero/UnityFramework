@@ -350,7 +350,7 @@ Assets/Framework/View/Editor/              ← 🆕 CSharpAutoBind/VarBind/ViewO
 Assets/Framework/View/Navigation.Editor/   ← 🆕 GraphView/Record/TreeView（Editor-only）
 Assets/Framework/MVVM/                     ← 🆕 MvvmForm/Node/Scene + BaseModel/BaseViewModel
 Assets/Framework/ViewCache/                ← 🆕 View 缓存（Cache/CacheFactory/FIFO/LRU/Statistics + CacheDependencies）
-Assets/Framework/DependencyInjection/      ← 🆕 Dependencies.Scope（VContainer 挂载点）
+Assets/Framework/DependencyInjection/      ← 🆕 环境容器门面 `Dependencies`（叶子 scope；对外 `Resolve`/`TryResolve`/`ResolveOrDefault`/`CreateChild`，不暴露容器类型）
 Assets/Framework/Coverage/                 ← 🆕 界面覆盖区域检测（BaseCoverage/CanvasCoverage/SegmentTree）
 Assets/Framework/Touch/                    ← 🆕 自定义输入模块（StandaloneAdvInputModule + BaseTrigger/BaseButton/BaseDrag/PassTrigger）
 
@@ -427,6 +427,8 @@ UI 框架 + 显示层 + 相机控制 + UI 3D 模型均已落地（见 UI-01~05�
 - REDDOT-01: RedDot 红点系统
 
 ## 最新验证记录
+
+- 2026-08-16: **DI 门面封装 + 持久层语义文档化**：`Framework.DependencyInjection.Dependencies` 从裸 `Scope`（`LifetimeScope`）重构为环境容器门面（`Resolve`/`TryResolve`/`ResolveOrDefault`/`CreateChild`，null 兜底内聚，不暴露容器类型）；删除 `Framework.MVVM.Dependencies` 转发壳，MVVM（`MvvmBaseModel`/`BaseViewModel`/`MvvmForm`/`MvvmNode`/`MvvmScene`）直接调门面。明确两点语义并写入 `static-restart-state.md`——「叶子 scope / 父容器恒为叶子（无需按层指定父容器）」与「DI scope 留 `DontDestroyOnLoad` 持久层（跨场景存活 + 软重启两级拆除）」。**待验证**：Unity 编译（`Framework.DependencyInjection` + `Framework.MVVM` asmdef）。
 
 - 2026-08-16: **显示层 + 相机 + DOTween + UI 3D 模型落地（本轮）**：① UI 相机系统（`Core/UI/UICamera` + `UICameraAdapter`，`ViewSystem.CreateUIRoot` 切 ScreenSpaceCamera）；② URP 14.0.8 引入（`KJUrpSetup` 管线脚本）；③ `UI3DFormSupport`（3D UI 透视/正交切换）；④ DOTween 引入（`1External/Demigiant` 免费版）+ `CameraMoveAdv` 精简拆分版（`General/Camera`，partial + 7 功能 Inspector 开关）；⑤ UI 3D 模型（`Framework/UIEffectExtension` UIModelImage 四件套，渲染通用 GameObject 到 RawImage，不依赖 Spine）。**Bug 修复**：`CoverageRoot` 未创建 → FormCoverage NRE；`ViewBase` 异步生命周期 null 守卫（退出 MissingReferenceException）；`LifeCycleExecuteClose` 缓存已销毁 Form；`FormManager.Shutdown` 丢弃异步 Close（改 `.Forget()`）；`UIRoot` layer 不匹配 UI 相机 cullingMask；`DemoFormPrefabCreator` 用 Default 层重建 prefab；`UI3DFormSupport._recordUseList`/`UIModelLocMgr` 缓存 static readonly → 可变 static（软重启泄漏）；`DontDestroyOnLoad` 撤销（软重启设计，动态 UI 根随重启拆除）。**待验证**：UIModelImg / CameraMoveAdv 功能（用户以后测）。
 

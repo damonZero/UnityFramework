@@ -1,3 +1,4 @@
+using Framework.DependencyInjection;
 using Framework.Log;
 using System;
 using R3;
@@ -118,7 +119,7 @@ namespace Framework.MVVM
         {
             try
             {
-                var success = Dependencies.Resolver.TryResolve<T>(out var result);
+                var success = Dependencies.TryResolve<T>(out var result);
                 if (!success)
                 {
                     // FIXME by fred
@@ -175,7 +176,7 @@ namespace Framework.MVVM
                 GameLog.Error($"Container already exists , {GetType()}", module: "Framework.MVVM");
             }
 
-            _lifetimeScope = Dependencies.Scope.CreateChild(installation);
+            _lifetimeScope = Dependencies.CreateChild(installation);
             _lifetimeScope.Container.Inject(this);
         }
 

@@ -24,6 +24,7 @@
         "Framework.View.Navigation",
         "Framework.Coverage",
         "Framework.Touch",
+        "Framework.UIEffectExtension",
         "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],

@@ -1,3 +1,4 @@
+using Framework.DependencyInjection;
 using Framework.Log;
 using System;
 
@@ -17,7 +18,7 @@ namespace Framework.MVVM
             if (!typeof(BaseViewModel).IsAssignableFrom(type))
                 throw new ArgumentException($"{type.FullName} is not a subclass of {nameof(BaseViewModel)}");
 
-            var flag = Dependencies.Resolver.TryResolve(type, out var instance);
+            var flag = Dependencies.TryResolve(type, out var instance);
             return flag ? (BaseViewModel)instance : null;
         }
 

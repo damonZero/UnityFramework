@@ -100,13 +100,15 @@ namespace Tests.EditMode
         [Test]
         public void BootStartupLog_RecordsSnapshotEntries()
         {
-            int before = Boot.BootStartupLog.Snapshot.Count;
+            // Snapshot 是「快照并清空」语义：先消费历史条目，避免其它测试残留污染基线。
+            _ = Boot.BootStartupLog.Snapshot;
+
             Boot.BootStartupLog.Info("info-msg");
             Boot.BootStartupLog.Warn("warn-msg");
             Boot.BootStartupLog.Error("error-msg");
 
             var snap = Boot.BootStartupLog.Snapshot;
-            Assert.That(snap.Count, Is.EqualTo(before + 3));
+            Assert.That(snap.Count, Is.EqualTo(3));
             Assert.That(snap.Any(e => e.Level == Boot.BootStartupLogLevel.Info && e.Message == "info-msg"), Is.True);
             Assert.That(snap.Any(e => e.Level == Boot.BootStartupLogLevel.Warn && e.Message == "warn-msg"), Is.True);
             Assert.That(snap.Any(e => e.Level == Boot.BootStartupLogLevel.Error && e.Message == "error-msg"), Is.True);

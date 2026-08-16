@@ -21,6 +21,7 @@ namespace Tests.EditMode
         {
             PoolDependencies.LoadAssetAsync = null;
             PoolDependencies.ReleaseAssetByPath = null;
+            PoolDependencies.LogError = null;
             PoolDependencies.LoadGates.Clear();
         }
 
@@ -28,6 +29,9 @@ namespace Tests.EditMode
         {
             PoolDependencies.LoadAssetAsync = (path, parent) => UniTask.FromResult(GameObject.CreatePrimitive(PrimitiveType.Cube));
             PoolDependencies.ReleaseAssetByPath = _ => { };
+            // GameObjectPool 的污染/错误归还诊断经 PoolDependencies.LogError 输出（Pool 不引用 Log）；
+            // 测试里接到 Debug.LogError 以配合 LogAssert.Expect 断言。
+            PoolDependencies.LogError = msg => Debug.LogError(msg);
         }
 
         // A-D1 / C-2：Recycle 超过 maxIdlePerPrefab 的实例应被 Destroy 而非入栈。
